@@ -12,7 +12,10 @@ echo "Zipping Controller"
 zip -r ${ZIP_NAME} py/ run.sh config.yaml -x "py/controller_env/*"
 
 echo "Cleaning remote ZIP_DIR and recreating..."
-ssh ${TUNNEL_SSH_ENTITY} "rm -rf ${ZIP_DIR} && mkdir -p ${ZIP_DIR}"
+ssh ${TUNNEL_SSH_ENTITY} "
+    rm -rf ${ZIP_DIR}/py &&  
+    find ${ZIP_DIR}/ -maxdepth 1 -type f &&
+    mkdir -p ${ZIP_DIR}"
 
 echo "Copying Zip To ${TUNNEL_SSH_ENTITY}"
 scp ${ZIP_NAME} ${TUNNEL_SSH_ENTITY}:${ZIP_DIR}

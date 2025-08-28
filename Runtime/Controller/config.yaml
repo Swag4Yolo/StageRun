@@ -1,3 +1,7 @@
 server:
   host: "127.0.0.1"
   port: 1337
+
+paths:
+  engines_dir: "../data/engines/"
+  tracker_file: "../data/engines_tracker.json"
