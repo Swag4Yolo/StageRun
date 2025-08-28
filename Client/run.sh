@@ -1,16 +1,16 @@
 #!/bin/bash
 
-VENV="controller_env"
-PROGRAM="controller.py"
+VENV="client_env"
+PROGRAM="client.py"
 
 cd py
 
-echo "Initializing Controller Environment"
+echo "Initializing ${VENV} Environment"
     python3 -m venv $VENV
     source ${VENV}/bin/activate
     pip3 install -r requirements.txt
 
-echo "Initializing Program"
+echo "Initializing Client"
     python3 ${PROGRAM}
 
 cd ..
