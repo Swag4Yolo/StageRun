@@ -20,6 +20,7 @@ logger = logging.getLogger("controller")
 app = FastAPI()
 app.post("/upload_engine")(upload_engine)
 app.get("/list_engines")(list_engines)
+app.post("/compile_engine")(compile_engine)
 
 # ------------------------
 # Main entry
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
 
     # Init engine with config paths
-    init_engine(config["paths"])
+    init_engine(config)
 
     DEFAULT_IP = "127.0.0.1"
     DEFAULT_PORT = 1337

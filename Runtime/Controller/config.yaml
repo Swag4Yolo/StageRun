@@ -2,6 +2,14 @@ server:
   host: "127.0.0.1"
   port: 1337
 
-paths:
-  engines_dir: "../data/engines/"
-  tracker_file: "../data/engines_tracker.json"
+
+stagerun_root: /home/tofino/Work/PhD/StageRun/Runtime/
+
+engines:
+  engines_dir: data/engines/
+  tracker_file: data/engines_tracker.json
+
+compiler:
+  hw_flags: "-D FLOW_2 -D OPTIMIZE_TCAM -D HW"
+  build_dir: data/builds/
+  tools_path: /home/tofino/tools

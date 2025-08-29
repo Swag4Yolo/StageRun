@@ -5,6 +5,10 @@ import traceback
 import os
 import argparse
 
+
+COMPILATION_LOGS_DIR_PATH = None
+
+
 class StageRunClient(cmd.Cmd):
     system_name = "StageRun"
 
@@ -16,6 +20,9 @@ class StageRunClient(cmd.Cmd):
     def __init__(self, config_file='../config.yaml'):
         super().__init__()
 
+        global COMPILATION_LOGS_DIR_PATH
+
+
         # Load server config from YAML
         try:
             with open(config_file, "r") as f:
@@ -23,6 +30,10 @@ class StageRunClient(cmd.Cmd):
             self.host = config["server"].get("host", "127.0.0.1")
             self.port = config["server"].get("port", 1337)
             self.base_url = f"http://{self.host}:{self.port}"
+
+            COMPILATION_LOGS_DIR_PATH = config['compilation_log_dir']
+            os.makedirs(COMPILATION_LOGS_DIR_PATH, exist_ok=True)
+            
         except Exception as e:
             print("Error loading config file:", e)
             exit(1)
@@ -67,8 +78,7 @@ class StageRunClient(cmd.Cmd):
             print(resp.json())
 
         except SystemExit:
-            # argparse throws SystemExit on error; catch it to avoid exiting client
-            parser.print_help()
+            pass
             
         except Exception:
             traceback.print_exc()
@@ -90,6 +100,46 @@ class StageRunClient(cmd.Cmd):
                 print("Error:", resp.text)
         except Exception:
             traceback.print_exc()
+
+    def do_compile_engine(self, arg):
+        """
+        Compile a previously uploaded engine.
+        Usage: compile_engine -t <tag>
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag to compile")
+
+        try:
+            args = parser.parse_args(arg.split())
+            tag = args.tag
+
+            response = requests.post(f"{self.base_url}/compile_engine", data={"tag": tag})
+            if response.status_code == 200:
+                data = response.json()
+                if "error" in data:
+                    print(f"Compilation failed: {data['error']}")
+                    if "log_path" in data:
+                        print(f"See log at: {data['log_path']}")
+                        if "log" in data:
+                            filepath = os.path.join(COMPILATION_LOGS_DIR_PATH, f"{tag}.log")
+                            with open(filepath, "w") as f:
+                                f.write(data["log"])
+                            print(f"Log saved locally at: {filepath}")
+
+                else:
+                    print(data.get("message", "Compilation completed"))
+            else:
+                print(f"Server returned status {response.status_code}: {response.text}")
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
 
 
 if __name__ == "__main__":
