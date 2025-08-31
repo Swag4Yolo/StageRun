@@ -8,6 +8,7 @@ stagerun_root: /home/tofino/Work/PhD/StageRun/Runtime/
 engines:
   engines_dir: data/engines/
   tracker_file: data/engines_tracker.json
+  running_engine: data/running_engine.json
 
 compiler:
   hw_flags: "-D FLOW_2 -D OPTIMIZE_TCAM -D HW"

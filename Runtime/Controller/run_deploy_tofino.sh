@@ -7,6 +7,8 @@ TUNNEL_HOST="localhost"
 TUNNEL_PORT=1337
 ZIP_DIR="/home/tofino/Work/PhD/StageRun/Runtime"
 ZIP_NAME="controller_${CONTROLLER_VERSION}.zip"
+TOOLS_DIR="/home/tofino/tools"
+SDE_DIR="/home/tofino/bf-sde-9.13.2"
 
 echo "Zipping Controller"
 zip -r ${ZIP_NAME} py/ run.sh config.yaml -x "py/controller_env/*"
@@ -23,6 +25,8 @@ scp ${ZIP_NAME} ${TUNNEL_SSH_ENTITY}:${ZIP_DIR}
 echo "Initializing Tunnel (manual run afterwards)..."
 ssh -t -L ${TUNNEL_PORT}:${TUNNEL_HOST}:${TUNNEL_PORT} ${TUNNEL_SSH_ENTITY} "
     tmux new -A -s AutoDeployController \; \
+    send-keys 'cd ${SDE_DIR}' C-m \; \
+    send-keys 'source ${TOOLS_DIR}/set_sde.bash' C-m \; \
     send-keys 'cd ${ZIP_DIR}' C-m \; \
     send-keys 'unzip -o ${ZIP_NAME}' C-m \; \
     send-keys 'chmod +x run.sh' C-m \; \

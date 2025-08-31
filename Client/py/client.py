@@ -4,7 +4,8 @@ import yaml
 import traceback
 import os
 import argparse
-
+import re
+import shlex
 
 COMPILATION_LOGS_DIR_PATH = None
 
@@ -39,7 +40,6 @@ class StageRunClient(cmd.Cmd):
             exit(1)
 
     # -------- Commands -------- #
-
     def do_exit(self, line):
         """Exit the client"""
         print("Exiting...")
@@ -54,16 +54,21 @@ class StageRunClient(cmd.Cmd):
 
         parser = argparse.ArgumentParser(prog="upload_engine")
         parser.add_argument("-z", "--zip", dest="zip_file", help="Path to the engine zip file", required=True)
-        parser.add_argument("-t", dest="tag", help="Unique tag identifying the engine", required=True)
-        parser.add_argument("-v", dest="version", help="Engine version string", default="v0.1")
-        parser.add_argument("-m", dest="main_file_name", help="Main P4 file name to check", required=True)
-        parser.add_argument("-c", "--comment", dest="comment", help="Optional comment", default="")
+        parser.add_argument("-t", "--tag", dest="tag", help="Unique tag identifying the engine", required=True)
+        parser.add_argument("-v", "--version", dest="version", help="Engine version string", default="0.1")
+        parser.add_argument("-m", "--main_file_name", dest="main_file_name", help="Main P4 file name to check", required=True)
+        parser.add_argument("-c", "--comment", type=str, dest="comment", help="Optional comment", default="")
 
         try:
-            args = parser.parse_args(arg.split())
+            args = parser.parse_args(shlex.split(arg))
 
             if not os.path.exists(args.zip_file):
                 print(f"Error: File {args.zip_file} does not exist")
+                return
+            
+            pattern = r'^\d+\.\d+$'
+            if not re.fullmatch(pattern, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
             files = {"zip_file": open(args.zip_file, "rb")}
@@ -94,26 +99,37 @@ class StageRunClient(cmd.Cmd):
             if resp.status_code == 200:
                 engines = resp.json()
                 print("Engines on controller:")
-                for tag, info in engines.items():
-                    print(f"- {tag} (version={info['version']}, status={info['status']})")
+                for tag, versions in engines.items():
+                    print(f"- {tag}:")
+                    for version, info in versions.items():
+                        status = info.get("status", "UNKNOWN")
+                        print(f"    + version {version}: {status}")
+                        # print(f"    • version {version}: {status}")
             else:
                 print("Error:", resp.text)
         except Exception:
             traceback.print_exc()
 
+
     def do_compile_engine(self, arg):
         """
         Compile a previously uploaded engine.
-        Usage: compile_engine -t <tag>
+        Usage: compile_engine -t <tag> -v <version>
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag to compile")
+        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag")
+        parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="Engine version")
 
         try:
             args = parser.parse_args(arg.split())
-            tag = args.tag
 
-            response = requests.post(f"{self.base_url}/compile_engine", data={"tag": tag})
+            pattern = r'^\d+\.\d+$'
+            if not re.fullmatch(pattern, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
+                return
+
+            response = requests.post(f"{self.base_url}/compile_engine", params={"tag": args.tag, "version": args.version})
+
             if response.status_code == 200:
                 data = response.json()
                 if "error" in data:
@@ -121,13 +137,59 @@ class StageRunClient(cmd.Cmd):
                     if "log_path" in data:
                         print(f"See log at: {data['log_path']}")
                         if "log" in data:
-                            filepath = os.path.join(COMPILATION_LOGS_DIR_PATH, f"{tag}.log")
+                            filepath = os.path.join(COMPILATION_LOGS_DIR_PATH, f"{args.tag}.log")
                             with open(filepath, "w") as f:
                                 f.write(data["log"])
                             print(f"Log saved locally at: {filepath}")
 
                 else:
-                    print(data.get("message", "Compilation completed"))
+                    print(data.get("message"))
+            else:
+                print(f"Server returned status {response.status_code}: {response.text}")
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
+    def do_install_engine(self, arg):
+        """
+        Install a previously compiled engine.
+        Usage: install_engine -t <tag> -v <version>
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag")
+        parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="Engine version")
+
+        try:
+            args = parser.parse_args(arg.split())
+
+            pattern = r'^\d+\.\d+$'
+            if not re.fullmatch(pattern, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
+                return
+            
+            response = requests.post(f"{self.base_url}/install_engine", params={"tag": args.tag, "version": args.version})
+
+
+            if response.status_code == 200:
+                data = response.json()
+                if "status" in data and "error" in data["status"]:
+                    print(f"Installation failed:")
+                    if "log_path" in data:
+                        print(f"See log at: {data['log_path']}")
+                        if "log" in data:
+                            filepath = os.path.join(COMPILATION_LOGS_DIR_PATH, f"{args.tag}.log")
+                            with open(filepath, "w") as f:
+                                f.write(data["log"])
+                            print(f"Log saved locally at: {filepath}")
+
+                else:
+                    print(data.get("message"))
             else:
                 print(f"Server returned status {response.status_code}: {response.text}")
 
@@ -141,6 +203,69 @@ class StageRunClient(cmd.Cmd):
             traceback.print_exc()
 
 
+    def do_uninstall_engine(self, arg):
+        """
+        Uninstalls a previously installed engine.
+        Usage: uninstall_engine
+        """
+
+        try:
+            
+            response = requests.post(f"{self.base_url}/uninstall_engine")
+
+
+            if response.status_code == 200:
+                data = response.json()
+                if "error" in data:
+                    print(f"Installation failed: {data['error']}")
+                else:
+                    print(data.get("message"))
+            else:
+                print(f"Server returned status {response.status_code}: {response.text}")
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
+    def do_remove_engine(self, arg):
+        """
+        Removes a previously compiled engine.
+        Usage: remove_engine -t <tag> -v <version>
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag")
+        parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="Engine version")
+
+        try:
+            args = parser.parse_args(arg.split())
+
+            pattern = r'^\d\d\.\d\d$'
+            if not re.fullmatch(pattern, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
+                return
+            
+            response = requests.delete(f"{self.base_url}/remove_engine", params={"tag": args.tag, "version": args.version})
+
+
+            if response.status_code == 200:
+                data = response.json()
+                print(data)
+            else:
+                print(f"Server returned status {response.status_code}: {response.text}")
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
 
 if __name__ == "__main__":
     StageRunClient().cmdloop()

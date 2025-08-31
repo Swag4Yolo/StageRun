@@ -21,6 +21,9 @@ app = FastAPI()
 app.post("/upload_engine")(upload_engine)
 app.get("/list_engines")(list_engines)
 app.post("/compile_engine")(compile_engine)
+app.post("/install_engine")(install_engine)
+app.post("/uninstall_engine")(uninstall_engine)
+app.delete("/remove_engine")(remove_engine)
 
 # ------------------------
 # Main entry
