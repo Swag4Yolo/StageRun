@@ -10,6 +10,11 @@ engines:
   tracker_file: data/engines_tracker.json
   running_engine: data/running_engine.json
 
+apps:
+  apps_dir: data/apps/
+  tracker_file: data/apps_tracker.json
+  running_app: data/running_app.json
+
 compiler:
   hw_flags: "-D FLOW_2 -D OPTIMIZE_TCAM -D HW"
   build_dir: data/builds/

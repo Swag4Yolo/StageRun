@@ -3,6 +3,7 @@ import uvicorn
 import logging
 from fastapi import FastAPI
 from engine import *
+from app import *
 
 # ------------------------
 # Logging Setup
@@ -18,12 +19,22 @@ logger = logging.getLogger("controller")
 # FastAPI Setup
 # ------------------------
 app = FastAPI()
+
+# Engines
 app.post("/upload_engine")(upload_engine)
 app.get("/list_engines")(list_engines)
 app.post("/compile_engine")(compile_engine)
 app.post("/install_engine")(install_engine)
 app.post("/uninstall_engine")(uninstall_engine)
 app.delete("/remove_engine")(remove_engine)
+
+# Apps
+app.post("/upload_app")(upload_app)
+app.get("/list_apps")(list_apps)
+# app.post("/compile_engine")(compile_engine)
+# app.post("/install_engine")(install_engine)
+# app.post("/uninstall_engine")(uninstall_engine)
+app.delete("/remove_app")(remove_app)
 
 # ------------------------
 # Main entry
@@ -34,6 +45,7 @@ if __name__ == "__main__":
 
     # Init engine with config paths
     init_engine(config)
+    init_app(config)
 
     DEFAULT_IP = "127.0.0.1"
     DEFAULT_PORT = 1337

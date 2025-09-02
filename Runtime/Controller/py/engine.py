@@ -9,57 +9,76 @@ from datetime import datetime
 from fastapi import UploadFile, Form, HTTPException, File
 from pathlib import Path
 import time
+from status import *
+
+# Engine Status = {Uploaded, Compiled, Installed}
 
 #CONSTANTS
 
 RUNNING_ENGINE = "__running__engine__"
 RUNNING_SESSION_NAME = "run_switchd"
 
-# class Engine():
-#     def __init__(self, tag="", version="v0.1", main_file_location=None, comment=""):
-#         self.tag = tag
-#         self.version = version
-#         self.main_file_location = main_file_location
-#         self.comment = comment
 
 logger = logging.getLogger("controller")
 
 # Globals set at init
-ENGINES_DIR_PATH = None
-ENGINES_FILE_PATH = None
-RUNNING_ENGINE_FILE_PATH = None
 BUILD_DIR_PATH = None
 TOOLS_DIR_PATH = None
 HW_FLAGS = None
+
+# Managing Engines
+ENGINES_DIR_PATH = None
+ENGINES_FILE_PATH = None
+RUNNING_ENGINE_FILE_PATH = None
 engines = {}
 running_engine = {}
 
+# Managing Apps
+# APPS_DIR_PATH = None
+# APPS_FILE_PATH = None
+# APP_RUNNING_FILE_PATH = None
+# apps = {}
+# running_app = {}
+
+# Compiler
 p4_native_compiler_path = None
 STAGE_RUN_ROOT_PATH = None
-
 # -----------------------
 # Initialization
 # -----------------------
 def init_engine(config):
     """Initialize engine module with config paths."""
-    global ENGINES_DIR_PATH, ENGINES_FILE_PATH, engines, BUILD_DIR_PATH, TOOLS_DIR_PATH, HW_FLAGS, p4_native_compiler_path, STAGE_RUN_ROOT_PATH, RUNNING_ENGINE_FILE_PATH, running_engine
+    global ENGINES_DIR_PATH, ENGINES_FILE_PATH, engines, BUILD_DIR_PATH, TOOLS_DIR_PATH, HW_FLAGS, p4_native_compiler_path, STAGE_RUN_ROOT_PATH, RUNNING_ENGINE_FILE_PATH, running_engine #\
+    # APPS_DIR_PATH, APPS_FILE_PATH, APP_RUNNING_FILE_PATH, APP_RUNNING_FILE_PATH, apps, running_app
 
     STAGE_RUN_ROOT_PATH = config["stagerun_root"]
     ENGINES_DIR_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["engines"]["engines_dir"])
     ENGINES_FILE_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["engines"]["tracker_file"])
     RUNNING_ENGINE_FILE_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["engines"]["running_engine"])
+
+    # APPS_DIR_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["apps_dir"])
+    # APPS_FILE_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["tracker_file"])
+    # APP_RUNNING_FILE_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["running_app"])
+
     BUILD_DIR_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["compiler"]["build_dir"])
 
     TOOLS_DIR_PATH = config["compiler"]["tools_path"]
     HW_FLAGS = config["compiler"].get("hw_flags", "")
 
+    # Engines
     os.makedirs(ENGINES_DIR_PATH, exist_ok=True)
     engines = load_engines()
     running_engine = load_running_engine()
     logger.info(f"Engine system initialized with dir={ENGINES_DIR_PATH}, tracker={ENGINES_FILE_PATH}")
 
-    os.makedirs(BUILD_DIR_PATH, exist_ok=True)
+    # Apps
+    # os.makedirs(APPS_DIR_PATH, exist_ok=True)
+    # apps = load_apps()
+    # running_app = load_running_app()
+    # logger.info(f"Engine system initialized with dir={APPS_DIR_PATH}, tracker={APPS_FILE_PATH}")
 
+    # Compiler
+    os.makedirs(BUILD_DIR_PATH, exist_ok=True)
     p4_native_compiler_path = f"{TOOLS_DIR_PATH}/p4_build.sh"
     if not os.path.isfile(p4_native_compiler_path):
         logger.error(f"Failed to Initialize Engine, native compiler not found in {TOOLS_DIR_PATH}.")
@@ -68,6 +87,7 @@ def init_engine(config):
 # -----------------------
 # Engines load/save
 # -----------------------
+# Engines
 def load_engines():
     if ENGINES_FILE_PATH and os.path.exists(ENGINES_FILE_PATH):
         try:
@@ -95,6 +115,35 @@ def load_running_engine():
 def save_running_engine(running_engine):
     with open(RUNNING_ENGINE_FILE_PATH, "w+") as f:
         json.dump(running_engine, f, indent=2)
+
+# # Apps
+# def load_apps():
+#     if APPS_FILE_PATH and os.path.exists(APPS_FILE_PATH):
+#         try:
+#             with open(APPS_FILE_PATH, "r") as f:
+#                 return json.load(f)
+#         except json.JSONDecodeError:
+#             logger.warning("Running Engine file corrupted, resetting...")
+#             return {}
+#     return {}
+
+# def save_apps(apps):
+#     with open(APPS_FILE_PATH, "w+") as f:
+#         json.dump(apps, f, indent=2)
+
+# def load_running_app():
+#     if APP_RUNNING_FILE_PATH and os.path.exists(APP_RUNNING_FILE_PATH):
+#         try:
+#             with open(APP_RUNNING_FILE_PATH, "r") as f:
+#                 return json.load(f)
+#         except json.JSONDecodeError:
+#             logger.warning("Running Engine file corrupted, resetting...")
+#             return {}
+#     return {}
+
+# def save_running_app(running_app):
+#     with open(APP_RUNNING_FILE_PATH, "w+") as f:
+#         json.dump(running_app, f, indent=2)
 
 
 # -----------------------
@@ -137,7 +186,7 @@ async def upload_engine(
         "tag": tag,
         "version": version,
         "main_file_name": main_file_name,
-        "status": "UPLOADED",
+        "status": STATUS_UPLOADED,
         "comment": comment,
         "zip_file_path": engine_zip_path,
         "build_path": build_path,
@@ -146,9 +195,10 @@ async def upload_engine(
 
     save_engines(engines)
 
-    logger.info(f"Engine '{tag}' uploaded successfully")
+    logger.info(f"Engine '{engine_key}' uploaded successfully")
 
-    return {"status": "ok", "msg": f"Engine '{tag}' uploaded successfully"}
+    return {"status": "ok", "msg": f"Engine '{engine_key}' uploaded successfully"}
+
 
 async def list_engines():
     if len(engines) == 0:
@@ -159,7 +209,7 @@ async def list_engines():
     for _, info in engines.items():
         tag = info["tag"]
         version = info["version"]
-        status = info.get("status", "UNKNOWN")
+        status = info.get("status", STATUS_UNKNOWN)
         if tag not in grouped:
             grouped[tag] = {}
         grouped[tag][version] = {"status": status}
@@ -188,8 +238,8 @@ async def compile_engine(tag: str, version: str):
     version = engine_info["version"]
     main_file_name = engine_info["main_file_name"]
 
-    if engine_info.get("status") == "COMPILED":
-        return {"message": f"Engine '{tag}' already compiled", "status": "SKIPPED"}
+    if engine_info.get("status") == STATUS_COMPILED:
+        return {"message": f"Engine '{tag}' already compiled", "status": STATUS_SKIPPED}
 
     # --- Prepare build dir ---
     build_path = os.path.join(BUILD_DIR_PATH, f"{tag}_v{version}")
@@ -236,12 +286,12 @@ async def compile_engine(tag: str, version: str):
                 check=False
             )
         if result.returncode == 0:
-            engines[engine_key]["status"] = "COMPILED"
+            engines[engine_key]["status"] = STATUS_COMPILED
             with open(ENGINES_FILE_PATH, "w") as f:
                 json.dump(engines, f, indent=2)
             return {"message": f"Engine '{tag}' compiled successfully", "status": "COMPILED"}
         else:
-            engines[engine_key]["status"] = "COMPILE_ERROR"
+            engines[engine_key]["status"] = STATUS_COMPILE_ERROR
             with open(ENGINES_FILE_PATH, "w") as f:
                 json.dump(engines, f, indent=2)
 
@@ -249,21 +299,21 @@ async def compile_engine(tag: str, version: str):
                 log_content = f.read()
             return {
                 "error": f"Compilation failed for engine '{tag}'",
-                "status": "COMPILE_ERROR",
+                "status": STATUS_COMPILE_ERROR,
                 "log_path": log_path,
                 "log": log_content,
             }
     except Exception as e:
-        return {"error": str(e), "status": "COMPILE_EXCEPTION"}
+        return {"error": str(e), "status": STATUS_COMPILE_EXCEPTION}
 
 
-def install_engine(tag: str, version: str):
+async def install_engine(tag: str, version: str):
 
     engine_key = f"{tag}_v{version}"
     if engine_key not in engines:
         return {"status": "error", "message": f"Engine {engine_key} not found."}
 
-    if engines[engine_key]["status"] != "COMPILED":
+    if engines[engine_key]["status"] != STATUS_COMPILED:
         return {"status": "error", "message": f"Engine {engine_key} is not compiled."}
 
     # Ensure no other engine is installed
@@ -311,7 +361,7 @@ def install_engine(tag: str, version: str):
         # engines[RUNNING_ENGINE]["engine_key"] = engine_key
         # engines[RUNNING_ENGINE]["pid"] = proc.pid
         # engines[RUNNING_ENGINE]["log"] = log_path
-        engines[engine_key]["status"] = "INSTALLED"
+        engines[engine_key]["status"] = STATUS_INSTALLED
         save_engines(engines)
         save_running_engine(running_engine)
         return {"status": "ok", "message":f"Engine {engine_key} Installed Successfully"}
@@ -324,7 +374,7 @@ def install_engine(tag: str, version: str):
                 "log":log_content
                 }
 
-def uninstall_engine():
+async def uninstall_engine():
 
     if running_engine[RUNNING_ENGINE]["engine_key"] == "":
         return {"status": "error", "message": f"There it not an Engine Installed."}
@@ -339,7 +389,7 @@ def uninstall_engine():
 
     subprocess.run(["tmux", "kill-session", "-t", RUNNING_SESSION_NAME])
     
-    engines[engine_key]["status"] = "COMPILED"
+    engines[engine_key]["status"] = STATUS_COMPILED
     running_engine[RUNNING_ENGINE]["engine_key"] = ""
     running_engine[RUNNING_ENGINE]["log"] = ""
 
@@ -349,13 +399,13 @@ def uninstall_engine():
     return {"status": "ok", "message": f"Engine {engine_key} uninstalled."}
 
 
-def remove_engine(tag: str, version: str):
+async def remove_engine(tag: str, version: str):
 
     engine_key = f"{tag}_v{version}"
     if engine_key not in engines:
         return {"status": "error", "message": f"Engine {engine_key} not found."}
 
-    if engines[engine_key]["status"] == "INSTALLED":
+    if engines[engine_key]["status"] == STATUS_INSTALLED:
         return {"status": "error", "message": "Cannot remove an installed engine."}
 
     # Delete files
@@ -370,4 +420,3 @@ def remove_engine(tag: str, version: str):
     save_engines(engines)
 
     return {"status": "ok", "message": f"Engine {engine_key} removed."}
-

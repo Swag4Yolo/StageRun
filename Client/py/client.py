@@ -8,7 +8,7 @@ import re
 import shlex
 
 COMPILATION_LOGS_DIR_PATH = None
-
+VERSION_PATTERN = r'^\d+\.\d+$'
 
 class StageRunClient(cmd.Cmd):
     system_name = "StageRun"
@@ -45,6 +45,8 @@ class StageRunClient(cmd.Cmd):
         print("Exiting...")
         return True   # returning True cleanly exits cmd loop
 
+    # Engines
+
     def do_upload_engine(self, arg):
         """
         Upload an engine to the controller.
@@ -66,8 +68,7 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: File {args.zip_file} does not exist")
                 return
             
-            pattern = r'^\d+\.\d+$'
-            if not re.fullmatch(pattern, args.version):
+            if not re.fullmatch(VERSION_PATTERN, args.version):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
@@ -110,7 +111,6 @@ class StageRunClient(cmd.Cmd):
         except Exception:
             traceback.print_exc()
 
-
     def do_compile_engine(self, arg):
         """
         Compile a previously uploaded engine.
@@ -123,8 +123,7 @@ class StageRunClient(cmd.Cmd):
         try:
             args = parser.parse_args(arg.split())
 
-            pattern = r'^\d+\.\d+$'
-            if not re.fullmatch(pattern, args.version):
+            if not re.fullmatch(VERSION_PATTERN, args.version):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
@@ -168,8 +167,7 @@ class StageRunClient(cmd.Cmd):
         try:
             args = parser.parse_args(arg.split())
 
-            pattern = r'^\d+\.\d+$'
-            if not re.fullmatch(pattern, args.version):
+            if not re.fullmatch(VERSION_PATTERN, args.version):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
@@ -201,7 +199,6 @@ class StageRunClient(cmd.Cmd):
             
         except Exception:
             traceback.print_exc()
-
 
     def do_uninstall_engine(self, arg):
         """
@@ -244,8 +241,7 @@ class StageRunClient(cmd.Cmd):
         try:
             args = parser.parse_args(arg.split())
 
-            pattern = r'^\d\d\.\d\d$'
-            if not re.fullmatch(pattern, args.version):
+            if not re.fullmatch(VERSION_PATTERN, args.version):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
@@ -266,6 +262,106 @@ class StageRunClient(cmd.Cmd):
             
         except Exception:
             traceback.print_exc()
+
+
+    # Apps
+
+    def do_upload_app(self, arg):
+        """
+        Upload an app to the controller.
+
+        Usage: upload_app -f <app_file> -t <tag> -v <version> -c <COMMENT>
+        """
+
+        parser = argparse.ArgumentParser(prog="upload_engine")
+        parser.add_argument("-f", "--app_file", dest="app_file", help="Path to the app zip file", required=True)
+        parser.add_argument("-t", "--tag", dest="tag", help="Unique tag identifying the engine", required=True)
+        parser.add_argument("-v", "--version", dest="version", help="Engine version string", default="0.1")
+        parser.add_argument("-c", "--comment", type=str, dest="comment", help="Optional comment", default="")
+
+        try:
+            args = parser.parse_args(shlex.split(arg))
+
+            if not os.path.exists(args.app_file):
+                print(f"Error: File {args.app_file} does not exist")
+                return
+            
+            if not re.fullmatch(VERSION_PATTERN, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
+                return
+
+            files = {"app_file": open(args.app_file, "rb")}
+            data = {
+                "tag": args.tag,
+                "version": args.version,
+                "comment": args.comment,
+            }
+
+            resp = requests.post(f"{self.base_url}/upload_app", files=files, data=data)
+            print(resp.json())
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
+    def do_list_apps(self, line):
+        """
+        List all apps stored on the controller.
+
+        Usage: list_apps
+        """
+        try:
+            resp = requests.get(f"{self.base_url}/list_apps")
+            if resp.status_code == 200:
+                apps = resp.json()
+                print("Apps on controller:")
+                for tag, versions in apps.items():
+                    print(f"- {tag}:")
+                    for version, info in versions.items():
+                        status = info.get("status", "UNKNOWN")
+                        print(f"    + version {version}: {status}")
+                        # print(f"    • version {version}: {status}")
+            else:
+                print("Error:", resp.text)
+        except Exception:
+            traceback.print_exc()
+
+    def do_remove_app(self, arg):
+        """
+        Removes a previously compiled engine.
+        Usage: remove_app -t <tag> -v <version>
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag")
+        parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="Engine version")
+
+        try:
+            args = parser.parse_args(arg.split())
+
+            if not re.fullmatch(VERSION_PATTERN, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
+                return
+            
+            response = requests.delete(f"{self.base_url}/remove_app", params={"tag": args.tag, "version": args.version})
+
+
+            if response.status_code == 200:
+                data = response.json()
+                print(data)
+            else:
+                print(f"Server returned status {response.status_code}: {response.text}")
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
 
 if __name__ == "__main__":
     StageRunClient().cmdloop()
