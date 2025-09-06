@@ -1,0 +1,73 @@
+from lib.tofino.types import *
+from lib.tofino.constants import *
+
+
+class P1TableKeys(BaseTableKeys):
+    def __init__(self, program_id=1, next_instruction=DISABLED, pkt_id=[DISABLED, DISABLED]):
+        super().__init__()
+        self.next_instruction = next_instruction
+        self.pkt_id = pkt_id
+        self.program_id = program_id
+
+    def to_key_list(self):
+        """
+        Converts the key values to the format required by the runtime.
+        """
+        return [
+            ["flow_md.next_instruction", self.next_instruction, "exact"],
+            ["ig_md.pkt_filter_md.pkt_id", self.pkt_id[0], self.pkt_id[1], "ternary"],
+            ["hdr.bridge_meta.program_id", self.program_id, "exact"]
+        ]
+        
+class P2TableKeys(BaseTableKeys):
+
+    def __init__(self, program_id=1, next_instruction=DISABLED, pkt_id=[DISABLED, DISABLED], cond_mode=[DISABLED, DISABLED], cond_val=[DISABLED, DISABLED], cond_mode_2=[DISABLED, DISABLED], cond_val_2=[DISABLED, DISABLED]):
+        super().__init__()
+        self.program_id = program_id
+        self.next_instruction = next_instruction
+        self.pkt_id = pkt_id
+        self.cond_mode = cond_mode
+        self.cond_val = cond_val
+        self.cond_mode_2 = cond_mode_2
+        self.cond_val_2 = cond_val_2
+
+    def to_key_list(self):
+        """
+        Converts the key values to the format required by the runtime.
+        """
+        return [
+            ["flow_md.next_instruction", self.next_instruction, "exact"],
+            ["ig_md.pkt_filter_md.pkt_id", self.pkt_id[0], self.pkt_id[1], "ternary"],
+
+            ["res_md.cond_md.cond_mode", self.cond_mode[0], self.cond_mode[1], "ternary"],
+            ["res_md.cond_md.cond_val", self.cond_val[0], self.cond_val[1], "ternary"],
+            ["res_md.cond_md.cond_mode_2", self.cond_mode_2[0], self.cond_mode_2[1], "ternary"],
+            ["res_md.cond_md.cond_val_2", self.cond_val_2[0], self.cond_val_2[1], "ternary"],
+            ["hdr.bridge_meta.program_id", self.program_id, "exact"],
+
+        ]
+        
+class SpeculativeKeys(BaseTableKeys):
+    def __init__(self, program_id=1,next_instruction_speculative=DISABLED, pkt_id=[DISABLED, DISABLED], cond_mode=[DISABLED, DISABLED], cond_val=[DISABLED, DISABLED], cond_mode_2=[DISABLED, DISABLED], cond_val_2=[DISABLED, DISABLED]):
+        super().__init__()
+        self.program_id = program_id
+        self.next_instruction_speculative = next_instruction_speculative
+        self.pkt_id = pkt_id
+        self.cond_mode = cond_mode
+        self.cond_val = cond_val
+        self.cond_mode_2 = cond_mode_2
+        self.cond_val_2 = cond_val_2
+
+    def to_key_list(self):
+        return [
+            ["flow_md.next_instruction_speculative", self.next_instruction_speculative, "exact"],
+            ["ig_md.pkt_filter_md.pkt_id", self.pkt_id[0], self.pkt_id[1], "ternary"],
+
+            ["res_md.cond_md.cond_mode", self.cond_mode[0], self.cond_mode[1], "ternary"],
+            ["res_md.cond_md.cond_val", self.cond_val[0], self.cond_val[1], "ternary"],
+            ["res_md.cond_md.cond_mode_2", self.cond_mode_2[0], self.cond_mode_2[1], "ternary"],
+            ["res_md.cond_md.cond_val_2", self.cond_val_2[0], self.cond_val_2[1], "ternary"],
+            ["hdr.bridge_meta.program_id", self.program_id, "exact"],
+
+        ]
+        

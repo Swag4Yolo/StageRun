@@ -31,8 +31,9 @@ app.delete("/remove_engine")(remove_engine)
 # Apps
 app.post("/upload_app")(upload_app)
 app.get("/list_apps")(list_apps)
+app.get("/install_app")(install_app)
+app.get("/run_app")(run_app)
 # app.post("/compile_engine")(compile_engine)
-# app.post("/install_engine")(install_engine)
 # app.post("/uninstall_engine")(uninstall_engine)
 app.delete("/remove_app")(remove_app)
 

@@ -14,8 +14,10 @@ apps:
   apps_dir: data/apps/
   tracker_file: data/apps_tracker.json
   running_app: data/running_app.json
+  port_set: data/port_sets.json
 
 compiler:
   hw_flags: "-D FLOW_2 -D OPTIMIZE_TCAM -D HW"
   build_dir: data/builds/
   tools_path: /home/tofino/tools
+

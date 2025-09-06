@@ -1,0 +1,54 @@
+switch:
+    comment: "Tofino1 32p ..."
+    model: "Tofino1"
+    # server_ip:   10.0.0.1
+    # server_port: 9090
+    arch: tf1 
+    ports:
+        - 49/-:
+            speed: 100
+            loopback: False
+        - 50/-:
+            speed: 100
+            loopback: False
+        # - 51/-:
+        #     speed: 100
+        #     loopback: False
+        #     connections: 52/-
+        # - 52/-:
+        #     speed: 100
+        #     loopback: False
+        #     connections: 51/-
+        # - 53/-:
+        #     speed: 100
+        #     loopback: False
+        #     connections: 55/-
+        # - 54/-:
+        #     comment: "connected to other Tofino"
+        #     loopback: optional
+        #     speed: 100
+        # - 55/-:
+        #     speed: 100
+        #     loopback: False
+        #     connections: 53/-
+        # - 56/-:
+        #     comment: "connected to other Tofino"
+        #     loopback: optional
+        #     speed: 100
+        # - 57/-:
+        #     loopback: optional
+        #     speed: 100
+
+program:
+    name: "NetHide"
+    HW: True
+    Endpoints:
+        PFromExternal:
+            port: 50/-
+        PToExternal:
+            port: 50/-
+        PFromInternal:
+            port: 49/-
+        PToInternal:
+            port: 49/-
+                        

@@ -9,7 +9,8 @@ from datetime import datetime
 from fastapi import UploadFile, Form, HTTPException, File
 from pathlib import Path
 import time
-from status import *
+from lib.utils.status import *
+# from app import clear_apps_engine_uninstall
 
 # Engine Status = {Uploaded, Compiled, Installed}
 
@@ -69,6 +70,8 @@ def init_engine(config):
     os.makedirs(ENGINES_DIR_PATH, exist_ok=True)
     engines = load_engines()
     running_engine = load_running_engine()
+    print("Running Engine")
+    print(running_engine)
     logger.info(f"Engine system initialized with dir={ENGINES_DIR_PATH}, tracker={ENGINES_FILE_PATH}")
 
     # Apps
@@ -115,35 +118,6 @@ def load_running_engine():
 def save_running_engine(running_engine):
     with open(RUNNING_ENGINE_FILE_PATH, "w+") as f:
         json.dump(running_engine, f, indent=2)
-
-# # Apps
-# def load_apps():
-#     if APPS_FILE_PATH and os.path.exists(APPS_FILE_PATH):
-#         try:
-#             with open(APPS_FILE_PATH, "r") as f:
-#                 return json.load(f)
-#         except json.JSONDecodeError:
-#             logger.warning("Running Engine file corrupted, resetting...")
-#             return {}
-#     return {}
-
-# def save_apps(apps):
-#     with open(APPS_FILE_PATH, "w+") as f:
-#         json.dump(apps, f, indent=2)
-
-# def load_running_app():
-#     if APP_RUNNING_FILE_PATH and os.path.exists(APP_RUNNING_FILE_PATH):
-#         try:
-#             with open(APP_RUNNING_FILE_PATH, "r") as f:
-#                 return json.load(f)
-#         except json.JSONDecodeError:
-#             logger.warning("Running Engine file corrupted, resetting...")
-#             return {}
-#     return {}
-
-# def save_running_app(running_app):
-#     with open(APP_RUNNING_FILE_PATH, "w+") as f:
-#         json.dump(running_app, f, indent=2)
 
 
 # -----------------------
@@ -266,10 +240,14 @@ async def compile_engine(tag: str, version: str):
     log_path = os.path.join(build_path, "compile.log")
     # program_name = f"{tag}_v{version}"
 
+
+    print("HW_FLAGS")
+    print(HW_FLAGS)
     cmd = [
         "time",
         os.path.join(TOOLS_DIR_PATH, "p4_build.sh"),
-        "-p", dst_main_path
+        "-p", dst_main_path,
+        # f"P4PPFLAGS={HW_FLAGS}"
     ]
 
     env = os.environ.copy()
@@ -308,6 +286,11 @@ async def compile_engine(tag: str, version: str):
 
 
 async def install_engine(tag: str, version: str):
+    """
+        Install Engine:
+            - Receives a Tag and Version of an Engine
+            - Runs that Engine, initializing the run_switchd (loader)
+    """
 
     engine_key = f"{tag}_v{version}"
     if engine_key not in engines:
@@ -357,6 +340,8 @@ async def install_engine(tag: str, version: str):
         running_engine[RUNNING_ENGINE] = {
             "engine_key": engine_key,
             "log": log_path,
+            "program_ids": {},
+            "free_pids": [],
         }
         # engines[RUNNING_ENGINE]["engine_key"] = engine_key
         # engines[RUNNING_ENGINE]["pid"] = proc.pid
@@ -395,6 +380,7 @@ async def uninstall_engine():
 
     save_engines(engines)
     save_running_engine(running_engine)
+    # clear_apps_engine_uninstall()
 
     return {"status": "ok", "message": f"Engine {engine_key} uninstalled."}
 
@@ -420,3 +406,36 @@ async def remove_engine(tag: str, version: str):
     save_engines(engines)
 
     return {"status": "ok", "message": f"Engine {engine_key} removed."}
+
+    ####### Program IDS Management #######
+def get_program_id():
+    prog_ids = running_engine[RUNNING_ENGINE]["program_ids"]
+    free_pids = running_engine[RUNNING_ENGINE].setdefault("free_pids", [])
+
+    if free_pids:
+        pid = free_pids.pop(0)  # reuse a freed ID
+    else:
+        # allocate next available ID (1, 2, 3, …)
+        used_ids = set(map(int, prog_ids.keys()))
+        pid = 1
+        while pid in used_ids:
+            pid += 1
+
+    return pid
+
+def set_program_id(pid, app_key):
+    running_engine[RUNNING_ENGINE]["program_ids"][str(pid)] = app_key
+    save_running_engine(running_engine)
+
+def remove_program_id(pid):
+    pid_str = str(pid)
+    if pid_str in running_engine[RUNNING_ENGINE]["program_ids"]:
+        del running_engine[RUNNING_ENGINE]["program_ids"][pid_str]
+        running_engine[RUNNING_ENGINE].setdefault("free_pids", []).append(pid)
+    save_running_engine(running_engine)
+
+
+def clear_program_ids():
+    running_engine[RUNNING_ENGINE]["program_ids"] = {}
+    running_engine[RUNNING_ENGINE]["free_pids"] = []
+    save_running_engine(running_engine)

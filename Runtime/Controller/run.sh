@@ -9,7 +9,6 @@ echo "Initializing Controller Environment"
     python3 -m venv $VENV
     source ${VENV}/bin/activate
     pip3 install -r requirements.txt
-
 echo "Initializing Program"
     python3 ${PROGRAM}
 
