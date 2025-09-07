@@ -13,100 +13,13 @@ import traceback
 import re
 
 # Import StageRun libs
-from engine import load_engines, load_running_engine, RUNNING_ENGINE, get_program_id, remove_program_id, set_program_id
+import lib.controller.state_manager as sm
 from lib.utils.status import *
 from lib.utils.manifest_parser import *
 from lib.utils.utils import *
 from lib.tofino.tofino_controller import *
 
 logger = logging.getLogger("controller")
-
-# App Status = {Uploaded, Installed, Running}
-
-# Managing Apps
-APPS_DIR_PATH = None
-APPS_FILE_PATH = None
-APP_RUNNING_FILE_PATH = None
-PORT_SETS = None
-apps = {}
-running_app = {}
-port_sets = {}
-tofino_controller = None
-
-# -----------------------
-# Initialization
-# -----------------------
-def init_app(config):
-    """Initialize app module with config paths."""
-    global \
-    APPS_DIR_PATH, APPS_FILE_PATH, APP_RUNNING_FILE_PATH, APP_RUNNING_FILE_PATH, apps, running_app, PORT_SETS, port_sets
-
-    STAGE_RUN_ROOT_PATH = config["stagerun_root"]
-
-    APPS_DIR_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["apps_dir"])
-    APPS_FILE_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["tracker_file"])
-    APP_RUNNING_FILE_PATH = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["running_app"])
-    PORT_SETS = os.path.join(STAGE_RUN_ROOT_PATH, config["apps"]["port_set"])
-
-    # Apps
-    os.makedirs(APPS_DIR_PATH, exist_ok=True)
-    apps = load_apps()
-    running_app = load_running_app()
-    logger.info(f"App system initialized with dir={APPS_DIR_PATH}, tracker={APPS_FILE_PATH}")
-    port_sets = load_port_sets()
-        
-def load_apps():
-    if APPS_FILE_PATH and os.path.exists(APPS_FILE_PATH):
-        try:
-            with open(APPS_FILE_PATH, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("Running App file corrupted, resetting...")
-            return {}
-    return {}
-
-def save_apps(apps):
-    with open(APPS_FILE_PATH, "w+") as f:
-        json.dump(apps, f, indent=2)
-
-def load_running_app():
-    if APP_RUNNING_FILE_PATH and os.path.exists(APP_RUNNING_FILE_PATH):
-        try:
-            with open(APP_RUNNING_FILE_PATH, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("Running App file corrupted, resetting...")
-            return {}
-    return {}
-
-def save_running_app(running_app):
-    with open(APP_RUNNING_FILE_PATH, "w+") as f:
-        json.dump(running_app, f, indent=2)
-
-# Ports
-def load_port_sets():
-    if PORT_SETS and os.path.exists(PORT_SETS):
-        try:
-            with open(PORT_SETS, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("Running App file corrupted, resetting...")
-            return {}
-    return {}
-
-def save_port_sets(port_sets):
-    with open(PORT_SETS, "w+") as f:
-        json.dump(port_sets, f, indent=2)
-
-
-def connect_tofino():
-    global tofino_controller
-    _running_engine = load_running_engine()
-    engine_key = _running_engine[RUNNING_ENGINE]['engine_key']
-    _engines = load_engines()
-    if engine_key != "" and engine_key in _engines:
-        if tofino_controller == None or tofino_controller.engine_key != engine_key:
-            tofino_controller = TofinoController(engine_key)
 
 async def upload_app(
     app_file: UploadFile = File(...),
@@ -124,13 +37,13 @@ async def upload_app(
 
     logger.info(f"Received upload request for App '{app_key}'")
 
-    if app_key in apps:
+    if app_key in sm.apps:
         logger.warning(f"Upload rejected: app '{app_key}' with version v{version} already exists")
         return {"status": "error", "msg": f"App '{app_key}' with version v{version} already exists"}
         # raise HTTPException(status_code=400, detail=f"App '{tag}' with version v{version} already exists")
     
 
-    app_dir_path = os.path.join(APPS_DIR_PATH, f"{app_key}/")
+    app_dir_path = os.path.join(sm.APPS_DIR_PATH, f"{app_key}/")
     os.makedirs(app_dir_path, exist_ok=True)
 
     ####### Processing App File
@@ -148,12 +61,12 @@ async def upload_app(
     if not ext or ext != '.yaml':
         return {"status": "error", "msg": f"The provided {manifest_file.filename} does not have a supported extension"}
     
-    manifest_path = os.path.join(APPS_DIR_PATH, f"{app_key}/manifest.yaml")
+    manifest_path = os.path.join(sm.APPS_DIR_PATH, f"{app_key}/manifest.yaml")
 
     with open(manifest_path, "wb") as f:
         shutil.copyfileobj(manifest_file.file, f)
 
-    apps[app_key] = {
+    sm.apps[app_key] = {
         "tag": tag,
         "version": version,
         "status": "UPLOADED",
@@ -165,19 +78,19 @@ async def upload_app(
         "port_set": "",
     }
 
-    save_apps(apps)
+    sm.save_apps()
 
     logger.info(f"App '{app_key}' uploaded successfully")
 
     return {"status": "ok", "msg": f"App '{app_key}' uploaded successfully"}
 
 async def list_apps():
-    if len(apps) == 0:
-        raise HTTPException(404, "No apps have been uploaded to the controller.")
+    if len(sm.apps) == 0:
+        raise HTTPException(404, "No sm.apps have been uploaded to the controller.")
 
     # Build dict grouped by tag → version → status
     grouped = {}
-    for _, info in apps.items():
+    for _, info in sm.apps.items():
         tag = info["tag"]
         version = info["version"]
         status = info.get("status", STATUS_UNKNOWN)
@@ -190,23 +103,23 @@ async def list_apps():
 async def remove_app(tag: str, version: str):
 
     app_key = f"{tag}_v{version}"
-    if app_key not in apps:
+    if app_key not in sm.apps:
         return {"status": "error", "message": f"Engine {app_key} not found."}
 
-    if apps[app_key]["status"] == STATUS_INSTALLED:
+    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
         return {"status": "error", "message": "Cannot remove an installed app."}
     
-    if apps[app_key]["status"] == STATUS_RUNNING:
+    if sm.apps[app_key]["status"] == STATUS_RUNNING:
         return {"status": "error", "message": "Cannot remove a running app."}
 
     # Delete files
 
-    # Path(apps[app_key]["app_path"]).unlink(missing_ok=True)
-    shutil.rmtree(apps[app_key]["app_dir_path"], ignore_errors=True)
+    # Path(sm.apps[app_key]["app_path"]).unlink(missing_ok=True)
+    shutil.rmtree(sm.apps[app_key]["app_dir_path"], ignore_errors=True)
 
     # Remove from tracker
-    apps.pop(app_key, None)
-    save_apps(apps)
+    sm.apps.pop(app_key, None)
+    sm.save_apps()
 
     return {"status": "ok", "message": f"App {app_key} removed."}
 
@@ -236,7 +149,7 @@ def check_port_compatibility(base_ports: dict, new_ports: dict):
 
 def assign_program_to_category(app_key: str, new_ports: dict):
 
-    for cat_name, cat_data in port_sets.items():
+    for cat_name, cat_data in sm.port_sets.items():
         status = check_port_compatibility(cat_data["ports"], new_ports)
         if status == "compatible":
             cat_data["programs"].append(app_key)
@@ -247,8 +160,8 @@ def assign_program_to_category(app_key: str, new_ports: dict):
             return cat_name, "extended"
 
     # no match, create new category
-    new_cat = f"category{len(port_sets) + 1}"
-    port_sets[new_cat] = {
+    new_cat = f"category{len(sm.port_sets) + 1}"
+    sm.port_sets[new_cat] = {
         "ports": new_ports,
         "programs": [app_key]
     }
@@ -256,7 +169,6 @@ def assign_program_to_category(app_key: str, new_ports: dict):
 
 
 def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=True):
-    global tofino_controller
 
     try:
         endpoints = get_endpoints(manifest) #EndpointsInfo
@@ -265,9 +177,9 @@ def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=
         # Program Name is the class name 
         SystemApp = load_stagerun_program(app_path)
 
-        connect_tofino()
+        sm.connect_tofino()
         # for switch in switches:
-        sys_app = SystemApp(tofino_controller.runtime)
+        sys_app = SystemApp(sm.tofino_controller.runtime)
 
         # Map endpoint name to port
         name_to_port = {e.name: e.port for e in endpoints}
@@ -306,86 +218,76 @@ def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=
 async def install_app(tag: str, version: str):
 
     app_key = f"{tag}_v{version}"
-    if app_key not in apps:
+    if app_key not in sm.apps:
         return {"status": "error", "message": f"App {app_key} not found."}
 
-    if apps[app_key]["status"] == STATUS_INSTALLED:
+    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
         return {"status": "error", "message": f"App {app_key} already installed."}
     
-    if apps[app_key]["status"] == STATUS_RUNNING:
+    if sm.apps[app_key]["status"] == STATUS_RUNNING:
         return {"status": "error", "message": f"App {app_key} is already installed and running."}
 
-    if apps[app_key]["status"] == STATUS_BAD_MANIFEST:
+    if sm.apps[app_key]["status"] == STATUS_BAD_MANIFEST:
         return {"status": "error", "message": f"App {app_key} has a bad manifest format. You need to remove, re-upload, and install again with the correct format."}
     
-    if apps[app_key]["status"] == STATUS_BAD_APP:
+    if sm.apps[app_key]["status"] == STATUS_BAD_APP:
         return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
 
-    app_file_path = apps[app_key]["app_path"]
-    manifest_file_path = apps[app_key]["manifest_path"]
+    app_file_path = sm.apps[app_key]["app_path"]
+    manifest_file_path = sm.apps[app_key]["manifest_path"]
    
     manifest = parse_manifest(manifest_file_path)
     if not 'switch' in manifest or not 'ports' in manifest['switch']:
-        apps[app_key]['status'] = STATUS_BAD_MANIFEST
-        save_apps(apps)
+        sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
+        sm.save_apps()
         return {"status": "error", "message": f"Bad Manifest File. Missing 'switch' or 'ports' in switch"}
     
 
-    _engines = load_engines()
-    _running_engine = load_running_engine()
-    engine_key = _running_engine[RUNNING_ENGINE]['engine_key']
+    engine_key = sm.running_engine[sm.RUNNING_ENGINE]['engine_key']
     
-    if engine_key not in _engines:
+    if engine_key not in sm.engines:
         return {"status": "error", "message": f"Please Initialize a Running Engine First"}
 
-    program_id = get_program_id()
+    program_id = sm.get_program_id()
     print("program_id", program_id)
     valid_app, message = validate_app(app_file_path, manifest, app_key, engine_key, program_id, True)
     if not valid_app:
-        apps[app_key]['status'] = STATUS_BAD_APP
-        remove_program_id(program_id)
-        save_apps(apps)
+        sm.apps[app_key]['status'] = STATUS_BAD_APP
+        sm.remove_program_id(program_id)
+        sm.save_apps()
         return {"status": "error", "message": f"App {app_key} is not valid. {message}"}
     
-    set_program_id(program_id, app_key)
-    apps[app_key]['status'] = STATUS_INSTALLED
-    save_apps(apps)
+    sm.set_program_id(program_id, app_key)
+    sm.apps[app_key]['status'] = STATUS_INSTALLED
+    sm.save_apps()
 
     print(app_key)
     print(manifest['switch']['ports'])
     # [{'49/-': {'speed': 100, 'loopback': False}}, {'50/-': {'speed': 100, 'loopback': False}}]
     assign_program_to_category(app_key, manifest['switch']['ports'])
-    save_port_sets(port_sets)
+    sm.save_port_sets()
 
     return {"status": "ok", "message": f"App {app_key} Installed succesfully."}
 
     # TODO: assuming a unique StageRunEngine format for now
     # The Controller knows how to install all the instructions in all stages. It needs to know which instructions are available in each stage. If needs to know which instructions that runtime has and which instructions are available in each stage.
 
-def clear_apps_engine_uninstall():
-    for app_key in apps:
-        if apps[app_key]['status'] in [STATUS_INSTALLED, STATUS_RUNNING]:
-            apps[app_key]['status'] = STATUS_UPLOADED
-    
-    save_apps(apps)
-
 async def run_app(tag: str, version: str):
-    global tofino_controller
     # [] 1. If is 1st app to run then pre rules need to be installed
     # [] 1.1 Install Ports
     # [] 2. If not:
     # []    2.1 Check Ports category is different from the one we have know:
     # []          2.1.1 Change ports
     # []      2.2 Check Port
-    connect_tofino()
+    sm.connect_tofino()
 
     app_key = f"{tag}_v{version}"
     port_set = None
 
     #port_key == port category
-    for port_key in port_sets:
-        if app_key in port_sets[port_key]['programs']:
-            port_set = port_sets[port_key]
+    for port_key in sm.port_sets:
+        if app_key in sm.port_sets[port_key]['programs']:
+            port_set = sm.port_sets[port_key]
             break
         """
             {
@@ -430,12 +332,10 @@ async def run_app(tag: str, version: str):
             print("loopback", loopback)
             print("fec", fec)
 
-            tofino_controller.port_mechanism.add_port(front_port=int(p_num), speed=speed, loopback=loopback, fec=fec)
+            sm.tofino_controller.port_mechanism.add_port(front_port=int(p_num), speed=speed, loopback=loopback, fec=fec)
 
-    # tc. program _id mechanism = program_id
-
-    apps[app_key]['status'] = STATUS_RUNNING
-    save_apps(apps)
+    sm.apps[app_key]['status'] = STATUS_RUNNING
+    sm.save_apps()
 
     return {"status": "ok", "message": f"App {app_key} Running succesfully."}
 

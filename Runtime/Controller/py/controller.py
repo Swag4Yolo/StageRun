@@ -2,8 +2,8 @@ import yaml
 import uvicorn
 import logging
 from fastapi import FastAPI
-from engine import *
-from app import *
+from lib.controller.engine import *
+from lib.controller.app import *
 
 # ------------------------
 # Logging Setup
@@ -45,8 +45,8 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
 
     # Init engine with config paths
-    init_engine(config)
-    init_app(config)
+    sm.init_engine_state(config)
+    sm.init_app_state(config)
 
     DEFAULT_IP = "127.0.0.1"
     DEFAULT_PORT = 1337
