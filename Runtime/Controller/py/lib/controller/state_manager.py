@@ -4,6 +4,7 @@ import json
 
 from lib.tofino.tofino_controller import TofinoController
 from lib.utils.status import *
+from lib.engine.engine_controller import EngineController
 
 logger = logging.getLogger("controller")
 
@@ -112,6 +113,7 @@ apps = {}
 running_app = {}
 port_sets = {}
 tofino_controller = None
+engine_controller = None
 
 def init_app_state(config):
     """Initialize app module with config paths."""
@@ -128,6 +130,7 @@ def init_app_state(config):
     # Apps
     os.makedirs(APPS_DIR_PATH, exist_ok=True)
     apps.update(load_apps())
+    print("apps", apps)
     running_app.update(load_running_app())
     logger.info(f"App system initialized with dir={APPS_DIR_PATH}, tracker={APPS_FILE_PATH}")
     port_sets = load_port_sets()
@@ -181,6 +184,7 @@ def save_running_app():
 
 def connect_tofino():
     global tofino_controller
+    global engine_controller
     global running_engine
     global engines
 
@@ -188,6 +192,7 @@ def connect_tofino():
     if engine_key != "" and engine_key in engines:
         if tofino_controller == None or tofino_controller.engine_key != engine_key:
             tofino_controller = TofinoController(engine_key)
+            engine_controller = EngineController(tofino_controller.runtime)
 
 
     ####### Program IDS Management #######
@@ -212,14 +217,33 @@ def set_program_id(pid, app_key):
     running_engine[RUNNING_ENGINE]["program_ids"][str(pid)] = app_key
     save_running_engine()
 
-def remove_program_id(pid):
+def remove_program_id(app_key):
+    """
+        For removing a program:
+        1. Update the internal state, freeing 
+        2. Remove the program from the engine
+    """
     global running_engine
-    pid_str = str(pid)
-    if pid_str in running_engine[RUNNING_ENGINE]["program_ids"]:
-        del running_engine[RUNNING_ENGINE]["program_ids"][pid_str]
-        running_engine[RUNNING_ENGINE].setdefault("free_pids", []).append(pid)
+    global engine_controller
+    
+    program = None
+    pid = None
+    
+    # 1. Update Controllers Stage about apps
+    for pid in running_engine[RUNNING_ENGINE]["program_ids"]:
+        program = running_engine[RUNNING_ENGINE]["program_ids"][pid]
+        if app_key == program:
+            # del running_engine[RUNNING_ENGINE]["program_ids"][pid]
+            # running_engine[RUNNING_ENGINE].setdefault("free_pids", []).append(pid)
+            break
     save_running_engine()
+    if pid:
+        # 2. Update Tables and configurations inside the Engine
+        connect_tofino()
+        engine_controller.remove_program(int(pid))
 
+    else:
+        logger.info(f"Remove Program Id app {app_key} not installed in the Engine or not detected in the state")
 
 def clear_program_ids():
     global running_engine

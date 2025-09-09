@@ -189,7 +189,7 @@ async def install_engine(tag: str, version: str):
         return {"status": "error", "message": f"Engine {engine_key} is not compiled."}
 
     # Ensure no other engine is installed
-    if sm.RUNNING_ENGINE in sm.engines and not sm.engines[RUNNING_ENGINE]["engine_key"] == "":
+    if sm.RUNNING_ENGINE in sm.engines and not sm.engines[sm.RUNNING_ENGINE]["engine_key"] == "":
         return {"status": "error", "message": f"Another engine ({sm.engines[sm.RUNNING_ENGINE]}) is already installed."}
 
 
@@ -211,7 +211,8 @@ async def install_engine(tag: str, version: str):
     subprocess.run(["tmux", "pipe-pane", "-t", sm.RUNNING_SESSION_NAME, f"cat >> {log_path}"])
 
     # 3. Send the command to tmux
-    subprocess.run(["tmux", "send-keys", "-t", sm.RUNNING_SESSION_NAME, f"sudo {run_switchd} -p {program_name}", "C-m"])
+    # Note we need to cd, because when the directory fails to exist for an undiscovered reason yet, tofino bfrt_python tries to do os.getcwd(), which fails to get a directory
+    subprocess.run(["tmux", "send-keys", "-t", sm.RUNNING_SESSION_NAME, f"cd; sudo {run_switchd} -p {program_name}", "C-m"])
 
     # since process is running proc.returncode will be None (not 0 or 1) because the process hasn’t finished yet.
 

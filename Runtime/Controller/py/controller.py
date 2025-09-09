@@ -8,12 +8,35 @@ from lib.controller.app import *
 # ------------------------
 # Logging Setup
 # ------------------------
+# class StreamToLogger:
+#     """
+#     Fake file-like stream object that redirects writes to a logger instance.
+#     """
+#     def __init__(self, logger, log_level=logging.INFO):
+#         self.logger = logger
+#         self.log_level = log_level
+#         self.linebuf = ''
+
+#     def write(self, buf):
+#         for line in buf.rstrip().splitlines():
+#             self.logger.log(self.log_level, line.rstrip())
+
+#     def flush(self):
+#         pass  # Nothing needed here
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
+    filename="controller.log",
+    filemode="a" #w para sobrescrever
 )
 logger = logging.getLogger("controller")
+
+# # Redirect stdout and stderr
+# sys.stdout = StreamToLogger(logger, logging.INFO)
+# sys.stderr = StreamToLogger(logger, logging.ERROR)
 
 # ------------------------
 # FastAPI Setup
@@ -33,8 +56,8 @@ app.post("/upload_app")(upload_app)
 app.get("/list_apps")(list_apps)
 app.get("/install_app")(install_app)
 app.get("/run_app")(run_app)
+app.get("/uninstall_app")(uninstall_app)
 # app.post("/compile_engine")(compile_engine)
-# app.post("/uninstall_engine")(uninstall_engine)
 app.delete("/remove_app")(remove_app)
 
 # ------------------------

@@ -21,7 +21,7 @@ from lib.engine.configurations.write_phase_configuration import *
 
 from time import sleep
 
-class BRIFlow():
+class EngineFlow():
     def __init__(self, bfrt_runtime:bfrt_runtime, flow_number: int):
         self.runtime = bfrt_runtime
         # self.flow_number = flow_number
@@ -53,30 +53,30 @@ class BRIFlow():
         self.i9_multi = MultiInstructionLastStage(self.runtime, f"SwitchIngress.f{flow_number}_i9")
 
 
-class BRIWritePhase():
+class EngineWritePhase():
     def __init__(self, bfrt_runtime:bfrt_runtime, location):
         self.runtime = bfrt_runtime
         self.location = location
         
         self.conditional_mechanism_after_reg = WritePhaseConditionalMechanismAfterReg(self.runtime, self.location)
 
-class BRIPipeline():
+class EngineController():
     def __init__(self, bfrt_runtime:bfrt_runtime):
         self.runtime = bfrt_runtime
         self.location = "SwitchIngress"
         
         #Flows
-        self.f1 = BRIFlow(self.runtime, 1)
-        self.f2 = BRIFlow(self.runtime, 2)
+        self.f1 = EngineFlow(self.runtime, 1)
+        self.f2 = EngineFlow(self.runtime, 2)
 
         #Write Phases
-        self.wp_s3 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s3')
-        self.wp_s4 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s4')
-        self.wp_s5 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s5')
-        self.wp_s6 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s6')
-        self.wp_s7 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s7')
-        self.wp_s8 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s8')
-        self.wp_s9 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s9') #TODO: s9 can have two conditionals; whereas others don't
+        self.wp_s3 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s3')
+        self.wp_s4 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s4')
+        self.wp_s5 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s5')
+        self.wp_s6 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s6')
+        self.wp_s7 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s7')
+        self.wp_s8 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s8')
+        self.wp_s9 = EngineWritePhase(self.runtime, f'{self.location}.write_phase_s9') #TODO: s9 can have two conditionals; whereas others don't
         # self.wp_s10 = BRIWritePhase(self.runtime, f'{self.location}.write_phase_s10')
 
         #Mechanisms
@@ -87,7 +87,7 @@ class BRIPipeline():
         self.program_enabler_mechanism = ProgramEnablerMechanism(self.runtime, self.location)
         self.pattern_mechanism = PatternMechanism(self.runtime, self.location)
         self.pos_filter_mechansim = PosFilterMechanism(self.runtime, self.location)
-        self.port_mechanism = PortMechanism(self.runtime)
+        # self.port_mechanism = PortMechanism(self.runtime)
         self.hash_mechanism = [HashMechanism(self.runtime, self.location + '.initblock.hash_1'), HashMechanism(self.runtime, self.location + '.initblock.hash_2'), HashMechanism(self.runtime, self.location + '.initblock.hash_3')]
         self.random_mechanism = RandomMechanism(self.runtime, self.location)
         self.port_metadata_mechanism = PortMetadataMechanism(self.runtime)
@@ -167,5 +167,44 @@ class BRIPipeline():
     def _final_configs_(self):
         PosFilterMechanism(self.runtime, self.location)._last_rules()
 
+    def remove_program(self, pid):
+        # tables_to_remove = [self.pre_filter_mechanism, self.pos_filter_mechansim, 
+        #     self.f1.i1_p1,
+        #     self.f1.i1_p2,
+        #     self.f1.i1_speculative,
+        #     self.f1.i2_p2,
+        #     self.f1.i2_speculative,
+        #     self.f1.i3_p2,
+        #     self.f1.i3_speculative,
+        #     self.f1.i4_p2,
+        #     self.f1.i4_speculative,
+        #     self.f1.i5_p2,
+        #     self.f1.i5_speculative,
+        #     self.f1.i6_p2,
+        #     self.f1.i6_speculative,
+        #     self.f1.i7_p2,
+        #     self.f1.i7_speculative,
+        #     self.f2.i1_p1,
+        #     self.f2.i1_p2,
+        #     self.f2.i1_speculative,
+        #     self.f2.i2_p2,
+        #     self.f2.i2_speculative,
+        #     self.f2.i3_p2,
+        #     self.f2.i3_speculative,
+        #     self.f2.i4_p2,
+        #     self.f2.i4_speculative,
+        #     self.f2.i5_p2,
+        #     self.f2.i5_speculative,
+        #     self.f2.i6_p2,
+        #     self.f2.i6_speculative,
+        #     self.f2.i7_p2,
+        #     self.f2.i7_speculative
+        # ]
 
+        tables_to_remove = [self.pre_filter_mechanism]
+
+        for table in tables_to_remove:
+            table.remove_entries_for_pid(pid)
+
+        
 

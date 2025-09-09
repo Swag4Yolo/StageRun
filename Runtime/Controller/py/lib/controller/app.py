@@ -103,6 +103,8 @@ async def list_apps():
 async def remove_app(tag: str, version: str):
 
     app_key = f"{tag}_v{version}"
+    print(sm.apps)
+
     if app_key not in sm.apps:
         return {"status": "error", "message": f"Engine {app_key} not found."}
 
@@ -343,5 +345,25 @@ async def uninstall_app(tag: str, version: str):
     # 0. If the app is running, cannot uninstall
     # 1. free program_id
     # 2. Delete all table entries with that program_id
-    # 
-    pass
+    app_key = f"{tag}_v{version}"
+
+    if sm.apps[app_key]["status"] == STATUS_UPLOADED:
+        return {"status": "error", "message": f"App {app_key} was uploaded and not installed."}
+
+    if sm.apps[app_key]["status"] == STATUS_RUNNING:
+        return {"status": "error", "message": f"App {app_key} is running. A running app cannot be uninstalled. Please change the running app."}
+
+    if sm.apps[app_key]["status"] == STATUS_BAD_MANIFEST:
+        return {"status": "error", "message": f"App {app_key} has a bad manifest format. You need to remove, re-upload, and install again with the correct format."}
+    
+    if sm.apps[app_key]["status"] == STATUS_BAD_APP:
+        return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
+    
+    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
+        sm.remove_program_id(app_key)
+
+        return {"status": "ok", "message": f"App {app_key} has been uninstalled successfully."}
+
+    else:
+        return {"status": "error", "message": f"App {app_key} does not follow one of the internal status, so uninstalling is not possible."}
+    

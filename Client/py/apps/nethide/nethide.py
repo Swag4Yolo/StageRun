@@ -1,15 +1,14 @@
 from lib.tofino.runtime import *
 from lib.tofino.types import *
-from lib.engine.pipeline import *
 from lib.tofino.constants import *
 from lib.utils.utils import *
-from lib.engine.pipeline import *
+from lib.engine.engine_controller import *
 # from lib.engine.Queue import *
 # from lib.engine.Port import *
 # from lib.engine.Pktgen import *
 
 
-class SystemApp(BRIPipeline):
+class SystemApp(EngineController):
 
     def __init__(self, bfrt_runtime:bfrt_runtime):
         super().__init__(bfrt_runtime)

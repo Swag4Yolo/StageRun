@@ -2,7 +2,11 @@ from lib.tofino.types import *
 from lib.tofino.constants import *
 
 class PreFilterKeys(BaseTableKeys):
-    def __init__(self, ig_port=[0,0], original_ig_port=[0,0], total_pkt_len=[0,0], tcp_dst_port=[0,0], ipv4_dst_addr=[0,0], tcp_flags= [0,0], ipv4_proto=[0,0], ipv4_src_addr=[0,0], udp_sport=[0,0], udp_dport=[0,0], program_id=0):
+    def __init__(self, ig_port=[0,0], original_ig_port=[0,0], total_pkt_len=[0,0], 
+                 tcp_dst_port=[0,0], ipv4_dst_addr=[0,0], tcp_flags=[0,0], 
+                 ipv4_proto=[0,0], ipv4_src_addr=[0,0], udp_sport=[0,0], 
+                 udp_dport=[0,0], program_id=0):
+        
         super().__init__()
         self.ig_port            = ig_port
         self.original_ig_port   = original_ig_port
@@ -15,6 +19,52 @@ class PreFilterKeys(BaseTableKeys):
         self.udp_sport          = udp_sport
         self.udp_dport          = udp_dport
         self.program_id         = program_id
+
+    @classmethod
+    def from_key_dict(cls, key_dict):
+        return cls(
+            ig_port=[
+                key_dict['ig_intr_md.ingress_port']['value'],
+                key_dict['ig_intr_md.ingress_port']['mask']
+            ],
+            original_ig_port=[
+                key_dict['hdr.bridge_meta.original_ingress_port']['value'],
+                key_dict['hdr.bridge_meta.original_ingress_port']['mask']
+            ],
+            total_pkt_len=[
+                key_dict['hdr.ipv4.totalLen']['value'],
+                key_dict['hdr.ipv4.totalLen']['mask']
+            ],
+            tcp_dst_port=[
+                key_dict['hdr.tcp.dst_port']['value'],
+                key_dict['hdr.tcp.dst_port']['mask']
+            ],
+            ipv4_dst_addr=[
+                key_dict['hdr.ipv4.dstAddr']['value'],
+                key_dict['hdr.ipv4.dstAddr']['mask']
+            ],
+            tcp_flags=[
+                key_dict['hdr.tcp.flags']['value'],
+                key_dict['hdr.tcp.flags']['mask']
+            ],
+            ipv4_proto=[
+                key_dict['hdr.ipv4.protocol']['value'],
+                key_dict['hdr.ipv4.protocol']['mask']
+            ],
+            ipv4_src_addr=[
+                key_dict['hdr.ipv4.srcAddr']['value'],
+                key_dict['hdr.ipv4.srcAddr']['mask']
+            ],
+            udp_sport=[
+                key_dict['hdr.udp.src_port']['value'],
+                key_dict['hdr.udp.src_port']['mask']
+            ],
+            udp_dport=[
+                key_dict['hdr.udp.dst_port']['value'],
+                key_dict['hdr.udp.dst_port']['mask']
+            ],
+            program_id=key_dict['hdr.bridge_meta.program_id']['value']
+        )
 
     def to_key_list(self):
         """
@@ -52,6 +102,19 @@ class PreFilterMechanism(BaseTable):
         keys = PreFilterKeys(ig_port, original_ig_port, total_pkt_len, tcp_dst_port, ipv4_dst_addr, tcp_flags, ipv4_proto, ipv4_src_addr, udp_sport, udp_dport, program_id)
         action = BaseAction("set_pkt_id_only", pkt_id)
         self.add_entry(keys, action)
+
+    def remove_entries_for_pid(self, pid):
+        # Obter todas as entradas instaladas na pre_filter
+        table_keys = self.get_all_entries(False)
+
+        for _, key in table_keys:
+            key_dict = key.to_dict()
+            key_pid = key_dict['hdr.bridge_meta.program_id']['value']
+
+            # Se o program_id for o mesmo, remove entrada
+            if key_pid == pid:
+                keys = PreFilterKeys.from_key_dict(key_dict)
+                self.delete_entry(keys)
     
 
 class GenericFwdKeys(BaseTableKeys):

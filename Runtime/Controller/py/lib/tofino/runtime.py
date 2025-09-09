@@ -180,6 +180,14 @@ class bfrt_runtime():
         resp = self.table.entry_get(self.target, [self.table.make_key(match)], {"from_hw": from_hw})
         data_dict = next(resp)[0].to_dict()
         return data_dict
+    
+    def __entry_get_all__(self, table_name, from_hw):
+        self.table = self.bfrt_info.table_get(table_name)
+        
+        resp = self.table.entry_get(self.target, [], {"from_hw": from_hw})
+        return resp
+        # data_dict = next(resp)[0].to_dict()
+        # return data_dict
 
     def get_dev_port(self, front_panel_port, lane):        
         

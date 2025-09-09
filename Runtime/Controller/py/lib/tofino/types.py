@@ -69,6 +69,17 @@ class BaseTable:
         # Add the entry
         self.runtime.__entry_add__(self.table_name, key_list, [action_params_list, action_name], keys.annotations)
 
+    def delete_entry(self, keys: BaseTableKeys):
+        """
+        Delete an entry from a table.
+        :param keys: An instance of a subclass of BaseTableKeys.
+        """
+        # Convert keys to the required format
+        key_list = keys.to_key_list()
+
+        # Del the entry
+        self.runtime.__entry_del__(self.table_name, key_list, keys.annotations)
+
     def clear_table(self):
         """
         """
@@ -85,6 +96,13 @@ class BaseTable:
 
         # Add the entry
         return self.runtime.__entry_get__(self.table_name, key_list, from_hw)
+
+    def get_all_entries(self, from_hw):
+        """
+        """
+
+        # Add the entry
+        return self.runtime.__entry_get_all__(self.table_name, from_hw)
 
     def set_default_entry(self, action:BaseAction):
         action_name, params = self.__verify__action__(action)

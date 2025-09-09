@@ -445,5 +445,45 @@ class StageRunClient(cmd.Cmd):
         except Exception:
             traceback.print_exc()
 
+    def do_uninstall_app(self, arg):
+        """
+        Install a previously uploaded app.
+        Usage: uninstall_app -t <tag> -v <version>
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="App tag")
+        parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="App version")
+
+        try:
+            args = parser.parse_args(arg.split())
+
+            if not re.fullmatch(VERSION_PATTERN, args.version):
+                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                return
+            
+            response = requests.get(f"{self.base_url}/uninstall_app", params={"tag": args.tag, "version": args.version})
+
+
+            if response.status_code == 200:
+                data = response.json()
+                if "status" in data and "error" in data["status"]:
+                    print(f"Uninstall failed:")
+                    print(data.get("message"))
+
+                else:
+                    print(data.get("message"))
+            else:
+                print(f"Server returned status {response.status_code}: {response.text}")
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
+
 if __name__ == "__main__":
     StageRunClient().cmdloop()
