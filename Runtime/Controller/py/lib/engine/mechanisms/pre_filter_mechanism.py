@@ -129,6 +129,15 @@ class GenericFwdKeys(BaseTableKeys):
             ["ig_md.pkt_filter_md.pkt_id", self.pkt_id, "exact"],
         ]
 
+    @classmethod
+    def from_key_dict(cls, key_dict):
+        return cls(
+            pkt_id=key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
+            program_id=key_dict['hdr.bridge_meta.program_id']['value']
+        )
+
+
+
 class GenericFwd(BaseTable):
 
     def __init__(self, runtime, location):
@@ -148,3 +157,16 @@ class GenericFwd(BaseTable):
         keys = GenericFwdKeys(pkt_id, program_id)
         action = BaseAction("fwd_and_enqueue", port, qid)
         self.add_entry(keys, action)
+
+    def remove_entries_for_pid(self, pid):
+        # Obter todas as entradas instaladas na pre_filter
+        table_keys = self.get_all_entries(False)
+
+        for _, key in table_keys:
+            key_dict = key.to_dict()
+            key_pid = key_dict['hdr.bridge_meta.program_id']['value']
+
+            # Se o program_id for o mesmo, remove entrada
+            if key_pid == pid:
+                keys = GenericFwdKeys.from_key_dict(key_dict)
+                self.delete_entry(keys)

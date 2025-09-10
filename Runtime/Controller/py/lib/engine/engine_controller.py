@@ -201,7 +201,29 @@ class EngineController():
         #     self.f2.i7_speculative
         # ]
 
-        tables_to_remove = [self.pre_filter_mechanism]
+        tables_to_remove = [
+            # Init Block
+            self.random_mechanism,
+            self.write_phase_mechanism,
+
+            # Prefilter Mechanism
+            self.pre_filter_mechanism, 
+            self.generic_fwd,
+
+            # WritePhase
+            self.wp_s3.conditional_mechanism_after_reg,
+            self.wp_s4.conditional_mechanism_after_reg,
+            self.wp_s5.conditional_mechanism_after_reg,
+            self.wp_s6.conditional_mechanism_after_reg,
+            self.wp_s7.conditional_mechanism_after_reg,
+            self.wp_s8.conditional_mechanism_after_reg,
+            self.wp_s9.conditional_mechanism_after_reg,
+
+            # RecircBlock, which has the PosFilter inside
+            self.pos_filter_mechansim,
+
+            # Instructions
+            ]
 
         for table in tables_to_remove:
             table.remove_entries_for_pid(pid)
