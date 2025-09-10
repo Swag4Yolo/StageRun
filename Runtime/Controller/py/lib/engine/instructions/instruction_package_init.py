@@ -61,7 +61,6 @@ class InstructPackInit_P2Table(BaseTable):
         action = BaseAction("fwd_ni", instr_id, port, qid, mark_to_drop, rts, enabled)
         self.add_entry(keys, action)
 
-
 class InstructPackInitSpeculative(BaseTable):
     """
     Represents the multi_instruction_p1_t table, encapsulating its keys, actions, and functionality.

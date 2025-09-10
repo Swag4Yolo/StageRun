@@ -29,15 +29,15 @@ class EngineFlow():
 
         #Instructions
         self.i1_p1 = P1Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
-        self.i1_p2 = InstructPackInit_P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
-        self.i1_speculative = InstructPackInitSpeculative(self.runtime, f"SwitchIngress.f{flow_number}_i1")
+        self.i1_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
+        self.i1_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i1")
         self.i2_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i2")
         self.i2_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i2")
-        self.i3_p2 = InstructPack3_P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i3")
+        self.i3_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i3")
         self.i3_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i3")
-        self.i4_p2 = InstructPack6_P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i4")
+        self.i4_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i4")
         self.i4_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i4")
-        self.i5_p2 = InstructPack5_P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i5")
+        self.i5_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i5")
         self.i5_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i5")
         self.i6_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i6")
         self.i6_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i6")
@@ -201,7 +201,7 @@ class EngineController():
         #     self.f2.i7_speculative
         # ]
 
-        tables_to_remove = [
+        tables_to_remove_pid = [
             # Init Block
             self.random_mechanism,
             self.write_phase_mechanism,
@@ -223,9 +223,44 @@ class EngineController():
             self.pos_filter_mechansim,
 
             # Instructions
+            #   Flow 1
+            self.f1.i1_p1,
+            self.f1.i1_p2,
+            self.f1.i3_p2,
+            self.f1.i3_speculative,
+            self.f1.i3_p2,
+            self.f1.i4_speculative,
+            self.f1.i4_p2,
+            self.f1.i4_speculative,
+            self.f1.i5_p2,
+            self.f1.i5_speculative,
+            self.f1.i6_p2,
+            self.f1.i6_speculative,
+            self.f1.i7_p2,
+            self.f1.i7_speculative,
+            self.f1.i8_multi,
+            self.f1.i9_multi,
+            #   Flow 2
+            self.f1.i1_p1,
+            self.f1.i1_p2,
+            self.f1.i3_p2,
+            self.f1.i3_speculative,
+            self.f1.i3_p2,
+            self.f1.i4_speculative,
+            self.f1.i4_p2,
+            self.f1.i4_speculative,
+            self.f1.i5_p2,
+            self.f1.i5_speculative,
+            self.f1.i6_p2,
+            self.f1.i6_speculative,
+            self.f1.i7_p2,
+            self.f1.i7_speculative,
+            self.f1.i8_p2,
+            self.f1.i8_speculative,
+            self.f1.i9_multi,
             ]
 
-        for table in tables_to_remove:
+        for table in tables_to_remove_pid:
             table.remove_entries_for_pid(pid)
 
         

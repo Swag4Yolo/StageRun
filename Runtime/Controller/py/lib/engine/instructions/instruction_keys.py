@@ -18,6 +18,22 @@ class P1TableKeys(BaseTableKeys):
             ["ig_md.pkt_filter_md.pkt_id", self.pkt_id[0], self.pkt_id[1], "ternary"],
             ["hdr.bridge_meta.program_id", self.program_id, "exact"]
         ]
+    
+    
+    @classmethod
+    def from_key_dict(cls, key_dict):
+        return cls(
+            next_instruction=[
+                key_dict['flow_md.next_instruction']['value'],
+                key_dict['flow_md.next_instruction']['mask']
+            ],
+            pkt_id=[
+                key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
+                key_dict['ig_md.pkt_filter_md.pkt_id']['mask']
+            ],
+            program_id=key_dict['hdr.bridge_meta.program_id']['value']
+        )
+
         
 class P2TableKeys(BaseTableKeys):
 
@@ -36,6 +52,7 @@ class P2TableKeys(BaseTableKeys):
         Converts the key values to the format required by the runtime.
         """
         return [
+            ["hdr.bridge_meta.program_id", self.program_id, "exact"],
             ["flow_md.next_instruction", self.next_instruction, "exact"],
             ["ig_md.pkt_filter_md.pkt_id", self.pkt_id[0], self.pkt_id[1], "ternary"],
 
@@ -43,9 +60,39 @@ class P2TableKeys(BaseTableKeys):
             ["res_md.cond_md.cond_val", self.cond_val[0], self.cond_val[1], "ternary"],
             ["res_md.cond_md.cond_mode_2", self.cond_mode_2[0], self.cond_mode_2[1], "ternary"],
             ["res_md.cond_md.cond_val_2", self.cond_val_2[0], self.cond_val_2[1], "ternary"],
-            ["hdr.bridge_meta.program_id", self.program_id, "exact"],
 
         ]
+    
+    @classmethod
+    def from_key_dict(cls, key_dict):
+        return cls(
+            next_instruction=[
+                key_dict['flow_md.next_instruction']['value'],
+                key_dict['flow_md.next_instruction']['mask']
+            ],
+            pkt_id=[
+                key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
+                key_dict['ig_md.pkt_filter_md.pkt_id']['mask']
+            ],
+            cond_mode=[
+                key_dict['res_md.cond_md.cond_mode']['value'],
+                key_dict['res_md.cond_md.cond_mode']['mask']
+            ],
+            cond_val=[
+                key_dict['res_md.cond_md.cond_val']['value'],
+                key_dict['res_md.cond_md.cond_val']['mask']
+            ],
+            cond_mode_2=[
+                key_dict['res_md.cond_md.cond_mode_2']['value'],
+                key_dict['res_md.cond_md.cond_mode_2']['mask']
+            ],
+            cond_val_2=[
+                key_dict['res_md.cond_md.cond_val_2']['value'],
+                key_dict['res_md.cond_md.cond_val_2']['mask']
+            ],
+            program_id=key_dict['hdr.bridge_meta.program_id']['value']
+        )
+
         
 class SpeculativeKeys(BaseTableKeys):
     def __init__(self, program_id=1,next_instruction_speculative=DISABLED, pkt_id=[DISABLED, DISABLED], cond_mode=[DISABLED, DISABLED], cond_val=[DISABLED, DISABLED], cond_mode_2=[DISABLED, DISABLED], cond_val_2=[DISABLED, DISABLED]):
@@ -71,3 +118,32 @@ class SpeculativeKeys(BaseTableKeys):
 
         ]
         
+    @classmethod
+    def from_key_dict(cls, key_dict):
+        return cls(
+            next_instruction=[
+                key_dict['flow_md.next_instruction']['value'],
+                key_dict['flow_md.next_instruction']['mask']
+            ],
+            pkt_id=[
+                key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
+                key_dict['ig_md.pkt_filter_md.pkt_id']['mask']
+            ],
+            cond_mode=[
+                key_dict['res_md.cond_md.cond_mode']['value'],
+                key_dict['res_md.cond_md.cond_mode']['mask']
+            ],
+            cond_val=[
+                key_dict['res_md.cond_md.cond_val']['value'],
+                key_dict['res_md.cond_md.cond_val']['mask']
+            ],
+            cond_mode_2=[
+                key_dict['res_md.cond_md.cond_mode_2']['value'],
+                key_dict['res_md.cond_md.cond_mode_2']['mask']
+            ],
+            cond_val_2=[
+                key_dict['res_md.cond_md.cond_val_2']['value'],
+                key_dict['res_md.cond_md.cond_val_2']['mask']
+            ],
+            program_id=key_dict['hdr.bridge_meta.program_id']['value']
+        )
