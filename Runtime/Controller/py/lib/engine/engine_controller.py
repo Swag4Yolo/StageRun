@@ -87,7 +87,7 @@ class EngineController():
         self.program_enabler_mechanism = ProgramEnablerMechanism(self.runtime, self.location)
         self.pattern_mechanism = PatternMechanism(self.runtime, self.location)
         self.pos_filter_mechansim = PosFilterMechanism(self.runtime, self.location)
-        # self.port_mechanism = PortMechanism(self.runtime)
+        self.port_mechanism = PortMechanism(self.runtime)
         self.hash_mechanism = [HashMechanism(self.runtime, self.location + '.initblock.hash_1'), HashMechanism(self.runtime, self.location + '.initblock.hash_2'), HashMechanism(self.runtime, self.location + '.initblock.hash_3')]
         self.random_mechanism = RandomMechanism(self.runtime, self.location)
         self.port_metadata_mechanism = PortMetadataMechanism(self.runtime)
@@ -99,7 +99,8 @@ class EngineController():
     def _init_configs_(self):
         PaddingInitModes(self.runtime, self.location)
         CalculatePadding(self.runtime, self.location)
-        PosFilterMechanism(self.runtime, self.location)._begin_rules()
+        self.pos_filter_mechansim._begin_rules()
+        self.pos_filter_mechansim._last_rules()
 
 
 
@@ -164,8 +165,8 @@ class EngineController():
 
             Activate(self.runtime, self.location, i)
 
-    def _final_configs_(self):
-        PosFilterMechanism(self.runtime, self.location)._last_rules()
+    # def _final_configs_(self):
+    #     PosFilterMechanism(self.runtime, self.location)._last_rules()
 
     def remove_program(self, pid):
         # tables_to_remove = [self.pre_filter_mechanism, self.pos_filter_mechansim, 
@@ -241,23 +242,23 @@ class EngineController():
             self.f1.i8_multi,
             self.f1.i9_multi,
             #   Flow 2
-            self.f1.i1_p1,
-            self.f1.i1_p2,
-            self.f1.i3_p2,
-            self.f1.i3_speculative,
-            self.f1.i3_p2,
-            self.f1.i4_speculative,
-            self.f1.i4_p2,
-            self.f1.i4_speculative,
-            self.f1.i5_p2,
-            self.f1.i5_speculative,
-            self.f1.i6_p2,
-            self.f1.i6_speculative,
-            self.f1.i7_p2,
-            self.f1.i7_speculative,
-            self.f1.i8_p2,
-            self.f1.i8_speculative,
-            self.f1.i9_multi,
+            self.f2.i1_p1,
+            self.f2.i1_p2,
+            self.f2.i3_p2,
+            self.f2.i3_speculative,
+            self.f2.i3_p2,
+            self.f2.i4_speculative,
+            self.f2.i4_p2,
+            self.f2.i4_speculative,
+            self.f2.i5_p2,
+            self.f2.i5_speculative,
+            self.f2.i6_p2,
+            self.f2.i6_speculative,
+            self.f2.i7_p2,
+            self.f2.i7_speculative,
+            self.f2.i8_p2,
+            self.f2.i8_speculative,
+            self.f2.i9_multi,
             ]
 
         for table in tables_to_remove_pid:

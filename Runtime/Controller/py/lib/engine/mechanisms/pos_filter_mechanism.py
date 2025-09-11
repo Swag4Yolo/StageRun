@@ -47,7 +47,7 @@ class PosFilterKeys(BaseTableKeys):
             ["hdr.bridge_meta.program_id", self.program_id[0], self.program_id[1] ,                 "ternary"],
         ]
         if self.match_priority != DISABLED:
-            key_list.append(["$MATCH_PRIORITY", self.match_priority,                                                "exact"])
+            key_list.append(["$MATCH_PRIORITY", self.match_priority, "exact"])
 
         return key_list
 
@@ -188,8 +188,9 @@ class PosFilterMechanism(BaseTable):
         for _, key in table_keys:
             key_dict = key.to_dict()
             key_pid = key_dict['hdr.bridge_meta.program_id']['value']
+            key_mask = key_dict['hdr.bridge_meta.program_id']['mask']
 
             # Se o program_id for o mesmo, remove entrada
-            if key_pid == pid:
+            if key_pid == pid and key_mask == MASK_PROGRAM_ID:
                 keys = PosFilterKeys.from_key_dict(key_dict)
                 self.delete_entry(keys)

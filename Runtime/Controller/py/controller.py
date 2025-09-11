@@ -30,7 +30,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     filename="controller.log",
-    filemode="a" #w para sobrescrever
+    filemode="w" #w para sobrescrever
 )
 logger = logging.getLogger("controller")
 

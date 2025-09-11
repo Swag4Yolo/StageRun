@@ -22,16 +22,17 @@ class P1TableKeys(BaseTableKeys):
     
     @classmethod
     def from_key_dict(cls, key_dict):
+        print("Key_dict")
+        print(key_dict)
         return cls(
-            next_instruction=[
-                key_dict['flow_md.next_instruction']['value'],
-                key_dict['flow_md.next_instruction']['mask']
-            ],
+            next_instruction=
+                int(key_dict['flow_md.next_instruction']['value']),
+                # key_dict['flow_md.next_instruction']['mask']
             pkt_id=[
-                key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
-                key_dict['ig_md.pkt_filter_md.pkt_id']['mask']
+                int(key_dict['ig_md.pkt_filter_md.pkt_id']['value']),
+                int(key_dict['ig_md.pkt_filter_md.pkt_id']['mask'])
             ],
-            program_id=key_dict['hdr.bridge_meta.program_id']['value']
+            program_id=int(key_dict['hdr.bridge_meta.program_id']['value'])
         )
 
         
@@ -66,10 +67,11 @@ class P2TableKeys(BaseTableKeys):
     @classmethod
     def from_key_dict(cls, key_dict):
         return cls(
-            next_instruction=[
+            next_instruction=
+            # [
                 key_dict['flow_md.next_instruction']['value'],
-                key_dict['flow_md.next_instruction']['mask']
-            ],
+            #     key_dict['flow_md.next_instruction']['mask']
+            # ],
             pkt_id=[
                 key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
                 key_dict['ig_md.pkt_filter_md.pkt_id']['mask']
@@ -121,10 +123,11 @@ class SpeculativeKeys(BaseTableKeys):
     @classmethod
     def from_key_dict(cls, key_dict):
         return cls(
-            next_instruction=[
-                key_dict['flow_md.next_instruction']['value'],
-                key_dict['flow_md.next_instruction']['mask']
-            ],
+            next_instruction=
+            # [
+                key_dict['flow_md.next_instruction_speculative']['value'],
+            #     key_dict['flow_md.next_instruction_speculative']['mask']
+            # ],
             pkt_id=[
                 key_dict['ig_md.pkt_filter_md.pkt_id']['value'],
                 key_dict['ig_md.pkt_filter_md.pkt_id']['mask']

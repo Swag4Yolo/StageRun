@@ -1,6 +1,6 @@
 from lib.tofino.types import *
 from lib.tofino.constants import *
-     
+from lib.engine.mechanisms.write_phase_mechanism import WritePhaseMechanism
 
 # class ProgramIdMechanismKeys(BaseTableKeys):
 #     def __init__(self, f1_next_instr=[0,0], f2_next_instr=[0,0], ig_port=[0,0], original_ig_port=[0,0]):
@@ -73,7 +73,7 @@ class PortMetadataMechanism(BaseTable):
 
 class PortMetadataMechanismManager(BaseTable):
 
-    def __init__(self, runtime, write_phase_mechanism, port_metadata_mechanism):
+    def __init__(self, runtime, write_phase_mechanism: WritePhaseMechanism, port_metadata_mechanism: PortMetadataMechanism):
         super().__init__(runtime, "$PORT_METADATA")
         self.programs = {}
         self.write_phase_mechanism = write_phase_mechanism
@@ -83,11 +83,12 @@ class PortMetadataMechanismManager(BaseTable):
     def add_program(self, program:Program):
         self.programs[program.pid] = program
 
+    # Set Program makes the program_id goes into the $PORT_METADATA of each port
     def set_program(self, pid=1):
         if pid in self.programs:
             program = self.programs[pid]
 
-            self.write_phase_mechanism.set_write_phases(program.wp_s3, program.wp_s4, program.wp_s5, program.wp_s6, program.wp_s7, program.wp_s8, program.wp_s9, program.wp_s10)
+            self.write_phase_mechanism.set_write_phases(program_id=pid, write_s3=program.wp_s3, write_s4=program.wp_s4, write_s5=program.wp_s5, write_s6=program.wp_s6, write_s7=program.wp_s7, write_s8=program.wp_s8, write_s9=program.wp_s9, write_s10=program.wp_s10)
 
             self.port_metadata_mechanism.clear()
             for port in program.ports:

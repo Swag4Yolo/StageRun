@@ -5,9 +5,9 @@ import json
 from lib.tofino.tofino_controller import TofinoController
 from lib.utils.status import *
 from lib.engine.engine_controller import EngineController
+from time import sleep
 
 logger = logging.getLogger("controller")
-
 ###########################################################
 #                       Engine State                      #
 ###########################################################
@@ -183,6 +183,7 @@ def save_running_app():
         json.dump(running_app, f, indent=2)
 
 def connect_tofino():
+    print("[+] Tofino Connection Startup")
     global tofino_controller
     global engine_controller
     global running_engine
@@ -191,9 +192,22 @@ def connect_tofino():
     engine_key = running_engine[RUNNING_ENGINE]['engine_key']
     if engine_key != "" and engine_key in engines:
         if tofino_controller == None or tofino_controller.engine_key != engine_key:
+            
+            print("Initializing Tofino and Engine's Controller")
+            print("Sleeping 5s")
+            logger.info("Initializing Tofino and Engine's Controller")
+            logger.info("Sleeping 5s")
+            sleep(5)
             tofino_controller = TofinoController(engine_key)
             engine_controller = EngineController(tofino_controller.runtime)
 
+    print("[✓] Tofino Connection")
+
+def disconnect_tofino():
+    global tofino_controller, engine_controller
+    
+    tofino_controller = None
+    engine_controller = None
 
     ####### Program IDS Management #######
 def get_program_id():
@@ -233,10 +247,18 @@ def remove_program_id(app_key):
     for pid in running_engine[RUNNING_ENGINE]["program_ids"]:
         program = running_engine[RUNNING_ENGINE]["program_ids"][pid]
         if app_key == program:
-            # del running_engine[RUNNING_ENGINE]["program_ids"][pid]
-            # running_engine[RUNNING_ENGINE].setdefault("free_pids", []).append(pid)
+            del running_engine[RUNNING_ENGINE]["program_ids"][pid]
+            running_engine[RUNNING_ENGINE].setdefault("free_pids", []).append(pid)
             break
+    for category in port_sets:
+        if app_key in port_sets[category]["programs"]:
+            port_sets[category]["programs"].remove(app_key)
+            if len(port_sets[category]["programs"]) == 0:
+                del port_sets[category]
+    save_port_sets()
     save_running_engine()
+    apps[app_key]["status"]=STATUS_UPLOADED
+    save_apps()
     if pid:
         # 2. Update Tables and configurations inside the Engine
         connect_tofino()

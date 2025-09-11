@@ -23,6 +23,8 @@
 - upload_engine -z ../../Runtime/Engine/StageRunEngine_dev_v2.0 -t StageRunEngine -m bytecode_interpreter_speculative.p4 -v 1_2 -c "This Version Integrated the Program ID"
 
 
+upload_app -a apps/nethide/nethide.py -m apps/nethide/nethide_manifest.yaml -t NetHide -v 0_1
+upload_app -a apps/stateful_fw/stateful_fw.py -m apps/stateful_fw/stateful_fw.yaml -t Statefull_fw -v 0_1
 
 ### Manual Configuration
 

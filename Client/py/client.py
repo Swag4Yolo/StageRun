@@ -178,6 +178,8 @@ class StageRunClient(cmd.Cmd):
                 data = response.json()
                 if "status" in data and "error" in data["status"]:
                     print(f"Installation failed:")
+                    if "message" in data:
+                        print(f"Message: {data['message']}")
                     if "log_path" in data:
                         print(f"See log at: {data['log_path']}")
                         if "log" in data:

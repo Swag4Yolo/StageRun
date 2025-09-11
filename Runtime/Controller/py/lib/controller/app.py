@@ -86,7 +86,7 @@ async def upload_app(
 
 async def list_apps():
     if len(sm.apps) == 0:
-        raise HTTPException(404, "No sm.apps have been uploaded to the controller.")
+        raise HTTPException(404, "No apps have been uploaded to the controller.")
 
     # Build dict grouped by tag → version → status
     grouped = {}
@@ -248,14 +248,14 @@ async def install_app(tag: str, version: str):
     engine_key = sm.running_engine[sm.RUNNING_ENGINE]['engine_key']
     
     if engine_key not in sm.engines:
-        return {"status": "error", "message": f"Please Initialize a Running Engine First"}
+        return {"status": "error", "message": f"Please install an engine before installing an app"}
 
     program_id = sm.get_program_id()
     print("program_id", program_id)
     valid_app, message = validate_app(app_file_path, manifest, app_key, engine_key, program_id, True)
     if not valid_app:
         sm.apps[app_key]['status'] = STATUS_BAD_APP
-        sm.remove_program_id(program_id)
+        sm.remove_program_id(app_key)
         sm.save_apps()
         return {"status": "error", "message": f"App {app_key} is not valid. {message}"}
     
@@ -263,8 +263,8 @@ async def install_app(tag: str, version: str):
     sm.apps[app_key]['status'] = STATUS_INSTALLED
     sm.save_apps()
 
-    print(app_key)
-    print(manifest['switch']['ports'])
+    # print(app_key)
+    # print(manifest['switch']['ports'])
     # [{'49/-': {'speed': 100, 'loopback': False}}, {'50/-': {'speed': 100, 'loopback': False}}]
     assign_program_to_category(app_key, manifest['switch']['ports'])
     sm.save_port_sets()
@@ -339,7 +339,11 @@ async def run_app(tag: str, version: str):
     sm.apps[app_key]['status'] = STATUS_RUNNING
     sm.save_apps()
 
-    return {"status": "ok", "message": f"App {app_key} Running succesfully."}
+    # sm.engine_controller.run_program(app_key)
+    # sm.engine_controller.program_enabler_mechanism.enable_program()
+    # sm.engine_controller.program_id_mechanism.set_program(pid)
+
+    return {"status": "ok", "message": f"App {app_key} running"}
 
 async def uninstall_app(tag: str, version: str):
     # 0. If the app is running, cannot uninstall

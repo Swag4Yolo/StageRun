@@ -1,0 +1,26 @@
+switch:
+    comment: "Tofino1 32p ..."
+    model: "Tofino1"
+    # server_ip:   10.0.0.1
+    # server_port: 9090
+    arch: tf1 
+    ports:
+        - 49/-:
+            speed: 100
+            loopback: no
+        - 50/-:
+            speed: 100
+            loopback: no
+
+program:
+    Program: "StatefullFirewall"
+    HW: True
+    Endpoints:
+        externalIn:
+            port: 50/-
+        externalOut:
+            port: 50/-
+        internalIn:
+            port: 49/-
+        internalOut:
+            port: 49/-            

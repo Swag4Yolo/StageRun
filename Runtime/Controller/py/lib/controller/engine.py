@@ -130,6 +130,7 @@ async def compile_engine(tag: str, version: str):
 
     # --- Compile ---
     log_path = os.path.join(build_path, "compile.log")
+    #TODO: delete file? What 
     # program_name = f"{tag}_v{version}"
 
 
@@ -239,6 +240,11 @@ async def install_engine(tag: str, version: str):
         sm.engines[engine_key]["status"] = STATUS_INSTALLED
         sm.save_engines()
         sm.save_running_engine()
+
+        # Connect to Tofino and Init Configurations
+        sm.connect_tofino()
+        sm.engine_controller._init_configs_()
+
         return {"status": "ok", "message":f"Engine {engine_key} Installed Successfully"}
 
     else:
@@ -271,6 +277,7 @@ async def uninstall_engine():
     sm.save_running_engine()
 
     sm.clear_apps()
+    sm.disconnect_tofino()
     return {"status": "ok", "message": f"Engine {engine_key} uninstalled."}
 
 
