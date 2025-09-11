@@ -276,6 +276,9 @@ async def run_app(tag: str, version: str):
 
     app_key = f"{tag}_v{version}"
 
+    if app_key not in sm.apps:
+        return {"status": "error", "message": f"Engine {app_key} not found."}
+    
     if sm.apps[app_key]["status"] == STATUS_UPLOADED:
         return {"status": "error", "message": f"App {app_key} was uploaded and not installed."}
 
@@ -308,6 +311,9 @@ async def uninstall_app(tag: str, version: str):
     # 1. free program_id
     # 2. Delete all table entries with that program_id
     app_key = f"{tag}_v{version}"
+
+    if app_key not in sm.apps:
+        return {"status": "error", "message": f"Engine {app_key} not found."}
 
     if sm.apps[app_key]["status"] == STATUS_UPLOADED:
         return {"status": "error", "message": f"App {app_key} was uploaded and not installed."}
