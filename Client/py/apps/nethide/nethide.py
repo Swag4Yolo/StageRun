@@ -125,16 +125,18 @@ class SystemApp(EngineController):
         self.f1.i1_p2.sum_ni(program_id=program_id, ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, header_update=1, header_id=HEADER_IPV4_TTL, const_val=-1)
 
 
-        program_name = "NetHide"
-        program = Program(program_id, program_name)
-        program.set_write_phases(write_s10=1)
-        program.ports=set([PFromExternal, PToExternal, PFromInternal, PToInternal])
-        self.program_id_mechanism.add_program(program)
+        self.write_phase_mechanism.set_write_phases(program_id=program_id, write_s10=1)
+        
+        # program_name = "NetHide"
+        # program = Program(program_id, program_name)
+        # program.set_write_phases(write_s10=1)
+        # program.ports=set([PFromExternal, PToExternal, PFromInternal, PToInternal])
+        # self.program_id_mechanism.add_program(program)
 
 
         # self._final_configs_()
-        self.program_enabler_mechanism.enable_program()
-        self.program_id_mechanism.set_program(program_id)
+        # self.program_enabler_mechanism.enable_program()
+        # self.program_id_mechanism.set_program(program_id)
         return self
 
         # ####### Write Phase Configuration #######

@@ -59,15 +59,15 @@ class PortMetadataMechanism(BaseTable):
         action.action_params = {
             "action_name": "",
             "params": {
-                "field1": hash_constant,
+                "field1": int(hash_constant),
                 "field2": 0,
                 "field3": 0,
-                "program_id": program_id,
+                "program_id": int(program_id),
             }
         }
         self.add_entry(keys, action)
 
-    def clear(self):
+    def clear_data(self):
         self.clear_table()
 
 
@@ -90,7 +90,7 @@ class PortMetadataMechanismManager(BaseTable):
 
             self.write_phase_mechanism.set_write_phases(program_id=pid, write_s3=program.wp_s3, write_s4=program.wp_s4, write_s5=program.wp_s5, write_s6=program.wp_s6, write_s7=program.wp_s7, write_s8=program.wp_s8, write_s9=program.wp_s9, write_s10=program.wp_s10)
 
-            self.port_metadata_mechanism.clear()
+            self.port_metadata_mechanism.clear_data()
             for port in program.ports:
                 self.port_metadata_mechanism.add_data(ig_port=port, program_id=pid)
             

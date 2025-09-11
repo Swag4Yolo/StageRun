@@ -3,9 +3,12 @@ import logging
 import json
 
 from lib.tofino.tofino_controller import TofinoController
+from lib.tofino.constants import *
 from lib.utils.status import *
 from lib.engine.engine_controller import EngineController
+from lib.utils.manifest_parser import parse_manifest
 from time import sleep
+import re
 
 logger = logging.getLogger("controller")
 ###########################################################
@@ -130,7 +133,6 @@ def init_app_state(config):
     # Apps
     os.makedirs(APPS_DIR_PATH, exist_ok=True)
     apps.update(load_apps())
-    print("apps", apps)
     running_app.update(load_running_app())
     logger.info(f"App system initialized with dir={APPS_DIR_PATH}, tracker={APPS_FILE_PATH}")
     port_sets = load_port_sets()
@@ -205,12 +207,19 @@ def connect_tofino():
 
 def disconnect_tofino():
     global tofino_controller, engine_controller
-    
+
     tofino_controller = None
     engine_controller = None
 
     ####### Program IDS Management #######
-def get_program_id():
+
+def get_program_id(app_key):
+    for pid in running_engine[RUNNING_ENGINE]["program_ids"]:
+        if app_key == running_engine[RUNNING_ENGINE]["program_ids"][pid]:
+            return pid
+    return None
+
+def allocate_pid():
     global running_engine
     prog_ids = running_engine[RUNNING_ENGINE]["program_ids"]
     free_pids = running_engine[RUNNING_ENGINE].setdefault("free_pids", [])
@@ -226,7 +235,7 @@ def get_program_id():
 
     return pid
 
-def set_program_id(pid, app_key):
+def set_pid(pid, app_key):
     global running_engine
     running_engine[RUNNING_ENGINE]["program_ids"][str(pid)] = app_key
     save_running_engine()
@@ -279,3 +288,130 @@ def clear_apps():
             apps[app_key]['status'] = STATUS_UPLOADED
 
     save_apps()
+
+def check_port_compatibility(base_ports: dict, new_ports: dict):
+    """
+    Compare new_ports with base_ports (a category).
+    Returns:
+      - "compatible" if identical
+      - "extend" if compatible but new ports need to be added
+      - "incompatible" if specs clash
+    """
+    extended = False
+    
+    # print("check_ports compatibility")
+    # print(base_ports)
+    # print(new_ports)
+
+    for port, new_spec in new_ports.items():
+        if port not in base_ports:
+            extended = True  # new port, no clash
+        else:
+            base_spec = base_ports[port]
+            if base_spec != new_spec:
+                return "incompatible"  # mismatch in spec
+    
+    return "extend" if extended else "compatible"
+
+
+def get_running_app():
+    for key in apps:
+        if apps[key]["status"] == STATUS_RUNNING:
+            return key
+    return None
+
+def get_ports_cat(app_key):
+    for category in port_sets:
+        if app_key in port_sets[category]["programs"]:
+            return category
+    return None
+
+def get_ports_list_from_category(category):
+    ports = []
+    for front_port in port_sets[category]['ports']:
+            match = re.search(r"(\d+)/", front_port)
+            if match:
+                p_num = match.group(1)
+                ports.append(int(p_num))
+    return ports
+
+def install_port_cat(category):
+    # for category in port_sets:
+    #     if app_key in port_sets[category]['programs']:
+    #         port_set = port_sets[category]
+    #         break
+    """
+        {
+    "category1": {
+        "ports": {
+        "49/-": {
+            "speed": 100,
+            "loopback": false
+        },
+        "50/-": {
+            "speed": 100,
+            "loopback": false
+        }
+        },
+        "programs": [
+        "NetHide_v1_0"
+        ]
+    }
+
+    }
+    """
+    # port_cfg {'49/-': {'speed': 100, 'loopback': False}}
+    for front_port in port_sets[category]['ports']:
+            match = re.search(r"(\d+)/", front_port)
+            if match:
+                p_num = match.group(1)
+                print("p_num", p_num)
+            else:
+                #TODO: error
+                print("ERROR")
+                
+            print("front_port", front_port)
+            port = port_sets[category]['ports'][front_port]
+
+            speed = PORT_SPEED_BF[port['speed']]
+            loopback = PORT_LOOPBACK_BF[port['loopback']]
+            fec = PORT_FEC_BF.get( (speed, loopback), FEC_NONE)
+
+            print("Port configs:")
+            print("p_num", p_num)
+            print("speed", speed)
+            print("loopback", loopback)
+            print("fec", fec)
+
+            tofino_controller.port_mechanism.add_port(front_port=int(p_num), speed=speed, loopback=loopback, fec=fec)
+
+def run_program(app_key):
+    # Old running app
+    prev_run_app_key = get_running_app()
+    
+    # New running app
+    pid = get_program_id(app_key)
+    new_cat = get_ports_cat(app_key)
+    new_ports = get_ports_list_from_category(new_cat)
+
+    if pid == None or new_cat == None or len(new_ports) == 0:
+        print("ERROR; RETURNING")
+        return
+
+    if prev_run_app_key:
+        running_app_category = get_ports_cat(prev_run_app_key)
+
+    if prev_run_app_key == None:
+        install_port_cat(new_cat)
+        # Configure Engine (change pid to pid of new app, and put ports => pid)
+        engine_controller.run_program(app_key, pid, new_ports)
+
+    elif check_port_compatibility(port_sets[running_app_category]["ports"], port_sets[new_cat]["ports"]) == "compatible":
+        engine_controller.run_program(app_key, pid, new_ports)
+    else:
+        # old_cat = get_ports_cat(prev_run_app_key)
+        # remove_ports(old_cat)
+        tofino_controller.port_mechanism.clear_ports()
+
+        install_port_cat(new_cat)
+        engine_controller.run_program(app_key, pid, new_ports)

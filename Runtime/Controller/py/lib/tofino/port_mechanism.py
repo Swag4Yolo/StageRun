@@ -112,6 +112,9 @@ class PortMechanism(BaseTable):
         }
         self.add_entry(keys, action)
 
+    def clear_ports(self):
+        return self.clear_table()
+
     def remove_port(self):
         pass
     def modify_port(self):

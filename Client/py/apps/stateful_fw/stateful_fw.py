@@ -123,14 +123,14 @@ class SystemApp(EngineController):
 
 
 
-        program_name = "StatefulFirewall"
-        program = Program(program_id, program_name)
-        program.set_write_phases(write_s3=1, write_s10=1)
-        program.ports=set([externalIn, externalOut, internalIn, internalOut])
-        self.program_id_mechanism.add_program(program)
+        # program_name = "StatefulFirewall"
+        # program = Program(program_id, program_name)
+        self.write_phase_mechanism.set_write_phases(program_id=program_id, write_s3=1, write_s10=1)
+        # program.ports=set([externalIn, externalOut, internalIn, internalOut])
+        # self.program_id_mechanism.add_program(program)
 
 
         # self._final_configs_()
-        self.program_enabler_mechanism.enable_program()
-        self.program_id_mechanism.set_program(program_id)
+        # self.program_enabler_mechanism.enable_program()
+        # self.program_id_mechanism.set_program(program_id)
         return self

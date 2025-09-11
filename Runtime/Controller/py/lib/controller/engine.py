@@ -135,7 +135,7 @@ async def compile_engine(tag: str, version: str):
 
 
     # print("HW_FLAGS")
-    print(sm.HW_FLAGS)
+    # print(sm.HW_FLAGS)
     cmd = [
         "time",
         os.path.join(sm.TOOLS_DIR_PATH, "p4_build.sh"),

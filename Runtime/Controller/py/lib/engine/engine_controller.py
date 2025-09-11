@@ -83,18 +83,19 @@ class EngineController():
         self.pre_filter_mechanism = PreFilterMechanism(self.runtime, f"{self.location}")
         self.generic_fwd = GenericFwd(self.runtime, f"{self.location}")
         self.clone_mechanism = CloneMechanism(self.runtime)
-        self.write_phase_mechanism = WritePhaseMechanism(self.runtime, self.location)
         self.program_enabler_mechanism = ProgramEnablerMechanism(self.runtime, self.location)
         self.pattern_mechanism = PatternMechanism(self.runtime, self.location)
         self.pos_filter_mechansim = PosFilterMechanism(self.runtime, self.location)
         self.port_mechanism = PortMechanism(self.runtime)
         self.hash_mechanism = [HashMechanism(self.runtime, self.location + '.initblock.hash_1'), HashMechanism(self.runtime, self.location + '.initblock.hash_2'), HashMechanism(self.runtime, self.location + '.initblock.hash_3')]
         self.random_mechanism = RandomMechanism(self.runtime, self.location)
+        # These two mechanisms are reponsible for the program_id management
         self.port_metadata_mechanism = PortMetadataMechanism(self.runtime)
+        self.write_phase_mechanism = WritePhaseMechanism(self.runtime, self.location)
         
         # Port Metadata Mechanism Manager
         # Currently responsible for program_id, hash_constant
-        self.program_id_mechanism = PortMetadataMechanismManager(self.runtime, self.write_phase_mechanism, self.port_metadata_mechanism)
+        # self.program_id_mechanism = PortMetadataMechanismManager(self.runtime, self.write_phase_mechanism, self.port_metadata_mechanism)
 
     def _init_configs_(self):
         PaddingInitModes(self.runtime, self.location)
@@ -265,4 +266,15 @@ class EngineController():
             table.remove_entries_for_pid(pid)
 
         
-
+    def run_program(self, app_key, pid, front_ports):
+        # print("[Engine Controller]")
+        # print(app_key)
+        # print(pid)
+        # print(ports)
+        self.port_metadata_mechanism.clear_data()
+        for port in front_ports:
+            dev_port = self.runtime.get_dev_port(port, 0)
+            self.port_metadata_mechanism.add_data(ig_port=dev_port, program_id=pid)
+        self.program_enabler_mechanism.enable_program()
+        
+        print(f"[✓] Program switched to {app_key} with pid {pid}")

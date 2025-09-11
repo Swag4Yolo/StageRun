@@ -1,16 +1,10 @@
 import os
 import shutil
-import zipfile
-import json
 import logging
-import subprocess
-import signal
 from datetime import datetime
 from fastapi import UploadFile, Form, HTTPException, File
 from pathlib import Path
-import time
 import traceback
-import re
 
 # Import StageRun libs
 import lib.controller.state_manager as sm
@@ -103,7 +97,6 @@ async def list_apps():
 async def remove_app(tag: str, version: str):
 
     app_key = f"{tag}_v{version}"
-    print(sm.apps)
 
     if app_key not in sm.apps:
         return {"status": "error", "message": f"Engine {app_key} not found."}
@@ -125,34 +118,34 @@ async def remove_app(tag: str, version: str):
 
     return {"status": "ok", "message": f"App {app_key} removed."}
 
-def check_port_compatibility(base_ports: dict, new_ports: dict):
-    """
-    Compare new_ports with base_ports (a category).
-    Returns:
-      - "compatible" if identical
-      - "extend" if compatible but new ports need to be added
-      - "incompatible" if specs clash
-    """
-    extended = False
+# def check_port_compatibility(base_ports: dict, new_ports: dict):
+#     """
+#     Compare new_ports with base_ports (a category).
+#     Returns:
+#       - "compatible" if identical
+#       - "extend" if compatible but new ports need to be added
+#       - "incompatible" if specs clash
+#     """
+#     extended = False
     
-    print("check_ports compatibility")
-    print(base_ports)
-    print(new_ports)
+#     print("check_ports compatibility")
+#     print(base_ports)
+#     print(new_ports)
 
-    for port, new_spec in new_ports.items():
-        if port not in base_ports:
-            extended = True  # new port, no clash
-        else:
-            base_spec = base_ports[port]
-            if base_spec != new_spec:
-                return "incompatible"  # mismatch in spec
+#     for port, new_spec in new_ports.items():
+#         if port not in base_ports:
+#             extended = True  # new port, no clash
+#         else:
+#             base_spec = base_ports[port]
+#             if base_spec != new_spec:
+#                 return "incompatible"  # mismatch in spec
     
-    return "extend" if extended else "compatible"
+#     return "extend" if extended else "compatible"
 
 def assign_program_to_category(app_key: str, new_ports: dict):
 
     for cat_name, cat_data in sm.port_sets.items():
-        status = check_port_compatibility(cat_data["ports"], new_ports)
+        status = sm.check_port_compatibility(cat_data["ports"], new_ports)
         if status == "compatible":
             cat_data["programs"].append(app_key)
             return cat_name, "compatible"
@@ -250,8 +243,7 @@ async def install_app(tag: str, version: str):
     if engine_key not in sm.engines:
         return {"status": "error", "message": f"Please install an engine before installing an app"}
 
-    program_id = sm.get_program_id()
-    print("program_id", program_id)
+    program_id = sm.allocate_pid()
     valid_app, message = validate_app(app_file_path, manifest, app_key, engine_key, program_id, True)
     if not valid_app:
         sm.apps[app_key]['status'] = STATUS_BAD_APP
@@ -259,7 +251,7 @@ async def install_app(tag: str, version: str):
         sm.save_apps()
         return {"status": "error", "message": f"App {app_key} is not valid. {message}"}
     
-    sm.set_program_id(program_id, app_key)
+    sm.set_pid(program_id, app_key)
     sm.apps[app_key]['status'] = STATUS_INSTALLED
     sm.save_apps()
 
@@ -269,81 +261,47 @@ async def install_app(tag: str, version: str):
     assign_program_to_category(app_key, manifest['switch']['ports'])
     sm.save_port_sets()
 
-    return {"status": "ok", "message": f"App {app_key} Installed succesfully."}
+    return {"status": "ok", "message": f"App {app_key} Installed successfully."}
 
     # TODO: assuming a unique StageRunEngine format for now
     # The Controller knows how to install all the instructions in all stages. It needs to know which instructions are available in each stage. If needs to know which instructions that runtime has and which instructions are available in each stage.
 
 async def run_app(tag: str, version: str):
-    # [] 1. If is 1st app to run then pre rules need to be installed
+    # [X] 1. If is 1st app to run then pre rules need to be installed
     # [] 1.1 Install Ports
     # [] 2. If not:
     # []    2.1 Check Ports category is different from the one we have know:
     # []          2.1.1 Change ports
     # []      2.2 Check Port
-    sm.connect_tofino()
 
     app_key = f"{tag}_v{version}"
-    port_set = None
 
-    #port_key == port category
-    for port_key in sm.port_sets:
-        if app_key in sm.port_sets[port_key]['programs']:
-            port_set = sm.port_sets[port_key]
-            break
-        """
-            {
-        "category1": {
-            "ports": {
-            "49/-": {
-                "speed": 100,
-                "loopback": false
-            },
-            "50/-": {
-                "speed": 100,
-                "loopback": false
-            }
-            },
-            "programs": [
-            "NetHide_v1_0"
-            ]
-        }
+    if sm.apps[app_key]["status"] == STATUS_UPLOADED:
+        return {"status": "error", "message": f"App {app_key} was uploaded and not installed."}
 
-        }
-        """
-    # port_cfg {'49/-': {'speed': 100, 'loopback': False}}
-    for front_port in port_set['ports']:
-            match = re.search(r"(\d+)/", front_port)
-            if match:
-                p_num = match.group(1)
-                print("p_num", p_num)
-            else:
-                #TODO: error
-                print("ERROR")
-                
-            print("front_port", front_port)
-            port = port_set['ports'][front_port]
+    if sm.apps[app_key]["status"] == STATUS_RUNNING:
+        return {"status": "error", "message": f"App {app_key} is running. A running app cannot be uninstalled. Please change the running app."}
 
-            speed = PORT_SPEED_BF[port['speed']]
-            loopback = PORT_LOOPBACK_BF[port['loopback']]
-            fec = PORT_FEC_BF.get( (speed, loopback), FEC_NONE)
+    if sm.apps[app_key]["status"] == STATUS_BAD_MANIFEST:
+        return {"status": "error", "message": f"App {app_key} has a bad manifest format. You need to remove, re-upload, and install again with the correct format."}
+    
+    if sm.apps[app_key]["status"] == STATUS_BAD_APP:
+        return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
+    
+    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
+        sm.run_program(app_key)
+        sm.apps[app_key]['status'] = STATUS_RUNNING
+        for key in sm.apps:
+            # Previous Running App is changed to STATUS_INSTALLED
+            if key != app_key and sm.apps[key]['status'] == STATUS_RUNNING:
+                sm.apps[key]['status']=STATUS_INSTALLED
+        sm.save_apps()
 
-            print("Port configs:")
-            print("p_num", p_num)
-            print("speed", speed)
-            print("loopback", loopback)
-            print("fec", fec)
+        return {"status": "ok", "message": f"App {app_key} running"}
 
-            sm.tofino_controller.port_mechanism.add_port(front_port=int(p_num), speed=speed, loopback=loopback, fec=fec)
-
-    sm.apps[app_key]['status'] = STATUS_RUNNING
-    sm.save_apps()
-
-    # sm.engine_controller.run_program(app_key)
-    # sm.engine_controller.program_enabler_mechanism.enable_program()
-    # sm.engine_controller.program_id_mechanism.set_program(pid)
-
-    return {"status": "ok", "message": f"App {app_key} running"}
+    else:
+        return {"status": "error", "message": f"App {app_key} does not follow one of the internal status, so uninstalling is not possible."}
+    
 
 async def uninstall_app(tag: str, version: str):
     # 0. If the app is running, cannot uninstall
