@@ -101,7 +101,7 @@ class EngineController():
         PaddingInitModes(self.runtime, self.location)
         CalculatePadding(self.runtime, self.location)
         self.pos_filter_mechansim._begin_rules()
-        self.pos_filter_mechansim._last_rules()
+        # self.pos_filter_mechansim._last_rules()
 
 
 
@@ -166,8 +166,10 @@ class EngineController():
 
             Activate(self.runtime, self.location, i)
 
-    # def _final_configs_(self):
-    #     PosFilterMechanism(self.runtime, self.location)._last_rules()
+    def _final_configs_(self, pid):
+        self.pos_filter_mechansim._insert_program_last_rules(pid)
+        # self.pos_filter_mechansim.remove_final_configs()
+        # self.pos_filter_mechansim._last_rules()
 
     def remove_program(self, pid):
         # tables_to_remove = [self.pre_filter_mechanism, self.pos_filter_mechansim, 

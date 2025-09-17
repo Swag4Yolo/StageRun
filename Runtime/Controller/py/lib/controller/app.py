@@ -207,6 +207,7 @@ def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=
             return False, f"Missing endpoint(s) for: {missing}"
         
     except Exception as e:
+        print(traceback.format_exc())
         logger.error(traceback.format_exc())
         return False, f"Failed to Install the Application. {repr(e)}"
 
@@ -260,6 +261,8 @@ async def install_app(tag: str, version: str):
     # [{'49/-': {'speed': 100, 'loopback': False}}, {'50/-': {'speed': 100, 'loopback': False}}]
     assign_program_to_category(app_key, manifest['switch']['ports'])
     sm.save_port_sets()
+
+    sm.engine_controller._final_configs_(program_id)
 
     return {"status": "ok", "message": f"App {app_key} Installed successfully."}
 

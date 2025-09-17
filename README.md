@@ -25,6 +25,7 @@
 
 upload_app -a apps/nethide/nethide.py -m apps/nethide/nethide_manifest.yaml -t NetHide -v 0_1
 upload_app -a apps/stateful_fw/stateful_fw.py -m apps/stateful_fw/stateful_fw.yaml -t Statefull_fw -v 0_1
+upload_app -a apps/NetWarden_particial_ack/netwarden_particial_ack.py -m apps/NetWarden_particial_ack/netwarden_particial_ack.yaml -t NetWarden -v 0_1
 
 ### Manual Configuration
 

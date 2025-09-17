@@ -82,7 +82,21 @@ async def list_engines():
 
     return grouped
 
-async def compile_engine(tag: str, version: str):
+def check_flags(flags: list[str]) -> tuple[bool, str]:
+    """
+    Validate flags:
+    - If 'HW' is present, all RECIR_PORT_P{0..3} must also be present.
+    """
+    if "HW" in flags:
+        required = {"RECIR_PORT_P0", "RECIR_PORT_P1", "RECIR_PORT_P2", "RECIR_PORT_P3"}
+        present = {f.split("=")[0] for f in flags}
+        missing = required - present
+        if missing:
+            return False, f"Missing mandatory flags when HW is enabled: {', '.join(sorted(missing))}"
+    return True, ""
+
+
+async def compile_engine(tag: str, version: str, flags: str = ""):
     """
     Compile an uploaded engine by tag.
 
@@ -106,6 +120,18 @@ async def compile_engine(tag: str, version: str):
 
     if engine_info.get("status") == STATUS_COMPILED:
         return {"message": f"Engine '{tag}' already compiled", "status": STATUS_SKIPPED}
+
+    # --- Parse flags ---
+    flag_list = flags.split() if flags else []
+    ok, msg = check_flags(flag_list)
+    if not ok:
+        return {"status": "error", "message": msg}
+
+    # Convert to "-D FLAG" form
+    ppflags = " ".join([f"-D {flag}" for flag in flag_list])
+
+    print("ppflags")
+    print(ppflags)
 
     # --- Prepare build dir ---
     build_path = os.path.join(sm.BUILD_DIR_PATH, f"{tag}_v{version}")
@@ -134,17 +160,15 @@ async def compile_engine(tag: str, version: str):
     # program_name = f"{tag}_v{version}"
 
 
-    # print("HW_FLAGS")
-    # print(sm.HW_FLAGS)
     cmd = [
         "time",
         os.path.join(sm.TOOLS_DIR_PATH, "p4_build.sh"),
         "-p", dst_main_path,
-        # f"P4PPFLAGS={HW_FLAGS}"
+        f"P4PPFLAGS={ppflags}"
     ]
 
     env = os.environ.copy()
-    env["P4PPFLAGS"] = sm.HW_FLAGS
+    # env["P4PPFLAGS"] = sm.HW_FLAGS
 
     try:
         with open(log_path, "w") as log_file:
@@ -272,11 +296,13 @@ async def uninstall_engine():
     sm.engines[engine_key]["status"] = STATUS_COMPILED
     sm.running_engine[sm.RUNNING_ENGINE]["engine_key"] = ""
     sm.running_engine[sm.RUNNING_ENGINE]["log"] = ""
+    sm.running_engine[sm.RUNNING_ENGINE]["program_ids"] = {}
 
     sm.save_engines()
     sm.save_running_engine()
 
     sm.clear_apps()
+    sm.clear_port_sets()
     sm.disconnect_tofino()
     return {"status": "ok", "message": f"Engine {engine_key} uninstalled."}
 

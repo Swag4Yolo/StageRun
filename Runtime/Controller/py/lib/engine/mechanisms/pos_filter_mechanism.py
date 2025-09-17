@@ -1,5 +1,6 @@
 from lib.tofino.types import *
 from lib.tofino.constants import *
+import traceback
 
 class PosFilterKeys(BaseTableKeys):
     """
@@ -138,44 +139,49 @@ class PosFilterMechanism(BaseTable):
 
         ### Pos Filter Rules ###
 
-    def _last_rules(self):
-        ### Default Forwaring ###
-        keys = PosFilterKeys(need_recirc=[0, 0x1], match_priority=0xffffffff)
+    # def _last_rules(self):
+    #     ### Default Forwaring ###
+    #     keys = PosFilterKeys(need_recirc=[0, 0x1])
+    #     action = BaseAction("set_egress_port")
+    #     self.add_entry(keys, action)
+
+    def _insert_program_last_rules(self, pid):
+        keys = PosFilterKeys(need_recirc=[0, 0x1], program_id=[int(pid), MASK_PROGRAM_ID])
         action = BaseAction("set_egress_port")
         self.add_entry(keys, action)
 
 
     # Action implementations
-    def pos_filter_fwd(self, original_ig_port=[DISABLED, DISABLED], ipv4_proto=[DISABLED, DISABLED], ipv4_total_len=[DISABLED, DISABLED], port=DISABLED):
+    def pos_filter_fwd(self, original_ig_port=[DISABLED, DISABLED], ipv4_proto=[DISABLED, DISABLED], ipv4_total_len=[DISABLED, DISABLED], port=DISABLED, program_id=[1, MASK_PROGRAM_ID]):
 
-        keys = PosFilterKeys(original_ig_port=original_ig_port, ipv4_proto=ipv4_proto, ipv4_total_len=ipv4_total_len)
+        keys = PosFilterKeys(original_ig_port=original_ig_port, ipv4_proto=ipv4_proto, ipv4_total_len=ipv4_total_len, program_id=program_id)
         action = BaseAction("pos_filter_fwd", port)
         self.add_entry(keys, action)
 
     
     # Action implementations
-    def pos_filter_fwd_and_enqueue(self, original_ig_port=[DISABLED, DISABLED], ipv4_proto=[DISABLED, DISABLED], ipv4_total_len=[DISABLED, DISABLED], port=DISABLED, qid=DISABLED):
+    def pos_filter_fwd_and_enqueue(self, original_ig_port=[DISABLED, DISABLED], ipv4_proto=[DISABLED, DISABLED], ipv4_total_len=[DISABLED, DISABLED], port=DISABLED, qid=DISABLED, program_id=[1, MASK_PROGRAM_ID]):
 
-        keys = PosFilterKeys(original_ig_port=original_ig_port, ipv4_proto=ipv4_proto, ipv4_total_len=ipv4_total_len)
+        keys = PosFilterKeys(original_ig_port=original_ig_port, ipv4_proto=ipv4_proto, ipv4_total_len=ipv4_total_len, program_id=program_id)
         action = BaseAction("pos_filter_fwd_and_enqueue", port, qid)
         self.add_entry(keys, action)
     
     # Action implementations
-    def pos_filter_recirc_same_pipe(self, f1_next_instr=[DISABLED, DISABLED],f2_next_instr=[DISABLED, DISABLED]):
+    def pos_filter_recirc_same_pipe(self, f1_next_instr=[DISABLED, DISABLED],f2_next_instr=[DISABLED, DISABLED], program_id=[1, MASK_PROGRAM_ID]):
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x000, 0x180])
+        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x000, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p0")
         self.add_entry(keys, action)
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x080, 0x180])
+        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x080, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p1")
         self.add_entry(keys, action)
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0100, 0x180])
+        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0100, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p2")
         self.add_entry(keys, action)
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0180, 0x180])
+        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0180, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p3")
         self.add_entry(keys, action)
 

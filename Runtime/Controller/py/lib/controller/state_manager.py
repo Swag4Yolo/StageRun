@@ -264,6 +264,7 @@ def remove_program_id(app_key):
             port_sets[category]["programs"].remove(app_key)
             if len(port_sets[category]["programs"]) == 0:
                 del port_sets[category]
+                break
     save_port_sets()
     save_running_engine()
     apps[app_key]["status"]=STATUS_UPLOADED
@@ -288,6 +289,11 @@ def clear_apps():
             apps[app_key]['status'] = STATUS_UPLOADED
 
     save_apps()
+
+def clear_port_sets():
+    global port_sets
+    port_sets = {}
+    save_port_sets()
 
 def check_port_compatibility(base_ports: dict, new_ports: dict):
     """

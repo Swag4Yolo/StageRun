@@ -59,63 +59,63 @@ class RandomMechanism(BaseTable):
         super().__init__(runtime, f"{location}.initblock.random_t")
     
     #TODO: for now the program puts the random variable always in the beginning of the program without keys; later if needed we add the keys
-    def random_32b_v1(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_32b_v1(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_32b_v1")
         self.add_entry(keys, action)
     
-    def random_32b_v2(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_32b_v2(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_32b_v2")
         self.add_entry(keys, action)
     
-    def random_32b_v3(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_32b_v3(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_32b_v3")
         self.add_entry(keys, action)
     
-    def random_32b_v4(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_32b_v4(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_32b_v4")
         self.add_entry(keys, action)
     
-    def random_4b_v1(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_4b_v1(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_4b_v1")
         self.add_entry(keys, action)
     
-    def random_4b_v2(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_4b_v2(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_4b_v2")
         self.add_entry(keys, action)
     
-    def random_4b_v3(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_4b_v3(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_4b_v3")
         self.add_entry(keys, action)
     
-    def random_4b_v4(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def random_4b_v4(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("random_4b_v4")
         self.add_entry(keys, action)
 
-    def get_timestamp_v1(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def get_timestamp_v1(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("get_timestamp_v1")
         self.add_entry(keys, action)
-        
-    def get_timestamp_v2(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+
+    def get_timestamp_v2(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("get_timestamp_v2")
         self.add_entry(keys, action)
 
-    def get_timestamp_v3(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def get_timestamp_v3(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("get_timestamp_v3")
         self.add_entry(keys, action)
 
-    def get_timestamp_v4(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED]):
-        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port)
+    def get_timestamp_v4(self, f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ingress_port=[DISABLED, DISABLED], original_ingress_port=[DISABLED, DISABLED], program_id=1):
+        keys = RandomKeys(f1_next_instr, f2_next_instr, ingress_port, original_ingress_port, program_id)
         action = BaseAction("get_timestamp_v4")
         self.add_entry(keys, action)
 

@@ -114,20 +114,29 @@ class StageRunClient(cmd.Cmd):
     def do_compile_engine(self, arg):
         """
         Compile a previously uploaded engine.
-        Usage: compile_engine -t <tag> -v <version>
+        Usage: compile_engine -t <tag> -v <version> -f "FLAG1 FLAG2 FLAG3=VALUE"
         """
         parser = argparse.ArgumentParser()
         parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="Engine tag")
         parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="Engine version")
+        parser.add_argument("-f", "--flags", dest="flags", type=str, default="", help="Compile-time flags")
 
         try:
-            args = parser.parse_args(arg.split())
+            args = parser.parse_args(shlex.split(arg))
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
                 print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
                 return
 
-            response = requests.post(f"{self.base_url}/compile_engine", params={"tag": args.tag, "version": args.version})
+            # Send flags to server
+            response = requests.post(
+                f"{self.base_url}/compile_engine",
+                params={
+                    "tag": args.tag,
+                    "version": args.version,
+                    "flags": args.flags.strip()
+                }
+            )
 
             if response.status_code == 200:
                 data = response.json()
@@ -140,20 +149,17 @@ class StageRunClient(cmd.Cmd):
                             with open(filepath, "w") as f:
                                 f.write(data["log"])
                             print(f"Log saved locally at: {filepath}")
-
                 else:
                     print(data.get("message"))
             else:
                 print(f"Server returned status {response.status_code}: {response.text}")
 
-        except Exception as e:
-            print("Error:", e)
-
         except SystemExit:
             pass
-            
-        except Exception:
+        except Exception as e:
+            print("Error:", e)
             traceback.print_exc()
+
 
     def do_install_engine(self, arg):
         """
@@ -423,11 +429,21 @@ class StageRunClient(cmd.Cmd):
             if not re.fullmatch(VERSION_PATTERN, args.version):
                 print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
                 return
-            
+
+            import time            
+            start_time = time.perf_counter()
+
             response = requests.get(f"{self.base_url}/run_app", params={"tag": args.tag, "version": args.version})
+            
+            # Record finish time
 
 
             if response.status_code == 200:
+                finish_time = time.perf_counter()
+                # Compute elapsed time
+                time_diff = finish_time - start_time
+                print(f"Function took {time_diff:.6f} seconds")
+
                 data = response.json()
                 if "status" in data and "error" in data["status"]:
                     print(f"Installation failed:")
