@@ -1,0 +1,3 @@
+# Example StageRun program
+PORT ExternalPort
+FWD ExternalPort
