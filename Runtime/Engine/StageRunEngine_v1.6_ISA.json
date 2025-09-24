@@ -1,0 +1,264 @@
+{
+    "version": 2.0,
+    "ISA": [
+        "FWD",
+        "PAD",
+        "PADTO",
+        "ACTIVATE"
+    ],
+    "pipeline": {
+        "s2": {
+            "instructions_p1": [
+                "fetch_out",
+                "conditional_v1_v2",
+                "conditional_v3_v4",
+                "conditional_between_vars",
+                "set_index_ingress_port_w_const_val",
+                "set_index_ingress_port_w_global_var_pkt_size",
+                "set_index_hash_1_w_const_val",
+                "set_index_hash_1_w_global_var_pkt_size",
+                "set_index_hash_2_w_const_val",
+                "set_index_hash_2_w_global_var_pkt_size",
+                "fetch_v1",
+                "fetch_v2",
+                "fetch_hash_1",
+                "fetch_tcp_ack",
+                "fetch_tcp_seq",
+                "fetch_ipv4_ttl",
+                "fetch_const_val",
+                "fetch_ipv4_total_len",
+                "fetch_ipv4_ihl",
+                "fetch_tcp_data_offset"
+            ],
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "initialize_activate_ni",
+                "sum_ni",
+                "complement_ni",
+                "mul_4x_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_var",
+                "speculative_fetch_v1",
+                "speculative_fetch_v2",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq"
+            ]
+        },
+        "s3": {
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "initialize_activate_ni",
+                "sum_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s4": {
+            "instructions_p2": [
+                "sum_ni",
+                "sum_increment_ni",
+                "mul_4x_ni",
+                "arith_between_vars_v1_v2",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s5": {
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "arith_between_vars_v1_v2",
+                "sum_increment_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s6": {
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "initialize_activate_ni",
+                "sum_ni",
+                "sum_increment_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s7": {
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "initialize_activate_ni",
+                "sum_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s8": {
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "initialize_activate_ni",
+                "sum_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s9": {
+            "instructions_p2": [
+                "initialize_pad_ni",
+                "initialize_activate_ni",
+                "sum_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ],
+            "instructions_speculative": [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+                "speculative_set_index_ingress_port_w_const_val",
+                "speculative_set_index_ingress_port_w_global_var_pkt_size",
+                "speculative_set_index_hash_1_w_const_val",
+                "speculative_set_index_hash_1_w_global_var_pkt_size",
+                "speculative_set_index_hash_2_w_const_val",
+                "speculative_set_index_hash_2_w_global_var_pkt_size",
+                "speculative_fetch_v1",
+                "speculative_fetch_hash_1",
+                "speculative_fetch_tcp_ack",
+                "speculative_fetch_tcp_seq",
+                "speculative_fetch_const_val"
+            ]
+        },
+        "s10": {
+            "multi_instr_speculative": [
+                "initialize_activate_ni",
+                "sum_ni",
+                "exec_instr",
+                "exec_instr_set_index_ingress_port_w_const_val",
+                "exec_instr_set_index_ingress_port_w_global_var_pkt_size",
+                "exec_instr_set_index_hash_1_w_const_val",
+                "exec_instr_set_index_hash_1_w_global_var_pkt_size",
+                "exec_instr_set_index_hash_2_w_const_val",
+                "exec_instr_set_index_hash_2_w_global_var_pkt_size",
+                "process_conditional_v1_v2_ni",
+                "process_conditional_v3_v4_ni",
+                "reg1_old_value_ni",
+                "reg1_new_value_ni",
+                "fwd_ni"
+            ]
+        }
+    }
+}
+
+

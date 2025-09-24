@@ -47,8 +47,8 @@ def semantic_check(ast_nodes: List, program_name: str) -> Dict[str, Any]:
 
     ir = {
         "program": program_name,
-        "compiler_version": "0.1.0",
-        "schema_version": "1",
+        "compiler_version": 0.1,
+        "schema_version": 1,
         "data": {
             "ports": ports
         },

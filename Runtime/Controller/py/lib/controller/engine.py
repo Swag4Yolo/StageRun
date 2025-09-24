@@ -18,37 +18,42 @@ logger = logging.getLogger("controller")
 
 async def upload_engine(
     zip_file: UploadFile = File(...),
+    engine_isa: UploadFile = File(...),
     tag: str = Form(...),
     version: str = Form(...),
     main_file_name: str = Form(...),
     comment: str = Form("")
 ):
-    # global engines_tracker
-
-    engine_key = f"{tag}_v{version}"
+    engine_key = f"{tag}.v{version}"
 
     logger.info(f"Received upload request for engine '{engine_key}'")
 
     if engine_key in sm.engines:
         logger.warning(f"Upload rejected: engine '{tag}' with version v{version} already exists")
         return {"status": "error", "msg": f"Engine '{tag}' with version v{version} already exists"}
-        # raise HTTPException(status_code=400, detail=f"Engine '{tag}' with version v{version} already exists")
 
     engine_zip_path = os.path.join(sm.ENGINES_DIR_PATH, f"{engine_key}.zip")
+    engine_isa_path = os.path.join(sm.ENGINES_DIR_PATH, f"{engine_key}_isa.json")
     build_path = os.path.join(sm.BUILD_DIR_PATH, f"{engine_key}/")
 
+    # Save zip file
     with open(engine_zip_path, "wb") as f:
         shutil.copyfileobj(zip_file.file, f)
 
+    # Save ISA file
+    with open(engine_isa_path, "wb") as f:
+        shutil.copyfileobj(engine_isa.file, f)
+
+    # Verify main_file_name inside zip
     with zipfile.ZipFile(engine_zip_path, "r") as zip_ref:
         if main_file_name not in zip_ref.namelist():
             logger.error(f"Main file '{main_file_name}' not found in {engine_zip_path}")
-            logger.info(f"Removing Zip File {engine_zip_path}")
+            logger.info(f"Removing files {engine_zip_path} and {engine_isa_path}")
+            os.remove(engine_isa_path)
             os.remove(engine_zip_path)
             return {"status": "error", "msg": f"{main_file_name} not found in zip"}
-            # raise HTTPException(status_code=400, detail=f"{main_file_name} not found in zip")
 
-
+    # Register engine in tracker
     sm.engines[engine_key] = {
         "tag": tag,
         "version": version,
@@ -56,15 +61,17 @@ async def upload_engine(
         "status": STATUS_UPLOADED,
         "comment": comment,
         "zip_file_path": engine_zip_path,
+        "isa_file_path": engine_isa_path,
         "build_path": build_path,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "recirc_ports": {}
     }
 
     sm.save_engines()
-
     logger.info(f"Engine '{engine_key}' uploaded successfully")
 
     return {"status": "ok", "msg": f"Engine '{engine_key}' uploaded successfully"}
+
 
 async def list_engines():
     if len(sm.engines) == 0:
@@ -109,7 +116,7 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     6. Update tracker with result
     """
 
-    engine_key = f"{tag}_v{version}"
+    engine_key = f"{tag}.v{version}"
 
     if engine_key not in sm.engines:
         return {"status": "error", "message": f"Engine '{tag}' with version {version} does not exist."}
@@ -127,18 +134,30 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     if not ok:
         return {"status": "error", "message": msg}
 
+    # Updated Recirc Ports to the engine 
+    recirc_ports = {}
+    # print("flag_list")
+    # print(flag_list)
+    for flag in flag_list:
+        if 'RECIR_P' in flag:
+            splits = flag.split('=')
+            recirc_ports[splits[0]] = f"{splits[1]}/-"
+
+    # print("Recirc Ports")
+    # print(recirc_ports)
+
     # Convert to "-D FLAG" form
     ppflags = " ".join([f"-D {flag}" for flag in flag_list])
 
-    print("ppflags")
-    print(ppflags)
+    # print("ppflags")
+    # print(ppflags)
 
     # --- Prepare build dir ---
-    build_path = os.path.join(sm.BUILD_DIR_PATH, f"{tag}_v{version}")
+    build_path = os.path.join(sm.BUILD_DIR_PATH, f"{tag}.v{version}")
     # os.makedirs(build_path, exist_ok=True)
 
     # --- Unzip engine ---
-    zip_path = os.path.join(sm.ENGINES_DIR_PATH, f"{tag}_v{version}.zip")
+    zip_path = os.path.join(sm.ENGINES_DIR_PATH, f"{tag}.v{version}.zip")
     if not os.path.exists(zip_path):
         return {"error": f"Engine zip file not found: {zip_path}"}
 
@@ -147,7 +166,7 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
 
     # --- Rename main P4 file ---
     src_main_path = os.path.join(build_path, main_file_name)
-    dst_main_path = os.path.join(build_path, f"{tag}_v{version}.p4")
+    dst_main_path = os.path.join(build_path, f"{tag}.v{version}.p4")
 
     if not os.path.exists(src_main_path):
         return {"error": f"Main P4 file '{main_file_name}' not found in zip"}
@@ -157,7 +176,7 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     # --- Compile ---
     log_path = os.path.join(build_path, "compile.log")
     #TODO: delete file? What 
-    # program_name = f"{tag}_v{version}"
+    # program_name = f"{tag}.v{version}"
 
 
     cmd = [
@@ -182,6 +201,7 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
             )
         if result.returncode == 0:
             sm.engines[engine_key]["status"] = STATUS_COMPILED
+            sm.engines[engine_key]["recirc_ports"] = recirc_ports
             sm.save_engines()
             return {"message": f"Engine '{tag}' compiled successfully", "status": "COMPILED"}
         else:
@@ -206,7 +226,7 @@ async def install_engine(tag: str, version: str):
             - Runs that Engine, initializing the run_switchd (loader)
     """
 
-    engine_key = f"{tag}_v{version}"
+    engine_key = f"{tag}.v{version}"
     if engine_key not in sm.engines:
         return {"status": "error", "message": f"Engine {engine_key} not found."}
 
@@ -308,7 +328,7 @@ async def uninstall_engine():
 
 
 async def remove_engine(tag: str, version: str):
-    engine_key = f"{tag}_v{version}"
+    engine_key = f"{tag}.v{version}"
     if engine_key not in sm.engines:
         return {"status": "error", "message": f"Engine {engine_key} not found."}
 

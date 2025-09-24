@@ -8,7 +8,7 @@ import re
 import shlex
 
 COMPILATION_LOGS_DIR_PATH = None
-VERSION_PATTERN = r'^\d+\_\d+$'
+VERSION_PATTERN = r'^\d+\.\d+$'
 
 class StageRunClient(cmd.Cmd):
     system_name = "StageRun"
@@ -51,11 +51,12 @@ class StageRunClient(cmd.Cmd):
         """
         Upload an engine to the controller.
 
-        Usage: upload_engine -z <zip_file> -t <tag> -v <version> -m <main_file_name> -c <COMMENT>
+        Usage: upload_engine -z <zip_file> -i <isa_file> -t <tag> -v <version> -m <main_file_name> -c <COMMENT>
         """
 
         parser = argparse.ArgumentParser(prog="upload_engine")
         parser.add_argument("-z", "--zip", dest="zip_file", help="Path to the engine zip file", required=True)
+        parser.add_argument("-i", "--isa", dest="isa_file", help="Path to the engine ISA JSON file", required=True)  # NEW
         parser.add_argument("-t", "--tag", dest="tag", help="Unique tag identifying the engine", required=True)
         parser.add_argument("-v", "--version", dest="version", help="Engine version string", default="0.1")
         parser.add_argument("-m", "--main_file_name", dest="main_file_name", help="Main P4 file name to check", required=True)
@@ -67,12 +68,18 @@ class StageRunClient(cmd.Cmd):
             if not os.path.exists(args.zip_file):
                 print(f"Error: File {args.zip_file} does not exist")
                 return
-            
-            if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+            if not os.path.exists(args.isa_file):
+                print(f"Error: File {args.isa_file} does not exist")
                 return
 
-            files = {"zip_file": open(args.zip_file, "rb")}
+            if not re.fullmatch(VERSION_PATTERN, args.version):
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
+                return
+
+            files = {
+                "zip_file": open(args.zip_file, "rb"),
+                "engine_isa": open(args.isa_file, "rb")  # NEW
+            }
             data = {
                 "tag": args.tag,
                 "version": args.version,
@@ -85,9 +92,9 @@ class StageRunClient(cmd.Cmd):
 
         except SystemExit:
             pass
-            
         except Exception:
             traceback.print_exc()
+
 
     def do_list_engines(self, line):
         """
@@ -125,7 +132,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(shlex.split(arg))
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
             # Send flags to server
@@ -174,7 +181,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(arg.split())
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
             response = requests.post(f"{self.base_url}/install_engine", params={"tag": args.tag, "version": args.version})
@@ -250,7 +257,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(arg.split())
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
             response = requests.delete(f"{self.base_url}/remove_engine", params={"tag": args.tag, "version": args.version})
@@ -300,7 +307,7 @@ class StageRunClient(cmd.Cmd):
                 return
             
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
             files = {"app_file": open(args.app_file, "rb"), "manifest_file":open(args.manifest_file, "rb")}
@@ -354,7 +361,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(arg.split())
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
             response = requests.delete(f"{self.base_url}/remove_app", params={"tag": args.tag, "version": args.version})
@@ -388,7 +395,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(arg.split())
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
             response = requests.get(f"{self.base_url}/install_app", params={"tag": args.tag, "version": args.version})
@@ -427,7 +434,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(arg.split())
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
             import time            
@@ -476,7 +483,7 @@ class StageRunClient(cmd.Cmd):
             args = parser.parse_args(arg.split())
 
             if not re.fullmatch(VERSION_PATTERN, args.version):
-                print(f"Error: Version must contain only digits such as '31_01' instead of '{args.version}'")
+                print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
             response = requests.get(f"{self.base_url}/uninstall_app", params={"tag": args.tag, "version": args.version})

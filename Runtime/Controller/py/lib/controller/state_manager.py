@@ -6,7 +6,8 @@ from lib.tofino.tofino_controller import TofinoController
 from lib.tofino.constants import *
 from lib.utils.status import *
 from lib.engine.engine_controller import EngineController
-from lib.utils.manifest_parser import parse_manifest
+# from lib.utils.manifest_parser import parse_manifest
+from lib.utils.utils import parse_json
 from time import sleep
 import re
 
@@ -34,10 +35,11 @@ running_engine = {}
 # Compiler
 p4_native_compiler_path = None
 STAGE_RUN_ROOT_PATH = None
+COMPILER_VERSION = None
 
 def init_engine_state(config):
     """Initialize engine module with config paths."""
-    global ENGINES_DIR_PATH, ENGINES_FILE_PATH, engines, BUILD_DIR_PATH, TOOLS_DIR_PATH, HW_FLAGS, p4_native_compiler_path, STAGE_RUN_ROOT_PATH, RUNNING_ENGINE_FILE_PATH, running_engine #\
+    global ENGINES_DIR_PATH, ENGINES_FILE_PATH, engines, BUILD_DIR_PATH, TOOLS_DIR_PATH, HW_FLAGS, p4_native_compiler_path, STAGE_RUN_ROOT_PATH, RUNNING_ENGINE_FILE_PATH, running_engine, COMPILER_VERSION #\
     # APPS_DIR_PATH, APPS_FILE_PATH, APP_RUNNING_FILE_PATH, APP_RUNNING_FILE_PATH, apps, running_app
 
     STAGE_RUN_ROOT_PATH = config["stagerun_root"]
@@ -53,6 +55,8 @@ def init_engine_state(config):
 
     TOOLS_DIR_PATH = config["compiler"]["tools_path"]
     HW_FLAGS = config["compiler"].get("hw_flags", "")
+    COMPILER_VERSION = config["compiler"]["version"]
+
 
     # Engines
     os.makedirs(ENGINES_DIR_PATH, exist_ok=True)
@@ -99,7 +103,13 @@ def save_running_engine():
     with open(RUNNING_ENGINE_FILE_PATH, "w+") as f:
         json.dump(running_engine, f, indent=2)
 
+def get_engine_ISA(engine_key):
+    global engines
+    return parse_json(engines[engine_key]['isa_file_path'])
 
+def get_engine_recirc_ports(engine_key):
+    global engines
+    return engines[engine_key]['recirc_ports']
 
 ###########################################################
 #                         App State                       #

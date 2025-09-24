@@ -15,7 +15,7 @@ cd ..
 
 echo "Compiling Programs"
 
-for file in "${PROGRAMS_DIR}"/*; do
+for file in "${PROGRAMS_DIR}"/**/*.srun; do
 
     # Verificamos se o item é um ficheiro (para evitar subpastas)
     if [ -f "$file" ]; then
@@ -23,11 +23,13 @@ for file in "${PROGRAMS_DIR}"/*; do
         full_name=$(basename -- "$file")
         filename="${full_name%.*}"
         extension="${full_name##*.}"
+        dir_path=$(dirname -- "$file")
 
         if [[ "$extension" == "srun" ]]; then 
             echo -e "\t Compiling Program => ${filename}"
-            python3 "${PROGRAM}" "${file}" -o "${PROGRAMS_DIR}/${filename}.out" #> "${PROGRAMS_DIR}/${filename}.log"
+            python3 "${PROGRAM}" "${file}" -o "${dir_path}/${filename}.out" #> "${PROGRAMS_DIR}/${filename}.log"
         fi
     fi
 done
 
+deactivate

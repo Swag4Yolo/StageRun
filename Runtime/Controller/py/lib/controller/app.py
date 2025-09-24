@@ -24,7 +24,7 @@ async def upload_app(
 ):
     """
         This function is responsible for receiving an application with a manifest file for configuring the switch.
-        - The app file format is .py
+        - The app file format is .out
         - The manifest file format is .yaml
     """
     app_key = f"{tag}_v{version}"
@@ -42,10 +42,10 @@ async def upload_app(
 
     ####### Processing App File
     _, ext = os.path.splitext(app_file.filename)
-    if not ext or ext != '.py': 
+    if not ext or ext != '.out': 
         return {"status": "error", "msg": f"The provided {app_file.filename} does not have a supported extension"}
     
-    app_path = os.path.join(app_dir_path, f"app.py")
+    app_path = os.path.join(app_dir_path, f"app.out")
 
     with open(app_path, "wb") as f:
         shutil.copyfileobj(app_file.file, f)
@@ -211,9 +211,89 @@ def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=
         logger.error(traceback.format_exc())
         return False, f"Failed to Install the Application. {repr(e)}"
 
+def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
+    try:
+        # 0. controller.config.compiler_version == app.compiler_version
+        app_compiler_version = compiled_app["compiler_version"]
+        if app_compiler_version != sm.COMPILER_VERSION:
+
+            return False, f"Application Compiled Version {app_compiler_version} not the supported compiler version for controller {sm.COMPILER_VERSION}"
+
+        # 1. engine ISA must support instr
+        engine_isa = sm.get_engine_ISA(engine_key)
+        for instr in compiled_app['instructions']:
+            opcode = instr["op"]
+            if opcode not in engine_isa['ISA']:
+                return False, f"Instruction f{opcode} is not supported by the running engine."
+
+        # 2. Validate Manifest structure
+        if not 'switch' in manifest or not 'ports' in manifest['switch']:
+            sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
+            sm.save_apps()
+            return {"status": "error", "message": f"Bad Manifest File. Missing 'switch' or 'ports' in switch"}
+
+        endpoints = manifest['program']['Endpoints']
+        for port_name in compiled_app['data']['ports']:
+            # 2.1 Validate Manifest has the necessary ports names for the apps
+            if port_name not in endpoints:
+                sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
+                sm.save_apps()
+                return False, f"Port '{port_name}' not presented in the manifest file of the application"
+            # 2.2 Validate that all endpoints are in the setup
+            if endpoints[port_name]['port'] not in manifest['switch']['ports']:
+                sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
+                sm.save_apps()
+                return False, f"Manifest Error: All Endpoints must be specified in the setup"
+            
+        # 3. engine recirc ports must be compatible with the current testbed
+        if sm.check_port_compatibility(manifest['switch']['ports'], sm.get_engine_recirc_ports(engine_key)) not in ['extend', 'compatible']:
+            return False, "Ports are incompatible with existing engine"
+
+        return True, ""
+    
+    except Exception as e:
+        print(traceback.format_exc())
+        return False, f"Failed to Validate the Compiled Application. {repr(e)}"
+
+
+def deploy_app(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
+
+    try:
+        sm.connect_tofino()
+
+        pkt_id = 1
+        ni_f1 = 1
+        ni_f2 = 0
+
+        for instr in compiled_app['instructions']:
+            opcode = instr['op']
+            if opcode == "FWD":
+                port_name = instr['args']['dest']
+                front_port = get_pnum_from_endpoints(manifest, port_name)
+                port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
+
+                sm.engine_controller.pre_filter_mechanism.set_pkt_id(program_id=program_id, pkt_id=pkt_id, ni_f1=ni_f1, ni_f2=ni_f2)
+
+                sm.engine_controller.generic_fwd.fwd(program_id=program_id, pkt_id=pkt_id, port=port)
+        
+                current_instr    = 1
+                next_instruct    = INSTRUCTION_FINISH
+                sm.engine_controller.f1.i1_p2.fwd_ni(program_id=program_id, ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, rts=1)
+
+        return True, ""
+    
+    except Exception as e:
+        print(traceback.format_exc())
+        return False, f"Failed to Deploy Application in the Engine. {repr(e)}"
+
 async def install_app(tag: str, version: str):
 
     app_key = f"{tag}_v{version}"
+    engine_key = sm.running_engine[sm.RUNNING_ENGINE]['engine_key']
+
+    if engine_key not in sm.engines:
+        return {"status": "error", "message": f"Please install an engine before installing an app"}
+
     if app_key not in sm.apps:
         return {"status": "error", "message": f"App {app_key} not found."}
 
@@ -229,45 +309,54 @@ async def install_app(tag: str, version: str):
     if sm.apps[app_key]["status"] == STATUS_BAD_APP:
         return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
 
-    app_file_path = sm.apps[app_key]["app_path"]
+    # app_file_path = sm.apps[app_key]["app_path"]
+    compiled_app_file_path = sm.apps[app_key]["app_path"]
     manifest_file_path = sm.apps[app_key]["manifest_path"]
    
+    compiled_app = parse_json(compiled_app_file_path)
     manifest = parse_manifest(manifest_file_path)
-    if not 'switch' in manifest or not 'ports' in manifest['switch']:
-        sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
-        sm.save_apps()
-        return {"status": "error", "message": f"Bad Manifest File. Missing 'switch' or 'ports' in switch"}
-    
 
-    engine_key = sm.running_engine[sm.RUNNING_ENGINE]['engine_key']
-    
-    if engine_key not in sm.engines:
-        return {"status": "error", "message": f"Please install an engine before installing an app"}
+    valid_app, msg = validate_compiled_app(compiled_app, manifest, app_key, engine_key)
+
+    if not valid_app:
+        return {"status": "error", "message": msg}
 
     program_id = sm.allocate_pid()
-    valid_app, message = validate_app(app_file_path, manifest, app_key, engine_key, program_id, True)
-    if not valid_app:
-        sm.apps[app_key]['status'] = STATUS_BAD_APP
+
+    isInstalled, message = deploy_app(compiled_app, manifest, app_key, engine_key, program_id, True)
+
+    if not isInstalled:
+        sm.apps[app_key]['status'] = STATUS_UNSUPPORTED
         sm.remove_program_id(app_key)
         sm.save_apps()
-        return {"status": "error", "message": f"App {app_key} is not valid. {message}"}
-    
+        return {"status": "error", "message": f"App {app_key} is not supported. {message}"}
+
     sm.set_pid(program_id, app_key)
     sm.apps[app_key]['status'] = STATUS_INSTALLED
     sm.save_apps()
 
-    # print(app_key)
-    # print(manifest['switch']['ports'])
-    # [{'49/-': {'speed': 100, 'loopback': False}}, {'50/-': {'speed': 100, 'loopback': False}}]
-    assign_program_to_category(app_key, manifest['switch']['ports'])
+    # Update App ports with the Engine recirc ports
+    ports = manifest['switch']['ports']
+    print("Engine Recirc Ports")
+    print("Engine Ports")
+    recirc_ports = sm.get_engine_recirc_ports(engine_key)
+    for r_port in recirc_ports:
+        pnum = recirc_ports[r_port]
+        ports[pnum] = {
+            "speed": 100,
+            "loopback": True
+        }
+    assign_program_to_category(app_key, ports)
     sm.save_port_sets()
 
+    sm.connect_tofino()
     sm.engine_controller._final_configs_(program_id)
 
     return {"status": "ok", "message": f"App {app_key} Installed successfully."}
 
     # TODO: assuming a unique StageRunEngine format for now
     # The Controller knows how to install all the instructions in all stages. It needs to know which instructions are available in each stage. If needs to know which instructions that runtime has and which instructions are available in each stage.
+
 
 async def run_app(tag: str, version: str):
     # [X] 1. If is 1st app to run then pre rules need to be installed

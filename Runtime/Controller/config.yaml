@@ -20,4 +20,7 @@ compiler:
   hw_flags: "-D FLOW_2 -D OPTIMIZE_TCAM -D HW"
   build_dir: data/builds/
   tools_path: /home/tofino/tools
+  version: 0.1
 
+controller:
+  version: 1.0

@@ -172,39 +172,7 @@ class EngineController():
         # self.pos_filter_mechansim._last_rules()
 
     def remove_program(self, pid):
-        # tables_to_remove = [self.pre_filter_mechanism, self.pos_filter_mechansim, 
-        #     self.f1.i1_p1,
-        #     self.f1.i1_p2,
-        #     self.f1.i1_speculative,
-        #     self.f1.i2_p2,
-        #     self.f1.i2_speculative,
-        #     self.f1.i3_p2,
-        #     self.f1.i3_speculative,
-        #     self.f1.i4_p2,
-        #     self.f1.i4_speculative,
-        #     self.f1.i5_p2,
-        #     self.f1.i5_speculative,
-        #     self.f1.i6_p2,
-        #     self.f1.i6_speculative,
-        #     self.f1.i7_p2,
-        #     self.f1.i7_speculative,
-        #     self.f2.i1_p1,
-        #     self.f2.i1_p2,
-        #     self.f2.i1_speculative,
-        #     self.f2.i2_p2,
-        #     self.f2.i2_speculative,
-        #     self.f2.i3_p2,
-        #     self.f2.i3_speculative,
-        #     self.f2.i4_p2,
-        #     self.f2.i4_speculative,
-        #     self.f2.i5_p2,
-        #     self.f2.i5_speculative,
-        #     self.f2.i6_p2,
-        #     self.f2.i6_speculative,
-        #     self.f2.i7_p2,
-        #     self.f2.i7_speculative
-        # ]
-
+        
         tables_to_remove_pid = [
             # Init Block
             self.random_mechanism,

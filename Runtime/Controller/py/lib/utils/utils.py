@@ -1,5 +1,6 @@
 import os
 import importlib.util
+import json
 
 def load_stagerun_program(filepath, class_name="SystemApp"):
     """
@@ -56,6 +57,11 @@ def calculate_packet_interval(speed, packet_size_in_bytes, unit='Gbps'):
     time_interval_nanoseconds = time_interval_seconds * 1e9  # Convert to nanoseconds
 
     return int(round(time_interval_nanoseconds))
+
+def parse_json(json_path:str) -> json:
+    with open(json_path) as f:
+        return json.load(f)
+
 
 # def calculate_pps_interval(pps):
 #     """

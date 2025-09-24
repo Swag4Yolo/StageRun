@@ -30,9 +30,13 @@ def parse_manifest(manifest_path: str):
     return yaml_data
 
 def get_endpoints(manifest):
-    raw_endpoints =  manifest['program']['Endpoints']
+    raw_endpoints = manifest['program']['Endpoints']
     endpoints = []
     for name,v in raw_endpoints.items():
         p_num = int(re.search('[0-9]+', v['port'])[0])
         endpoints.append(EndpointInfo(name, p_num))
     return endpoints
+
+def get_pnum_from_endpoints(manifest, port_name):
+    port_str = manifest['program']['Endpoints'][port_name]['port']
+    return int(re.search('[0-9]+', port_str)[0])
