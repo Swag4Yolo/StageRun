@@ -1,0 +1,37 @@
+import "constants.spine"
+
+Procedure TTLManager(CONST ROUTER_A_IP, ROUTER_B_IP):
+    input:  [pExternal]
+    output: [pout]
+
+    with p from pExternal:
+        when (p.ipv4.dst == ROUTER_A_IP) -> ():
+            body:
+                p.ipv4.ttl = p.ipv4.ttl + 1
+
+        when (p.ipv4.dst == ROUTER_B_IP) -> ():
+            body:
+                p.ipv4.ttl = p.ipv4.ttl - 1
+            
+
+Program NetHide:
+        PORT PFromExternal      (io: IN,  speed: 100)
+        PORT PToExternal        (io: OUT, speed: 100)
+        PORT PFromInternal      (io: IN,  speed: 100)
+        PORT PToInternal        (io: OUT, speed: 100)
+
+
+    # Resource Declaration
+        # EMPTY
+
+        CONST ROUTER_A_IP 10.10.1.0/24
+        CONST ROUTER_B_IP 10.10.2.0/24
+
+    # Procedure Instantiation
+        PROC ttl_mngr   = TTLManager(ROUTER_A_IP, ROUTER_B_IP)
+
+    # Programmatic Model
+        [PFromExternal]    -> [pin]ttl_mngr[pout]   -> [PToInternal]
+
+        #Allow all trafic from PFromInternal to PToExternal
+        [PFromInternal]    -> _ -> [PToExternal]

@@ -107,12 +107,17 @@ class StageRunClient(cmd.Cmd):
             if resp.status_code == 200:
                 engines = resp.json()
                 print("Engines on controller:")
-                for tag, versions in engines.items():
+                
+                # Ordena as tags em ordem alfabética
+                for tag in sorted(engines.keys()):
                     print(f"- {tag}:")
-                    for version, info in versions.items():
+                    versions = engines[tag]
+                    
+                    # Ordena as versões de cada tag
+                    for version in sorted(versions.keys()):
+                        info = versions[version]
                         status = info.get("status", "UNKNOWN")
                         print(f"    + version {version}: {status}")
-                        # print(f"    • version {version}: {status}")
             else:
                 print("Error:", resp.text)
         except Exception:

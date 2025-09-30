@@ -1,15 +1,16 @@
 import os
 import logging
 import json
+from time import sleep
+import re
 
+from lib.controller.types import App, Engine
 from lib.tofino.tofino_controller import TofinoController
 from lib.tofino.constants import *
 from lib.utils.status import *
 from lib.engine.engine_controller import EngineController
 # from lib.utils.manifest_parser import parse_manifest
 from lib.utils.utils import parse_json
-from time import sleep
-import re
 
 logger = logging.getLogger("controller")
 ###########################################################
@@ -105,11 +106,99 @@ def save_running_engine():
 
 def get_engine_ISA(engine_key):
     global engines
-    return parse_json(engines[engine_key]['isa_file_path'])
+    return parse_json(engines[engine_key]['isa_path'])
 
 def get_engine_recirc_ports(engine_key):
     global engines
     return engines[engine_key]['recirc_ports']
+
+def is_an_engine_running():
+    global running_engine
+    return running_engine[RUNNING_ENGINE]['engine_key'] != ""
+
+def get_running_engine_key():
+    global running_engine
+    return running_engine[RUNNING_ENGINE]['engine_key']
+
+def get_engine_key(tag:str, version:str):
+    return f"{tag}_v{version}"
+
+def exists_engine(engine_key):
+    global engines
+    return engine_key in engines
+
+def add_engine(engine: Engine):
+    global engines
+    engines[engine.engine_key] = {
+        "tag": engine.tag,
+        "version": engine.version,
+        "main_file_name": engine.main_file_name,
+        "status": engine.status,
+        "comment": engine.comment,
+        "zip_path": engine.zip_path,
+        "isa_path": engine.isa_path,
+        "build_path": engine.build_path,
+        "timestamp": engine.timestamp,
+        "recirc_ports": engine.recirc_ports
+    }
+    save_engines()
+
+def get_engine(engine_key) -> Engine:
+    global engines
+    return Engine.from_dict(engine_key, engines[engine_key])
+
+def get_engines():
+    global engines
+    lst_engines = []
+    for engine_key in engines:
+        lst_engines.append(Engine.from_dict(engine_key, engines[engine_key]))
+
+    return lst_engines
+
+def update_engine(engine: Engine):
+    engines[engine.engine_key] = {
+        "tag": engine.tag,
+        "version": engine.version,
+        "main_file_name": engine.main_file_name,
+        "status": engine.status,
+        "comment": engine.comment,
+        "zip_path": engine.zip_path,
+        "isa_path": engine.isa_path,
+        "build_path": engine.build_path,
+        "timestamp": engine.timestamp,
+        "recirc_ports": engine.recirc_ports
+    }
+    save_engines()
+
+def set_engine_status(engine_key, status):
+    global engines
+    engines[engine_key]["status"] = status
+    save_engines()
+
+def set_running_engine(engine_key, log_path):
+    global running_engine
+    running_engine[RUNNING_ENGINE] = {
+            "engine_key": engine_key,
+            "log": log_path,
+            "program_ids": {},
+            "free_pids": [],
+    }
+    save_running_engine()
+
+def reset_running_engine():
+    global running_engine
+    running_engine[RUNNING_ENGINE] = {
+            "engine_key": "",
+            "log": "",
+            "program_ids": {},
+            "free_pids": [],
+    }
+    save_running_engine()
+
+def delete_engine(engine_key):
+    global engines
+    engines.pop(engine_key, None)
+    save_engines()
 
 ###########################################################
 #                         App State                       #
@@ -431,3 +520,58 @@ def run_program(app_key):
 
         install_port_cat(new_cat)
         engine_controller.run_program(app_key, pid, new_ports)
+
+def get_app_key(tag, version):
+    return f"{tag}_v{version}"
+
+def add_app(app: App):
+    global apps
+
+    apps[app.app_key] = {
+        "tag": app.tag,
+        "version": app.version,
+        "status": app.status,
+        "comment": app.comment,
+        "timestamp": app.timestamp,
+        "app_dir_path": app.app_dir_path,
+        "app_path": app.app_path,
+        "manifest_path": app.manifest_path,
+        "port_set": app.port_set,
+    }
+    save_apps()
+
+def delete_app(app_key):
+    global apps
+    apps.pop(app_key, None)
+    save_apps()
+
+def exists_app(app_key):
+    global apps
+    return app_key in apps
+
+def get_apps():
+    global apps
+
+    lst_apps = []
+    for app_key in apps:
+        lst_apps.append(App.from_dict(app_key, apps[app_key]))
+    
+    return lst_apps
+
+def get_app(app_key) -> App:
+    global apps
+    return App.from_dict(app_key, apps[app_key])
+
+def set_app_status(app_key, status):
+    global apps
+    apps[app_key]["status"] = status
+    save_apps()
+
+def set_running_app(app_key):
+    global apps
+    set_app_status(app_key, STATUS_RUNNING)
+    for key in apps:
+        # Previous Running App is changed to STATUS_INSTALLED
+        if key != app_key and apps[key]['status'] == STATUS_RUNNING:
+            apps[key]['status']=STATUS_INSTALLED
+    save_apps()

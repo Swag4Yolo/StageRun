@@ -7,6 +7,7 @@ from pathlib import Path
 import traceback
 
 # Import StageRun libs
+from lib.controller.types import App
 import lib.controller.state_manager as sm
 from lib.utils.status import *
 from lib.utils.manifest_parser import *
@@ -27,11 +28,11 @@ async def upload_app(
         - The app file format is .out
         - The manifest file format is .yaml
     """
-    app_key = f"{tag}_v{version}"
+    app_key = sm.get_app_key(tag, version)
 
     logger.info(f"Received upload request for App '{app_key}'")
 
-    if app_key in sm.apps:
+    if sm.exists_app(app_key):
         logger.warning(f"Upload rejected: app '{app_key}' with version v{version} already exists")
         return {"status": "error", "msg": f"App '{app_key}' with version v{version} already exists"}
         # raise HTTPException(status_code=400, detail=f"App '{tag}' with version v{version} already exists")
@@ -60,17 +61,20 @@ async def upload_app(
     with open(manifest_path, "wb") as f:
         shutil.copyfileobj(manifest_file.file, f)
 
-    sm.apps[app_key] = {
-        "tag": tag,
-        "version": version,
-        "status": "UPLOADED",
-        "comment": comment,
-        "timestamp": datetime.now().isoformat(),
-        "app_dir_path": app_dir_path,
-        "app_path": app_path,
-        "manifest_path": manifest_path,
-        "port_set": "",
-    }
+    sm.add_app(
+        App(
+            app_key=app_key,
+            tag=tag,
+            version=version,
+            status=STATUS_UPLOADED,
+            comment=comment,
+            timestamp=datetime.now().isoformat(),
+            app_dir_path=app_dir_path,
+            app_path=app_path,
+            manifest_path=manifest_path,
+            port_set=""
+            )
+        )
 
     sm.save_apps()
 
@@ -84,27 +88,28 @@ async def list_apps():
 
     # Build dict grouped by tag → version → status
     grouped = {}
-    for _, info in sm.apps.items():
-        tag = info["tag"]
-        version = info["version"]
-        status = info.get("status", STATUS_UNKNOWN)
+    for app in sm.get_apps():
+        tag = app.tag
+        version = app.version
+        status = app.status
         if tag not in grouped:
             grouped[tag] = {}
         grouped[tag][version] = {"status": status}
-
     return grouped
 
 async def remove_app(tag: str, version: str):
 
-    app_key = f"{tag}_v{version}"
+    app_key = sm.get_app_key(tag, version)
 
-    if app_key not in sm.apps:
+    if not sm.exists_app(app_key):
         return {"status": "error", "message": f"Engine {app_key} not found."}
 
-    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
+    app = sm.get_app(app_key)
+
+    if app.status == STATUS_INSTALLED:
         return {"status": "error", "message": "Cannot remove an installed app."}
     
-    if sm.apps[app_key]["status"] == STATUS_RUNNING:
+    if app.status == STATUS_RUNNING:
         return {"status": "error", "message": "Cannot remove a running app."}
 
     # Delete files
@@ -113,8 +118,7 @@ async def remove_app(tag: str, version: str):
     shutil.rmtree(sm.apps[app_key]["app_dir_path"], ignore_errors=True)
 
     # Remove from tracker
-    sm.apps.pop(app_key, None)
-    sm.save_apps()
+    sm.delete_app(app_key)
 
     return {"status": "ok", "message": f"App {app_key} removed."}
 
@@ -163,7 +167,7 @@ def assign_program_to_category(app_key: str, new_ports: dict):
     return new_cat, "new"
 
 
-def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=True):
+# def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=True):
 
     try:
         endpoints = get_endpoints(manifest) #EndpointsInfo
@@ -228,21 +232,18 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
 
         # 2. Validate Manifest structure
         if not 'switch' in manifest or not 'ports' in manifest['switch']:
-            sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
-            sm.save_apps()
+            sm.set_app_status(app_key, STATUS_BAD_MANIFEST)
             return {"status": "error", "message": f"Bad Manifest File. Missing 'switch' or 'ports' in switch"}
 
         endpoints = manifest['program']['Endpoints']
         for port_name in compiled_app['data']['ports']:
             # 2.1 Validate Manifest has the necessary ports names for the apps
             if port_name not in endpoints:
-                sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
-                sm.save_apps()
+                sm.set_app_status(app_key, STATUS_BAD_MANIFEST)
                 return False, f"Port '{port_name}' not presented in the manifest file of the application"
             # 2.2 Validate that all endpoints are in the setup
             if endpoints[port_name]['port'] not in manifest['switch']['ports']:
-                sm.apps[app_key]['status'] = STATUS_BAD_MANIFEST
-                sm.save_apps()
+                sm.set_app_status(app_key, STATUS_BAD_MANIFEST)
                 return False, f"Manifest Error: All Endpoints must be specified in the setup"
             
         # 3. engine recirc ports must be compatible with the current testbed
@@ -288,30 +289,33 @@ def deploy_app(compiled_app, manifest, app_key, engine_key, program_id, target_h
 
 async def install_app(tag: str, version: str):
 
-    app_key = f"{tag}_v{version}"
-    engine_key = sm.running_engine[sm.RUNNING_ENGINE]['engine_key']
+    app_key = sm.get_app_key(tag, version)
 
-    if engine_key not in sm.engines:
+    if not sm.is_an_engine_running():
         return {"status": "error", "message": f"Please install an engine before installing an app"}
 
-    if app_key not in sm.apps:
+    engine_key = sm.get_running_engine_key()
+
+    if not sm.exists_app(app_key):
         return {"status": "error", "message": f"App {app_key} not found."}
 
-    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
+    app = sm.get_app(app_key)
+
+    if app.status == STATUS_INSTALLED:
         return {"status": "error", "message": f"App {app_key} already installed."}
     
-    if sm.apps[app_key]["status"] == STATUS_RUNNING:
+    if app.status == STATUS_RUNNING:
         return {"status": "error", "message": f"App {app_key} is already installed and running."}
 
-    if sm.apps[app_key]["status"] == STATUS_BAD_MANIFEST:
+    if app.status == STATUS_BAD_MANIFEST:
         return {"status": "error", "message": f"App {app_key} has a bad manifest format. You need to remove, re-upload, and install again with the correct format."}
     
-    if sm.apps[app_key]["status"] == STATUS_BAD_APP:
+    if app.status == STATUS_BAD_APP:
         return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
 
     # app_file_path = sm.apps[app_key]["app_path"]
-    compiled_app_file_path = sm.apps[app_key]["app_path"]
-    manifest_file_path = sm.apps[app_key]["manifest_path"]
+    compiled_app_file_path = app.app_path
+    manifest_file_path = app.manifest_path
    
     compiled_app = parse_json(compiled_app_file_path)
     manifest = parse_manifest(manifest_file_path)
@@ -332,13 +336,10 @@ async def install_app(tag: str, version: str):
         return {"status": "error", "message": f"App {app_key} is not supported. {message}"}
 
     sm.set_pid(program_id, app_key)
-    sm.apps[app_key]['status'] = STATUS_INSTALLED
-    sm.save_apps()
+    sm.set_app_status(app_key, STATUS_INSTALLED)
 
     # Update App ports with the Engine recirc ports
     ports = manifest['switch']['ports']
-    print("Engine Recirc Ports")
-    print("Engine Ports")
     recirc_ports = sm.get_engine_recirc_ports(engine_key)
     for r_port in recirc_ports:
         pnum = recirc_ports[r_port]
@@ -366,32 +367,31 @@ async def run_app(tag: str, version: str):
     # []          2.1.1 Change ports
     # []      2.2 Check Port
 
-    app_key = f"{tag}_v{version}"
+    app_key = sm.get_app_key(tag, version)
 
-    if app_key not in sm.apps:
-        return {"status": "error", "message": f"Engine {app_key} not found."}
+    if not sm.is_an_engine_running():
+        return {"status": "error", "message": f"Please install an engine before installing an app"}
+
+    if not sm.exists_app(app_key):
+        return {"status": "error", "message": f"App {app_key} not found."}
     
-    if sm.apps[app_key]["status"] == STATUS_UPLOADED:
+    app = sm.get_app(app_key)
+
+    if app.status == STATUS_UPLOADED:
         return {"status": "error", "message": f"App {app_key} was uploaded and not installed."}
 
-    if sm.apps[app_key]["status"] == STATUS_RUNNING:
+    if app.status == STATUS_RUNNING:
         return {"status": "error", "message": f"App {app_key} is running. A running app cannot be uninstalled. Please change the running app."}
 
-    if sm.apps[app_key]["status"] == STATUS_BAD_MANIFEST:
+    if app.status == STATUS_BAD_MANIFEST:
         return {"status": "error", "message": f"App {app_key} has a bad manifest format. You need to remove, re-upload, and install again with the correct format."}
     
-    if sm.apps[app_key]["status"] == STATUS_BAD_APP:
+    if app.status == STATUS_BAD_APP:
         return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
     
-    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
+    if app.status == STATUS_INSTALLED:
         sm.run_program(app_key)
-        sm.apps[app_key]['status'] = STATUS_RUNNING
-        for key in sm.apps:
-            # Previous Running App is changed to STATUS_INSTALLED
-            if key != app_key and sm.apps[key]['status'] == STATUS_RUNNING:
-                sm.apps[key]['status']=STATUS_INSTALLED
-        sm.save_apps()
-
+        sm.set_running_app(app_key)
         return {"status": "ok", "message": f"App {app_key} running"}
 
     else:
@@ -402,24 +402,26 @@ async def uninstall_app(tag: str, version: str):
     # 0. If the app is running, cannot uninstall
     # 1. free program_id
     # 2. Delete all table entries with that program_id
-    app_key = f"{tag}_v{version}"
+    app_key = sm.get_app_key(tag, version)
 
-    if app_key not in sm.apps:
+    if not sm.exists_app(app_key):
         return {"status": "error", "message": f"Engine {app_key} not found."}
 
-    if sm.apps[app_key]["status"] == STATUS_UPLOADED:
+    app = sm.get_app(app_key)
+
+    if app.status == STATUS_UPLOADED:
         return {"status": "error", "message": f"App {app_key} was uploaded and not installed."}
 
-    if sm.apps[app_key]["status"] == STATUS_RUNNING:
+    if app.status == STATUS_RUNNING:
         return {"status": "error", "message": f"App {app_key} is running. A running app cannot be uninstalled. Please change the running app."}
 
-    if sm.apps[app_key]["status"] == STATUS_BAD_MANIFEST:
+    if app.status == STATUS_BAD_MANIFEST:
         return {"status": "error", "message": f"App {app_key} has a bad manifest format. You need to remove, re-upload, and install again with the correct format."}
     
-    if sm.apps[app_key]["status"] == STATUS_BAD_APP:
+    if app.status == STATUS_BAD_APP:
         return {"status": "error", "message": f"App {app_key} has a bad app format. You need to remove, re-upload, and install again with the correct format."}
     
-    if sm.apps[app_key]["status"] == STATUS_INSTALLED:
+    if app.status == STATUS_INSTALLED:
         sm.remove_program_id(app_key)
 
         return {"status": "ok", "message": f"App {app_key} has been uninstalled successfully."}

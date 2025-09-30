@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 
 # Custom imports
+from lib.controller.types import Engine
 from lib.utils.status import *
 import lib.controller.state_manager as sm
 
@@ -24,11 +25,11 @@ async def upload_engine(
     main_file_name: str = Form(...),
     comment: str = Form("")
 ):
-    engine_key = f"{tag}.v{version}"
+    engine_key = sm.get_engine_key(tag, version)
 
     logger.info(f"Received upload request for engine '{engine_key}'")
 
-    if engine_key in sm.engines:
+    if sm.exists_engine(engine_key):
         logger.warning(f"Upload rejected: engine '{tag}' with version v{version} already exists")
         return {"status": "error", "msg": f"Engine '{tag}' with version v{version} already exists"}
 
@@ -53,21 +54,21 @@ async def upload_engine(
             os.remove(engine_zip_path)
             return {"status": "error", "msg": f"{main_file_name} not found in zip"}
 
-    # Register engine in tracker
-    sm.engines[engine_key] = {
-        "tag": tag,
-        "version": version,
-        "main_file_name": main_file_name,
-        "status": STATUS_UPLOADED,
-        "comment": comment,
-        "zip_file_path": engine_zip_path,
-        "isa_file_path": engine_isa_path,
-        "build_path": build_path,
-        "timestamp": datetime.now().isoformat(),
-        "recirc_ports": {}
-    }
+    sm.add_engine(
+        Engine(
+            engine_key=engine_key,
+            tag=tag,
+            version=version,
+            main_file_name=main_file_name,
+            status=STATUS_UPLOADED,
+            comment=comment,
+            zip_path=engine_zip_path,
+            isa_path=engine_isa_path,
+            build_path=build_path,
+            timestamp=datetime.now().isoformat(),
+            recirc_ports={})
+        )
 
-    sm.save_engines()
     logger.info(f"Engine '{engine_key}' uploaded successfully")
 
     return {"status": "ok", "msg": f"Engine '{engine_key}' uploaded successfully"}
@@ -79,10 +80,11 @@ async def list_engines():
 
     # Build dict grouped by tag → version → status
     grouped = {}
-    for _, info in sm.engines.items():
-        tag = info["tag"]
-        version = info["version"]
-        status = info.get("status", STATUS_UNKNOWN)
+    engines = sm.get_engines()
+    for engine in engines:
+        tag = engine.tag
+        version = engine.version
+        status = engine.status
         if tag not in grouped:
             grouped[tag] = {}
         grouped[tag][version] = {"status": status}
@@ -116,17 +118,22 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     6. Update tracker with result
     """
 
-    engine_key = f"{tag}.v{version}"
+    engine_key = sm.get_engine_key(tag, version)
 
-    if engine_key not in sm.engines:
+    if not sm.exists_engine(engine_key):
         return {"status": "error", "message": f"Engine '{tag}' with version {version} does not exist."}
 
-    engine_info = sm.engines[engine_key]
-    version = engine_info["version"]
-    main_file_name = engine_info["main_file_name"]
+    engine = sm.get_engine(engine_key)
 
-    if engine_info.get("status") == STATUS_COMPILED:
+    if engine.status == STATUS_COMPILED:
         return {"message": f"Engine '{tag}' already compiled", "status": STATUS_SKIPPED}
+    
+    # engine_info = sm.engines[engine_key]
+    # version = engine_info["version"]
+    # main_file_name = engine_info["main_file_name"]
+
+    # if engine_info.get("status") == STATUS_COMPILED:
+    #     return {"message": f"Engine '{tag}' already compiled", "status": STATUS_SKIPPED}
 
     # --- Parse flags ---
     flag_list = flags.split() if flags else []
@@ -153,11 +160,11 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     # print(ppflags)
 
     # --- Prepare build dir ---
-    build_path = os.path.join(sm.BUILD_DIR_PATH, f"{tag}.v{version}")
+    build_path = os.path.join(sm.BUILD_DIR_PATH, f"{engine_key}")
     # os.makedirs(build_path, exist_ok=True)
 
     # --- Unzip engine ---
-    zip_path = os.path.join(sm.ENGINES_DIR_PATH, f"{tag}.v{version}.zip")
+    zip_path = os.path.join(sm.ENGINES_DIR_PATH, f"{engine_key}.zip")
     if not os.path.exists(zip_path):
         return {"error": f"Engine zip file not found: {zip_path}"}
 
@@ -165,11 +172,11 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
         zip_ref.extractall(build_path)
 
     # --- Rename main P4 file ---
-    src_main_path = os.path.join(build_path, main_file_name)
-    dst_main_path = os.path.join(build_path, f"{tag}.v{version}.p4")
+    src_main_path = os.path.join(build_path, engine.main_file_name)
+    dst_main_path = os.path.join(build_path, f"{engine_key}.p4")
 
     if not os.path.exists(src_main_path):
-        return {"error": f"Main P4 file '{main_file_name}' not found in zip"}
+        return {"error": f"Main P4 file '{engine.main_file_name}' not found in zip"}
 
     shutil.move(src_main_path, dst_main_path)
 
@@ -200,18 +207,23 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
                 check=False
             )
         if result.returncode == 0:
-            sm.engines[engine_key]["status"] = STATUS_COMPILED
-            sm.engines[engine_key]["recirc_ports"] = recirc_ports
-            sm.save_engines()
-            return {"message": f"Engine '{tag}' compiled successfully", "status": "COMPILED"}
+            engine.status = STATUS_COMPILED
+            engine.recirc_ports = recirc_ports
+            sm.update_engine(engine)
+            # sm.engines[engine_key]["status"] = STATUS_COMPILED
+            # sm.engines[engine_key]["recirc_ports"] = recirc_ports
+            # sm.save_engines()
+            return {"message": f"Engine '{tag}' version {version} compiled successfully", "status": "COMPILED"}
         else:
-            sm.engines[engine_key]["status"] = STATUS_COMPILE_ERROR
-            sm.save_engines()
+            engine.status = STATUS_COMPILE_ERROR
+            sm.update_engine(engine)
+            # sm.engines[engine_key]["status"] = STATUS_COMPILE_ERROR
+            # sm.save_engines()
 
             with open(log_path, 'r') as f:
                 log_content = f.read()
             return {
-                "error": f"Compilation failed for engine '{tag}'",
+                "error": f"Compilation failed for engine '{tag}' version {version}",
                 "status": STATUS_COMPILE_ERROR,
                 "log_path": log_path,
                 "log": log_content,
@@ -226,16 +238,19 @@ async def install_engine(tag: str, version: str):
             - Runs that Engine, initializing the run_switchd (loader)
     """
 
-    engine_key = f"{tag}.v{version}"
-    if engine_key not in sm.engines:
+    engine_key = sm.get_engine_key(tag, version)
+    if not sm.exists_engine(engine_key):
         return {"status": "error", "message": f"Engine {engine_key} not found."}
 
-    if sm.engines[engine_key]["status"] != STATUS_COMPILED:
+    engine = sm.get_engine(engine_key)
+
+    if engine.status != STATUS_COMPILED:
         return {"status": "error", "message": f"Engine {engine_key} is not compiled."}
 
     # Ensure no other engine is installed
-    if sm.RUNNING_ENGINE in sm.engines and not sm.engines[sm.RUNNING_ENGINE]["engine_key"] == "":
-        return {"status": "error", "message": f"Another engine ({sm.engines[sm.RUNNING_ENGINE]}) is already installed."}
+    # if sm.RUNNING_ENGINE in sm.engines and not sm.engines[sm.RUNNING_ENGINE]["engine_key"] == "":
+    if sm.is_an_engine_running():
+        return {"status": "error", "message": f"Another engine ({sm.get_running_engine_key()}) is already installed."}
 
 
     # Run switchd
@@ -272,18 +287,8 @@ async def install_engine(tag: str, version: str):
     if "WARNING: Authorised Access Only" in log_content:
     # if proc.returncode == 0:
         # Update tracker
-        sm.running_engine[sm.RUNNING_ENGINE] = {
-            "engine_key": engine_key,
-            "log": log_path,
-            "program_ids": {},
-            "free_pids": [],
-        }
-        # engines[RUNNING_ENGINE]["engine_key"] = engine_key
-        # engines[RUNNING_ENGINE]["pid"] = proc.pid
-        # engines[RUNNING_ENGINE]["log"] = log_path
-        sm.engines[engine_key]["status"] = STATUS_INSTALLED
-        sm.save_engines()
-        sm.save_running_engine()
+        sm.set_running_engine(engine_key, log_path)
+        sm.set_engine_status(engine_key, STATUS_INSTALLED)
 
         # Connect to Tofino and Init Configurations
         sm.connect_tofino()
@@ -300,26 +305,15 @@ async def install_engine(tag: str, version: str):
                 }
 
 async def uninstall_engine():
-    if sm.running_engine[sm.RUNNING_ENGINE]["engine_key"] == "":
+    if sm.get_running_engine_key == "":
         return {"status": "error", "message": f"There it not an Engine Installed."}
 
-    engine_key = sm.running_engine[sm.RUNNING_ENGINE]["engine_key"]
-    # pid = running_engine[RUNNING_ENGINE].get("pid")
-    # if pid:
-    #     try:
-    #         os.kill(pid, signal.SIGKILL)
-    #     except ProcessLookupError:
-    #         return {"status": "warning", "message": f"Process {pid} not found."}
+    engine_key = sm.get_running_engine_key()
 
     subprocess.run(["tmux", "kill-session", "-t", sm.RUNNING_SESSION_NAME])
     
-    sm.engines[engine_key]["status"] = STATUS_COMPILED
-    sm.running_engine[sm.RUNNING_ENGINE]["engine_key"] = ""
-    sm.running_engine[sm.RUNNING_ENGINE]["log"] = ""
-    sm.running_engine[sm.RUNNING_ENGINE]["program_ids"] = {}
-
-    sm.save_engines()
-    sm.save_running_engine()
+    sm.set_engine_status(engine_key, STATUS_COMPILED)
+    sm.reset_running_engine()
 
     sm.clear_apps()
     sm.clear_port_sets()
@@ -328,11 +322,13 @@ async def uninstall_engine():
 
 
 async def remove_engine(tag: str, version: str):
-    engine_key = f"{tag}.v{version}"
-    if engine_key not in sm.engines:
+    engine_key = sm.get_engine_key(tag, version)
+    if not sm.exists_engine(engine_key):
         return {"status": "error", "message": f"Engine {engine_key} not found."}
 
-    if sm.engines[engine_key]["status"] == STATUS_INSTALLED:
+    engine = sm.get_engine(engine_key)
+
+    if engine.status == STATUS_INSTALLED:
         return {"status": "error", "message": "Cannot remove an installed engine."}
 
     # Delete files
@@ -343,8 +339,7 @@ async def remove_engine(tag: str, version: str):
     shutil.rmtree(build_path, ignore_errors=True)
 
     # Remove from tracker
-    sm.engines.pop(engine_key, None)
-    sm.save_engines()
+    sm.delete_engine(engine_key)
 
     return {"status": "ok", "message": f"Engine {engine_key} removed."}
 

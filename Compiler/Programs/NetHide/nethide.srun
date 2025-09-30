@@ -1,0 +1,5 @@
+PORT ExternalPort
+PORT InternalPort
+
+FETCH IPV4_TTL
+SUM IPV4_TTL, 1
