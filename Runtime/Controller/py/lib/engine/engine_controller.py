@@ -26,7 +26,6 @@ class EngineFlow():
         self.runtime = bfrt_runtime
         # self.flow_number = flow_number
 
-
         #Instructions
         self.i1_p1 = P1Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
         self.i1_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
@@ -64,7 +63,7 @@ class EngineController():
     def __init__(self, bfrt_runtime:bfrt_runtime):
         self.runtime = bfrt_runtime
         self.location = "SwitchIngress"
-        
+
         #Flows
         self.f1 = EngineFlow(self.runtime, 1)
         self.f2 = EngineFlow(self.runtime, 2)
@@ -96,6 +95,13 @@ class EngineController():
         # Port Metadata Mechanism Manager
         # Currently responsible for program_id, hash_constant
         # self.program_id_mechanism = PortMetadataMechanismManager(self.runtime, self.write_phase_mechanism, self.port_metadata_mechanism)
+
+          
+        # Generic Tables
+        self.p1_table   = P1Table(self.runtime, "") 
+        self.p2_table   = P2Table(self.runtime, "")
+        self.spec_table = Speculative(self.runtime, "")
+
 
     def _init_configs_(self):
         PaddingInitModes(self.runtime, self.location)

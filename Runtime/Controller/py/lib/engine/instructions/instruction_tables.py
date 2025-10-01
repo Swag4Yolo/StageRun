@@ -17,6 +17,9 @@ class P1Table(BaseTable):
         self.runtime = runtime
         self.table_name = f"{location}.multi_instruction_p1_t"
     
+    def _set_location_(self, location):
+        self.table_name = f"{location}.multi_instruction_p1_t"
+
     def conditional_v1_v2(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cond_mode=DISABLED, cond_val=DISABLED, cond_mode_2=DISABLED, cond_val_2=DISABLED):
         keys = P1TableKeys(program_id, ni, pkt_id)
         action = BaseAction("conditional_v1_v2", cond_mode, cond_val, cond_mode_2, cond_val_2)
@@ -140,6 +143,9 @@ class P2Table(BaseTable):
         self.runtime = runtime
         self.table_name = f"{location}.multi_instruction_p2_t"
     
+    def _set_location_(self, location):
+        self.table_name = f"{location}.multi_instruction_p2_t"
+
     def initialize_pad_ni(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cm=[DISABLED, DISABLED], cval=[DISABLED, DISABLED], cm_2 = [DISABLED, DISABLED], cval_2 = [DISABLED, DISABLED], 
                           instr_id=INSTRUCTION_FINISH, mode=DISABLED, value=DISABLED, num_bytes=DISABLED):
         keys = P2TableKeys(program_id, ni, pkt_id, cm, cval, cm_2, cval_2)
@@ -226,6 +232,9 @@ class Speculative(BaseTable):
 
     def __init__(self, runtime, location):
         self.runtime = runtime
+        self.table_name = f"{location}.speculative_t"
+    
+    def _set_location_(self, location):
         self.table_name = f"{location}.speculative_t"
     
     def speculative_conditional_v1_v2(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cm=[DISABLED, DISABLED], cval=[DISABLED, DISABLED], cm_2 = [DISABLED, DISABLED], cval_2 = [DISABLED, DISABLED],

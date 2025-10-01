@@ -8,6 +8,7 @@ import traceback
 
 # Import StageRun libs
 from lib.controller.types import App
+from lib.controller.constants import *
 import lib.controller.state_manager as sm
 from lib.utils.status import *
 from lib.utils.manifest_parser import *
@@ -40,7 +41,7 @@ async def upload_app(
 
     app_dir_path = os.path.join(sm.APPS_DIR_PATH, f"{app_key}/")
     os.makedirs(app_dir_path, exist_ok=True)
-
+ 
     ####### Processing App File
     _, ext = os.path.splitext(app_file.filename)
     if not ext or ext != '.out': 
@@ -257,6 +258,102 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
         return False, f"Failed to Validate the Compiled Application. {repr(e)}"
 
 
+def translate_instr_to_micro(instr, manifest, pid):
+	if instr['op'] == FWD:
+		front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
+		dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
+		return [{"instr": "fwd_ni", "kwargs":{"port": dev_port, "program_id": pid}}]
+
+def translate_program_to_micro_instrs(list_instructions, manifest, pid):
+	micro_program = []
+	for instr in list_instructions:
+		micro_program.extend(translate_instr_to_micro(instr, manifest, pid))
+	return micro_program
+
+def check_instruction_in_stage(pipeline, micro_instr, stage):
+    stages_tables = pipeline[stage]
+
+    for table in stages_tables:
+        print("Table")
+        print(table)
+        if micro_instr['instr'] in stages_tables[table]:
+            return table
+    return None
+
+	
+def install_micro_instr(micro_instr, current_stage):
+    pipeline = sm.get_engine_ISA(sm.get_running_engine_key())['pipeline']
+    
+    last_stage = current_stage
+    current_stage_num = int(current_stage[1:])
+
+    for stage_num in range(current_stage_num, 10):
+        
+        stage = f"s{stage_num}"
+        instruction_num = stage_num - 1
+        flow_number = 1
+
+        table = check_instruction_in_stage(pipeline, micro_instr, stage)
+        
+        print("Table detected")
+        print(table)
+        print("stage_number")
+        print(stage_num)
+        print("instruction_num")
+        print(instruction_num)
+
+        if table:
+            table_to_install_rule = None
+            if table in P1_TABLE:
+                table_to_install_rule = sm.engine_controller.p1_table
+            elif table in P2_TABLE:
+                table_to_install_rule = sm.engine_controller.p2_table
+            elif table in SPEC_TABLE:
+                table_to_install_rule = sm.engine_controller.spec_table
+
+            # I want to run
+            if table_to_install_rule:
+
+                table_to_install_rule._set_location_(f"SwitchIngress.f{flow_number}_i{instruction_num}")
+                
+                # call method by name
+                func = getattr(table_to_install_rule, micro_instr["instr"], None)
+                if func is None:
+                    raise RuntimeError(f"Instrução {micro_instr['instr']} não existe no objeto {table_to_install_rule}")
+                
+                args = micro_instr.get("args", [])
+                kwargs = micro_instr.get("kwargs", {})
+
+
+                # Execute with the arguments
+                func(*args, **kwargs)
+                return stage
+    
+        last_stage = stage
+
+    return last_stage
+	
+def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
+
+    try:
+        sm.connect_tofino()
+
+        micro_program = translate_program_to_micro_instrs(compiled_app['instructions'], manifest, program_id)
+
+        print("micro_program")
+        print(micro_program)
+        stage = "s2"
+        for micro_instr in micro_program:
+            stage = install_micro_instr(micro_instr, stage)
+        
+        sm.engine_controller.write_phase_mechanism.set_write_phases(program_id=program_id, write_s10=1)
+
+        return True, ""
+    
+    except Exception as e:
+        print(traceback.format_exc())
+        return False, f"Failed to Deploy Application in the Engine. {repr(e)}"
+
 def deploy_app(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
 
     try:
@@ -327,12 +424,14 @@ async def install_app(tag: str, version: str):
 
     program_id = sm.allocate_pid()
 
-    isInstalled, message = deploy_app(compiled_app, manifest, app_key, engine_key, program_id, True)
+    isInstalled, message = deploy_program(compiled_app, manifest, app_key, engine_key, program_id, True)
 
+    # TODO: test the set_app_status not working
     if not isInstalled:
-        sm.apps[app_key]['status'] = STATUS_UNSUPPORTED
+        sm.set_app_status(app_key, STATUS_UNSUPPORTED)
+        # sm.apps[app_key]['status'] = STATUS_UNSUPPORTED
         sm.remove_program_id(app_key)
-        sm.save_apps()
+        # sm.save_apps()
         return {"status": "error", "message": f"App {app_key} is not supported. {message}"}
 
     sm.set_pid(program_id, app_key)
