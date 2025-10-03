@@ -1,2 +1,1 @@
-[Tree(Token('RULE', 'statement'), [PortDecl(name='ExternalPort', lineno=2)]), Tree(Token('RULE', 'statement'), [ForwardInstr(dest='ExternalPort', lineno=3)])]
-Compiled Programs/1.srun -> Programs/1.out
+Compiled Programs/1/1.srun -> Programs/1/1.out

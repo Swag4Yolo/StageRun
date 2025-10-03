@@ -1,0 +1,33 @@
+{
+  "program": "2",
+  "compiler_version": 0.1,
+  "schema_version": 1,
+  "data": {
+    "ports": [
+      "ExternalPort"
+    ]
+  },
+  "instructions": [
+    {
+      "id": 1,
+      "op": "HINC",
+      "args": {
+        "target": "IPV4.TTL",
+        "value": 1
+      },
+      "meta": {
+        "lineno": 3
+      }
+    },
+    {
+      "id": 2,
+      "op": "FWD",
+      "args": {
+        "dest": "ExternalPort"
+      },
+      "meta": {
+        "lineno": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+Initializing compiler_env Environment
+Requirement already satisfied: lark in ./compiler_env/lib/python3.10/site-packages (from -r requirements.txt (line 1)) (1.2.2)
+Compiling Programs
+	 Compiling Program => 1
+	 Compiling Program => 2
+	 Compiling Program => nethide

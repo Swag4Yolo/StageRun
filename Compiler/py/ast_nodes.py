@@ -10,3 +10,10 @@ class PortDecl:
 class ForwardInstr:
     dest: str
     lineno: int
+
+@dataclass
+class HeaderIncrementInstruction:
+    target: str      # p.ex. "IPV4.TTL"
+    value: int       # positivo ou negativo
+    lineno: int
+

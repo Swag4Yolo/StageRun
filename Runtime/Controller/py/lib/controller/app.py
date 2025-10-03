@@ -229,7 +229,7 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
         for instr in compiled_app['instructions']:
             opcode = instr["op"]
             if opcode not in engine_isa['ISA']:
-                return False, f"Instruction f{opcode} is not supported by the running engine."
+                return False, f"Instruction {opcode} is not supported by the running engine."
 
         # 2. Validate Manifest structure
         if not 'switch' in manifest or not 'ports' in manifest['switch']:
@@ -259,10 +259,16 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
 
 
 def translate_instr_to_micro(instr, manifest, pid):
-	if instr['op'] == FWD:
-		front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
-		dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
-		return [{"instr": "fwd_ni", "kwargs":{"port": dev_port, "program_id": pid}}]
+    if instr['op'] == FWD:
+        front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
+        dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
+        return [{"instr": "fwd_ni", "kwargs":{"port": dev_port, "program_id": pid}}]
+    elif instr['op'] == HINC:
+        # sum_ni(ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, header_update=1, header_id=HEADER_IPV4_TTL, const_val=1)
+        if instr['args']['target'] == "IPV4.TTL":
+            return [{"instr": "fetch_ipv4_ttl", "kwargs":{}}, {"instr": "sum_ni", "kwargs":{"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}}]
+    
+
 
 def translate_program_to_micro_instrs(list_instructions, manifest, pid):
 	micro_program = []
@@ -327,11 +333,9 @@ def install_micro_instr(micro_instr, current_stage):
 
                 # Execute with the arguments
                 func(*args, **kwargs)
-                return stage
-    
-        last_stage = stage
+                return f"s{stage_num+1}"
 
-    return last_stage
+    return None
 	
 def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
 
@@ -345,6 +349,8 @@ def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, targ
         stage = "s2"
         for micro_instr in micro_program:
             stage = install_micro_instr(micro_instr, stage)
+            if not stage:
+                return False, f"Failed to allocate a stage sequence for the application."
         
         sm.engine_controller.write_phase_mechanism.set_write_phases(program_id=program_id, write_s10=1)
 
