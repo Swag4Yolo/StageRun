@@ -2,7 +2,7 @@ PORT ExternalPort
 PORT InternalPort
 
 PREFILTER toRouterA
-  KEY IG_PORT == ExternalPort
+  KEY PKT.PORT == ExternalPort
   KEY IPV4.DST == "10.10.1.0/24"
   DEFAULT FWD InternalPort
   BODY
@@ -11,7 +11,7 @@ PREFILTER toRouterA
 END
 
 PREFILTER toRouterB
-  KEY IG_PORT == ExternalPort
+  KEY PKT.PORT == ExternalPort
   KEY IPV4.DST == "10.10.2.0/24"
   DEFAULT FWD InternalPort
   BODY
@@ -20,6 +20,6 @@ PREFILTER toRouterB
 END
 
 PREFILTER FromInternal
-  KEY IG_PORT == InternalPort
+  KEY PKT.PORT == InternalPort
   DEFAULT FWD ExternalPort
 END

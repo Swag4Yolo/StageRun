@@ -7,16 +7,6 @@
       "ExternalPort"
     ]
   },
-  "instructions": [
-    {
-      "id": 1,
-      "op": "FWD",
-      "args": {
-        "dest": "ExternalPort"
-      },
-      "meta": {
-        "lineno": 3
-      }
-    }
-  ]
+  "instructions": [],
+  "prefilters": []
 }

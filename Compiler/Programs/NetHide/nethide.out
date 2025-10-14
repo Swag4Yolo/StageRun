@@ -1,0 +1,12 @@
+{
+  "program": "nethide",
+  "compiler_version": 0.2,
+  "schema_version": 1,
+  "data": {
+    "ports": [
+      "ExternalPort",
+      "InternalPort"
+    ]
+  },
+  "prefilters": []
+}

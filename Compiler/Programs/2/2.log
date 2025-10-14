@@ -1,1 +1,4 @@
-Compiled Programs/2/2.srun -> Programs/2/2.out
+Syntax error at line 3, column 1:
+   HINC IPV4.TTL 1
+^
+

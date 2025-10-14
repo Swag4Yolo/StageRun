@@ -21,7 +21,7 @@
         },
         {
           "name": "keyword.control.stagerun",
-          "match": "\\b(MAIN|BODY|PORT)\\b"
+          "match": "(?<!\\.)\\b(MAIN|BODY)\\b|(?<!\\.)\\b(PORT)\\b" 
         }
       ]
     },
