@@ -1,0 +1,33 @@
+{
+  "name": "stagerun-syntax",
+  "displayName": "StageRun Language Support",
+  "description": "Syntax highlighting for StageRun assembly-like programs",
+  "version": "0.0.1",
+  "publisher": "swag4yolo",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": ["Programming Languages"],
+  "extensionKind": ["ui", "workspace"],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:stagerun"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "stagerun",
+        "aliases": ["StageRun", "stagerun"],
+        "extensions": [".srun"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "stagerun",
+        "scopeName": "source.stagerun",
+        "path": "./syntaxes/stagerun.tmLanguage.json"
+      }
+    ]
+  }
+}
