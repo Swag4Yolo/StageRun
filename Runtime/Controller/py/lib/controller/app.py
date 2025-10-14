@@ -266,7 +266,8 @@ def translate_instr_to_micro(instr, manifest, pid):
     elif instr['op'] == HINC:
         # sum_ni(ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, header_update=1, header_id=HEADER_IPV4_TTL, const_val=1)
         if instr['args']['target'] == "IPV4.TTL":
-            return [{"instr": "fetch_ipv4_ttl", "kwargs":{}}, {"instr": "sum_ni", "kwargs":{"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}}]
+            return [{"instr": "fetch_ipv4_ttl", "kwargs":{}}, 
+                    {"instr": "sum_ni", "kwargs":{"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}}]
     
 
 

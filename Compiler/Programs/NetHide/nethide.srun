@@ -1,5 +1,25 @@
 PORT ExternalPort
 PORT InternalPort
 
-FETCH IPV4_TTL
-SUM IPV4_TTL, 1
+PREFILTER toRouterA
+  KEY IG_PORT == ExternalPort
+  KEY IPV4.DST == "10.10.1.0/24"
+  DEFAULT FWD InternalPort
+  BODY
+    HINC IPV4.TTL 1
+  END
+END
+
+PREFILTER toRouterB
+  KEY IG_PORT == ExternalPort
+  KEY IPV4.DST == "10.10.2.0/24"
+  DEFAULT FWD InternalPort
+  BODY
+    HINC IPV4.TTL -1
+  END
+END
+
+PREFILTER FromInternal
+  KEY IG_PORT == InternalPort
+  DEFAULT FWD ExternalPort
+END
