@@ -1,167 +1,106 @@
 # src/stagerun_compiler/parser.py
-from lark import Lark, Transformer, v_args
-from ast_nodes import (
-    PortDecl,
-    ForwardInstr,
-    HeaderIncrementInstruction,
-    KeyCondition,
-    PreFilter,
-)
+from pathlib import Path
+from lark import Lark, Transformer
+from lark.visitors import v_args
+import sys
 
-GRAMMAR = r"""
-start: statement*
-statement: port_decl | prefilter
+# Importa as dataclasses (agora sem o ast_utils.Ast inheritance)
+from ast_nodes import * # Mantenha a importação, mas remova o '_Ast' e o ast_utils do ast_nodes.py
 
-port_decl: "PORT" NAME                         -> port_decl
+GRAMMAR_PATH = "py/grammar/stagerun_grammar.lark"
 
-prefilter: "PREFILTER" NAME prefilter_body "END"   -> prefilter
-prefilter_body: (key_clause | default_clause | body_clause)*
 
-key_clause: "KEY" header_operand "==" value        -> key_clause
-default_clause: "DEFAULT" default_action           -> default_clause
-body_clause: "BODY" instr_list "END"               -> body_clause
-
-instr_list: instr*                                -> instr_list
-
-default_action: "FWD" NAME                         -> default_fwd
-              | "DROP"                            -> default_drop
-
-instr: fwd_instr
-     | hinc_instr
-
-fwd_instr: "FWD" NAME                               -> fwd_instr
-hinc_instr: "HINC" header_operand SIGNED_NUMBER     -> hinc_instr
-
-header_operand: NAME "." NAME                       -> header_operand
-value: ESCAPED_STRING | NAME                        -> value
-
-NAME: /[A-Za-z_][A-Za-z0-9_]*/
-%import common.ESCAPED_STRING
-%import common.SIGNED_NUMBER
-%import common.WS_INLINE
-%ignore WS_INLINE
-%ignore /#[^\n]*/   // comments
-%ignore /[\r\n]+/   // newlines
-"""
-
-# -----------------------------------------------------------------------------
-# Transformer: produce AST nodes only (no intermediary dicts/Tree leaking)
-# -----------------------------------------------------------------------------
-@v_args(meta=True)
-class SRTransformer(Transformer):
-    def start(self, meta, children):
-        # children: list of PortDecl | PreFilter
-        return children
-
-    def statement(self, meta, children):
-        return children[0]
-
-    # ----------------- Port -----------------
-    def port_decl(self, meta, children):
-        # children[0] is a Token NAME
-        return PortDecl(name=str(children[0].value), lineno=meta.line)
-
-    # ----------------- Prefilter -----------------
-    def prefilter(self, meta, children):
-        # children[0] is NAME token
-        name = str(children[0].value)
-        clauses = children[1:] if len(children) > 1 else []
-
-        keys = []
-        default = None
-        body = []
-
-        default_seen = False
-
-        for c in clauses:
-            # key_clause returns KeyCondition
-            if isinstance(c, KeyCondition):
-                keys.append(c)
-            # default_clause returns either ForwardInstr or the string "DROP"
-            elif isinstance(c, ForwardInstr) or (isinstance(c, str) and c == "DROP"):
-                if default_seen:
-                    # multiple DEFAULT clauses => syntax error
-                    raise SyntaxError(f"Multiple DEFAULT clauses in PREFILTER '{name}' (line {meta.line})")
-                default_seen = True
-                default = c
-            # body_clause returns list of instr (may be empty)
-            elif isinstance(c, list):
-                body = c
-            else:
-                # Shouldn't happen — defensive
-                raise SyntaxError(f"Unexpected clause in PREFILTER '{name}' at line {meta.line}: {type(c)}")
-
-        # ensure lists are present (possibly empty)
-        keys = list(keys)
-        body = list(body)
-
-        return PreFilter(name=name, keys=keys, default=default, body=body, lineno=meta.line)
-
-    def key_clause(self, meta, children):
-        # children: [header_operand (str "NAME.FIELD"), value (str)]
-        field = children[0]        # str "NAME.FIELD"
-        value = children[1]        # str (no quotes if was string)
-        return KeyCondition(field=field, op="==", value=value, lineno=meta.line)
-
-    def default_clause(self, meta, children):
-        # children[0] is default_action result (ForwardInstr or "DROP")
-        node = children[0]
-        # set correct lineno on node if ForwardInstr
-        if isinstance(node, ForwardInstr):
-            node.lineno = meta.line
-        return node
-
-    def body_clause(self, meta, children):
-        # children[0] is instr_list -> a list of AST instrs
-        return children[0]
-
-    def instr_list(self, meta, children):
-        # children is a list of instr nodes (possibly empty)
-        return children
-
-    def default_fwd(self, meta, children):
-        # children[0] is NAME token
-        return ForwardInstr(dest=str(children[0].value), lineno=meta.line)
-
-    def default_drop(self, meta, children):
-        return "DROP"
-
-    # ----------------- Instructions -----------------
-    def fwd_instr(self, meta, children):
-        return ForwardInstr(dest=str(children[0].value), lineno=meta.line)
-
-    def hinc_instr(self, meta, children):
-        target = children[0]   # header_operand -> str like "IPV4.TTL"
-        value = int(children[1])
-        return HeaderIncrementInstruction(target=target, value=value, lineno=meta.line)
-
-    # ----------------- Operands / values -----------------
-    def header_operand(self, meta, children):
-        # children are tokens NAME and NAME
-        left = str(children[0].value)
-        right = str(children[1].value)
-        return f"{left}.{right}"
-
-    def value(self, meta, children):
-        token = children[0]
-        # ESCAPED_STRING tokens have quotes in .value -> strip them
-        val = str(token.value)
-        if val.startswith('"') and val.endswith('"'):
-            return val[1:-1]
+# Usamos v_args(inline=True) para que o Lark nos envie os argumentos por posição.
+@v_args(inline=True)
+class StageRunTransformer(Transformer):
+    """
+    Constrói a AST StageRun (dataclasses) a partir do Lark Tree,
+    sem depender do ast_utils.create_transformer.
+    """
+    
+    # --- Métodos de Limpeza/Tokens ---
+    
+    def value(self, item): 
+        # item é o Token ('NAME' ou 'STRING').
+        val = item.value
+        if item.type == 'STRING':
+            return val[1:-1] # Remove as aspas
         return val
 
-# -----------------------------------------------------------------------------
-parser = Lark(GRAMMAR, parser="lalr", propagate_positions=True)
-transformer = SRTransformer()
+    def SIGNED_NUMBER(self, item):
+        return int(item.value)
+    
+    def key_name(self, name1, name2):
+        # name1 e name2 são Tokens, o '.' é ignorado
+        return f"{name1.value}.{name2.value}"
+
+    def header_operand(self, name1, name2):
+        return f"{name1.value}.{name2.value}"
+
+    # --- Métodos de Construção da AST (Correspondência de Regra) ---
+    
+    def start(self, *statements):
+        # A regra 'start' (statement+) retorna a lista final de nós AST
+        return list(statements)
+
+    def port_declr(self, name): # Mantenha o nome da regra (port_declr)
+        return PortDecl(name=name.value) 
+
+    # Regras de Instrução
+    def fwd_instr(self, dest):
+        return ForwardInstr(dest=dest.value)
+
+    def drop_instr(self): # Não recebe argumentos além de self
+        return DropInstr()
+        
+    def hinc_instr(self, target, value):
+        # Target e Value já foram limpos pelos métodos key_name/SIGNED_NUMBER
+        return HeaderIncrementInstruction(target=target, value=value)
+
+    # Regras de Cláusula
+    def key_clause(self, key_name, value): # A regra Lark tem 'KEY' key_name '==' value
+        # O "KEY" e o "==" são ignorados.
+        return KeyClause(field=key_name, value=value)
+
+    def default_instr(self, action): # Regra que apenas encaminha para FWD/DROP
+        return action # Retorna o nó FwdInstr ou DropInstr
+
+    def default_clause(self, action): # A regra Lark é 'DEFAULT' default_instr
+        return DefaultClause(action=action)
+
+    # Correção do problema de iterabilidade e agrupamento
+    def body_clause(self, *statements):
+        # A tupla *statements contém 0 ou mais nós de instrução. list() é sempre uma lista.
+        return BodyClause(statements=list(statements)) 
+
+    # Regra de Agrupamento Intermédio
+    def prefilter_body(self, *items):
+        # Agrupa a lista de cláusulas em chaves, default, body
+        keys = [item for item in items if isinstance(item, KeyClause)]
+        default = next((item for item in items if isinstance(item, DefaultClause)), None)
+        body = next((item for item in items if isinstance(item, BodyClause)), None)
+        
+        # Devolve um dicionário temporário que a regra 'prefilter' irá consumir.
+        return {'keys': keys, 'default': default, 'body': body}
+
+    # Regra Final
+    def prefilter(self, name, body_data):
+        # name é o Token (NAME)
+        return PreFilter(
+            name=name.value,
+            keys=body_data['keys'],
+            default=body_data['default'],
+            body=body_data['body']
+        )
+
+
+# ------------------------------
+# Parser
+# ------------------------------
+
+parser = Lark.open(str(GRAMMAR_PATH), parser="lalr", propagate_positions=True)
 
 def parse_program(text: str):
-    """
-    Parse StageRun source text into a list of AST nodes:
-      - PortDecl
-      - PreFilter
-
-    Each PreFilter keys/default/body are AST nodes (no dicts/Tree leftovers).
-    """
     tree = parser.parse(text)
-    return transformer.transform(tree)
-
+    # Apenas o seu transformer é usado.
+    return StageRunTransformer().transform(tree)

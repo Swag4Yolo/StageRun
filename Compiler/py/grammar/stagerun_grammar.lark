@@ -1,0 +1,44 @@
+// stagerun_grammar.lark
+
+start: statement+
+
+?statement: port_declr
+          | prefilter
+
+// port_declr: Os items são "PORT" e NAME
+port_declr: "PORT" NAME
+
+prefilter: "PREFILTER" NAME prefilter_body "END"
+
+// prefilter_body: O Lark agrupará numa lista. O ast_utils.create_transformer
+// tentará mapear esta lista para os campos de PreFilter.
+prefilter_body: (key_clause | default_clause | body_clause)*
+
+key_clause: "KEY" key_name "==" value
+default_clause: "DEFAULT" default_instr
+body_clause: "BODY" instr* "END" 
+
+?default_instr: fwd_instr
+              | drop_instr
+
+
+?instr: fwd_instr
+      | hinc_instr
+      | drop_instr
+
+
+fwd_instr: "FWD" NAME
+hinc_instr: "HINC" header_operand SIGNED_NUMBER
+drop_instr: "DROP"
+
+key_name:  NAME "." NAME
+header_operand: NAME "." NAME
+value: NAME | STRING
+
+NAME: /[A-Za-z_][A-Za-z0-9_]*/
+STRING: /"[^"]*"/
+%import common.SIGNED_NUMBER
+%import common.WS
+%ignore WS
+%ignore /#[^\n]*/
+%ignore /[\r\n]+/

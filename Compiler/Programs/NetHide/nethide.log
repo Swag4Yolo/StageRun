@@ -1,3 +1,7 @@
-Internal parse error: Error trying to process rule "prefilter":
-
-Unexpected clause in PREFILTER 'toRouterA' at line 4: <class 'lark.tree.Tree'>
+ast_nodes:
+[PortDecl(name='ExternalPort'), PortDecl(name='InternalPort'), PreFilter(name='toRouterA', keys=[KeyClause(field='PKT.PORT', value='ExternalPort'), KeyClause(field='IPV4.DST', value='10.10.1.0/24')], default=DefaultClause(action=ForwardInstr(dest='InternalPort')), body=BodyClause(statements=[HeaderIncrementInstruction(target='IPV4.TTL', value=1)])), PreFilter(name='toRouterB', keys=[KeyClause(field='PKT.PORT', value='ExternalPort'), KeyClause(field='IPV4.DST', value='10.10.2.0/24')], default=DefaultClause(action=ForwardInstr(dest='InternalPort')), body=BodyClause(statements=[HeaderIncrementInstruction(target='IPV4.TTL', value=-1)])), PreFilter(name='FromInternal', keys=[KeyClause(field='PKT.PORT', value='InternalPort')], default=DefaultClause(action=ForwardInstr(dest='ExternalPort')), body=None)]
+node.body.statements
+[HeaderIncrementInstruction(target='IPV4.TTL', value=1)]
+node.body.statements
+[HeaderIncrementInstruction(target='IPV4.TTL', value=-1)]
+Compiled Programs/NetHide/nethide.srun -> Programs/NetHide/nethide.out
