@@ -15,8 +15,6 @@ def semantic_check(ast_nodes: List[_Ast], program_name: str) -> Dict[str, Any]:
     instr_id = 1
     prefilters: List[Dict[str, Any]] = []
 
-    print("ast_nodes:")
-    print(ast_nodes)
 
     # 1. Collect ports
     for node in ast_nodes:
@@ -47,8 +45,6 @@ def semantic_check(ast_nodes: List[_Ast], program_name: str) -> Dict[str, Any]:
 
             body_instructions: List[Dict[str, Any]] = []
             if node.body:
-                print ("node.body.statements")
-                print (node.body.statements)
                 for instr in node.body.statements:
 
                     if isinstance(instr, ForwardInstr):

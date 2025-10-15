@@ -343,6 +343,7 @@ def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, targ
     try:
         sm.connect_tofino()
 
+        #1. Expand Phase
         micro_program = translate_program_to_micro_instrs(compiled_app['instructions'], manifest, program_id)
 
         print("micro_program")
