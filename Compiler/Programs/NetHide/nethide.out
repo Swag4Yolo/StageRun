@@ -4,8 +4,8 @@
   "schema_version": 1,
   "data": {
     "ports": [
-      "ExternalPort",
-      "InternalPort"
+      "InternalPort",
+      "ExternalPort"
     ]
   },
   "prefilters": [
@@ -14,7 +14,7 @@
       "keys": [
         {
           "field": "PKT.PORT",
-          "value": "InternalPort"
+          "value": "ExternalPort"
         },
         {
           "field": "IPV4.DST",
@@ -24,7 +24,7 @@
       "default": {
         "op": "FWD",
         "args": {
-          "dest": "ExternalPort"
+          "dest": "InternalPort"
         }
       },
       "body": [
@@ -43,7 +43,7 @@
       "keys": [
         {
           "field": "PKT.PORT",
-          "value": "InternalPort"
+          "value": "ExternalPort"
         },
         {
           "field": "IPV4.DST",
@@ -53,7 +53,7 @@
       "default": {
         "op": "FWD",
         "args": {
-          "dest": "ExternalPort"
+          "dest": "InternalPort"
         }
       },
       "body": [
@@ -72,13 +72,13 @@
       "keys": [
         {
           "field": "PKT.PORT",
-          "value": "ExternalPort"
+          "value": "InternalPort"
         }
       ],
       "default": {
         "op": "FWD",
         "args": {
-          "dest": "InternalPort"
+          "dest": "ExternalPort"
         }
       },
       "body": []

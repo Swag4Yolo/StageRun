@@ -343,14 +343,18 @@ class Installer:
         func(**kwargs)
 
     @staticmethod
-    def install_default_action(prefilter: PreFilter):
+    def install_default_action(prefilter: PreFilter, pkt_id):
         """
         Installs the default action for the prefilter (drop, fwd, fwd_and_enqueue).
         """
         default = prefilter.default_action
+
+        print("Inside Install_default_action")
+        print(default)
         if (default):
             instr = default.instr_name
             kwargs = default.kwargs
+            kwargs['pkt_id'] = pkt_id
 
             if instr not in ["drop", "fwd", "fwd_and_enqueue"]:
                 raise RuntimeError(f"Default action '{instr}' not recognized.")
@@ -391,11 +395,14 @@ class Installer:
             cf_id = cfg.initial_cf_id_f1
             cf_id_2 = cfg.initial_cf_id_f2
 
+            print("PrefilterName:")
+            print(cfg_name)
+
             # 1. Keys
             self.install_prefilter_key(prefilter, cf_id, cf_id_2, pkt_id)
 
             # 2. Default Action
-            self.install_default_action(prefilter)
+            self.install_default_action(prefilter, pkt_id)
 
             # 3. Body
             for node in cfg.nodes:

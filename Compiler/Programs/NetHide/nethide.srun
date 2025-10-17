@@ -1,25 +1,25 @@
-PORT ExternalPort
 PORT InternalPort
+PORT ExternalPort
 
 PREFILTER toRouterA
-  KEY PKT.PORT == InternalPort
+  KEY PKT.PORT == ExternalPort
   KEY IPV4.DST == "10.10.1.0/24"
-  DEFAULT FWD ExternalPort
+  DEFAULT FWD InternalPort
   BODY
     HINC IPV4.TTL 1
   END
 END
 
 PREFILTER toRouterB
-  KEY PKT.PORT == InternalPort
+  KEY PKT.PORT == ExternalPort
   KEY IPV4.DST == "10.10.2.0/24"
-  DEFAULT FWD ExternalPort
+  DEFAULT FWD InternalPort
   BODY
     HINC IPV4.TTL -1
   END
 END
 
 PREFILTER FromInternal
-  KEY PKT.PORT == ExternalPort
-  DEFAULT FWD InternalPort
+  KEY PKT.PORT == InternalPort
+  DEFAULT FWD ExternalPort
 END

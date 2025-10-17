@@ -52,7 +52,7 @@ class MicroInstructionParser():
             if field == "PKT.PORT":
                 port = get_pnum_from_endpoints(manifest, value)
                 dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(port, 0)
-                args["ig_port"] = [dev_port, dev_port]
+                args["ig_port"] = [dev_port, MASK_PORT]
 
             elif field == "IPV4.DST":
                 ip_cidr = value  # e.g. "10.10.1.0/24"
@@ -141,10 +141,10 @@ class MicroInstructionParser():
             #     }
             # }]
 
-            return DefaultAction(instr_name=instr, kwargs=kwargs)
-
         else:
             raise ValueError(f"Unknown default action: {op}")
+        
+        return DefaultAction(instr_name=instr, kwargs=kwargs)
 
     @staticmethod
     def translate_instr_to_micro(instr, manifest, pid) -> List[MicroInstruction]:
@@ -180,6 +180,10 @@ class MicroInstructionParser():
             name = prefilter['name']
             keys = self.translate_keys_to_micro(prefilter, manifest, pid)
             action = self.translate_default_action_to_micro(prefilter, manifest, pid)
+
+            print("To_micro ACTION:")
+            print(action.instr_name)
+            print(action.kwargs)
             body = self.translate_body_to_micro(prefilter, manifest, pid)
 
             pf = PreFilter(name, keys, action, body)
