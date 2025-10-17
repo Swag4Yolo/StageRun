@@ -14,6 +14,7 @@ from lib.utils.status import *
 from lib.utils.manifest_parser import *
 from lib.utils.utils import *
 from lib.tofino.tofino_controller import *
+from lib.controller.deployer.deployer import deploy_program
 
 logger = logging.getLogger("controller")
 
@@ -168,54 +169,6 @@ def assign_program_to_category(app_key: str, new_ports: dict):
     return new_cat, "new"
 
 
-# def validate_app(app_path, manifest, app_key, engine_key, program_id, target_hw=True):
-
-    try:
-        endpoints = get_endpoints(manifest) #EndpointsInfo
-
-        # Program path is the compiled program
-        # Program Name is the class name 
-        SystemApp = load_stagerun_program(app_path)
-
-        sm.connect_tofino()
-        # for switch in switches:
-        sys_app = SystemApp(sm.tofino_controller.runtime)
-
-        # Map endpoint name to port
-        name_to_port = {e.name: e.port for e in endpoints}
-
-        # Get install method parameters
-        param_names = list(inspect.signature(sys_app.install).parameters)
-
-        # Check if all required names exist in endpoints (except possibly the last one if it's target_hw)
-        if len(param_names) < 2:
-            return False, "The application does not have the necessary arguments in the SystemApp method. Missing one of the target_hw or program_id arguments."
-        if not param_names[-2] == 'target_hw' or not param_names[-1] == 'program_id':
-            return False, "The application does not have the necessary arguments in the SystemApp method. Missing one of the target_hw or program_id arguments."
-
-        expected_endpoint_names = param_names[:-2] 
-
-        # Ensure we have all required endpoint ports
-        if all(name in name_to_port for name in expected_endpoint_names):
-            # Build the argument list
-            args = [name_to_port[name] for name in expected_endpoint_names]
-
-            # If 'target_hw' is expected, add it
-            if param_names and param_names[-2] == 'target_hw' and param_names[-1] == 'program_id':
-                args.append(target_hw)
-                args.append(program_id)
-
-                sys_app.install(*args)
-                return True, ""
-        else:
-            missing = [name for name in expected_endpoint_names if name not in name_to_port]
-            return False, f"Missing endpoint(s) for: {missing}"
-        
-    except Exception as e:
-        print(traceback.format_exc())
-        logger.error(traceback.format_exc())
-        return False, f"Failed to Install the Application. {repr(e)}"
-
 def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
     try:
         # 0. controller.config.compiler_version == app.compiler_version
@@ -226,10 +179,12 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
 
         # 1. engine ISA must support instr
         engine_isa = sm.get_engine_ISA(engine_key)
-        for instr in compiled_app['instructions']:
-            opcode = instr["op"]
-            if opcode not in engine_isa['ISA']:
-                return False, f"Instruction {opcode} is not supported by the running engine."
+        # TODO: do POSFILTERS
+        for prefilter in compiled_app['prefilters']:
+            for instr in prefilter['body']:
+                opcode = instr["op"]
+                if opcode not in engine_isa['ISA']:
+                    return False, f"Instruction {opcode} is not supported by the running engine."
 
         # 2. Validate Manifest structure
         if not 'switch' in manifest or not 'ports' in manifest['switch']:
@@ -258,139 +213,6 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
         return False, f"Failed to Validate the Compiled Application. {repr(e)}"
 
 
-def translate_instr_to_micro(instr, manifest, pid):
-    if instr['op'] == FWD:
-        front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
-        dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
-        return [{"instr": "fwd_ni", "kwargs":{"port": dev_port, "program_id": pid}}]
-    elif instr['op'] == HINC:
-        # sum_ni(ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, header_update=1, header_id=HEADER_IPV4_TTL, const_val=1)
-        if instr['args']['target'] == "IPV4.TTL":
-            return [{"instr": "fetch_ipv4_ttl", "kwargs":{}}, 
-                    {"instr": "sum_ni", "kwargs":{"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}}]
-    
-
-
-def translate_program_to_micro_instrs(list_instructions, manifest, pid):
-	micro_program = []
-	for instr in list_instructions:
-		micro_program.extend(translate_instr_to_micro(instr, manifest, pid))
-	return micro_program
-
-def check_instruction_in_stage(pipeline, micro_instr, stage):
-    stages_tables = pipeline[stage]
-
-    for table in stages_tables:
-        print("Table")
-        print(table)
-        if micro_instr['instr'] in stages_tables[table]:
-            return table
-    return None
-
-	
-def install_micro_instr(micro_instr, current_stage):
-    pipeline = sm.get_engine_ISA(sm.get_running_engine_key())['pipeline']
-    
-    last_stage = current_stage
-    current_stage_num = int(current_stage[1:])
-
-    for stage_num in range(current_stage_num, 10):
-        
-        stage = f"s{stage_num}"
-        instruction_num = stage_num - 1
-        flow_number = 1
-
-        table = check_instruction_in_stage(pipeline, micro_instr, stage)
-        
-        print("Table detected")
-        print(table)
-        print("stage_number")
-        print(stage_num)
-        print("instruction_num")
-        print(instruction_num)
-
-        if table:
-            table_to_install_rule = None
-            if table in P1_TABLE:
-                table_to_install_rule = sm.engine_controller.p1_table
-            elif table in P2_TABLE:
-                table_to_install_rule = sm.engine_controller.p2_table
-            elif table in SPEC_TABLE:
-                table_to_install_rule = sm.engine_controller.spec_table
-
-            # I want to run
-            if table_to_install_rule:
-
-                table_to_install_rule._set_location_(f"SwitchIngress.f{flow_number}_i{instruction_num}")
-                
-                # call method by name
-                func = getattr(table_to_install_rule, micro_instr["instr"], None)
-                if func is None:
-                    raise RuntimeError(f"Instrução {micro_instr['instr']} não existe no objeto {table_to_install_rule}")
-                
-                args = micro_instr.get("args", [])
-                kwargs = micro_instr.get("kwargs", {})
-
-
-                # Execute with the arguments
-                func(*args, **kwargs)
-                return f"s{stage_num+1}"
-
-    return None
-	
-def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
-
-    try:
-        sm.connect_tofino()
-
-        #1. Expand Phase
-        micro_program = translate_program_to_micro_instrs(compiled_app['instructions'], manifest, program_id)
-
-        print("micro_program")
-        print(micro_program)
-        stage = "s2"
-        for micro_instr in micro_program:
-            stage = install_micro_instr(micro_instr, stage)
-            if not stage:
-                return False, f"Failed to allocate a stage sequence for the application."
-        
-        sm.engine_controller.write_phase_mechanism.set_write_phases(program_id=program_id, write_s10=1)
-
-        return True, ""
-    
-    except Exception as e:
-        print(traceback.format_exc())
-        return False, f"Failed to Deploy Application in the Engine. {repr(e)}"
-
-def deploy_app(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
-
-    try:
-        sm.connect_tofino()
-
-        pkt_id = 1
-        ni_f1 = 1
-        ni_f2 = 0
-
-        for instr in compiled_app['instructions']:
-            opcode = instr['op']
-            if opcode == "FWD":
-                port_name = instr['args']['dest']
-                front_port = get_pnum_from_endpoints(manifest, port_name)
-                port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
-
-                sm.engine_controller.pre_filter_mechanism.set_pkt_id(program_id=program_id, pkt_id=pkt_id, ni_f1=ni_f1, ni_f2=ni_f2)
-
-                sm.engine_controller.generic_fwd.fwd(program_id=program_id, pkt_id=pkt_id, port=port)
-        
-                current_instr    = 1
-                next_instruct    = INSTRUCTION_FINISH
-                sm.engine_controller.f1.i1_p2.fwd_ni(program_id=program_id, ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, rts=1)
-
-        return True, ""
-    
-    except Exception as e:
-        print(traceback.format_exc())
-        return False, f"Failed to Deploy Application in the Engine. {repr(e)}"
 
 async def install_app(tag: str, version: str):
 
@@ -434,7 +256,8 @@ async def install_app(tag: str, version: str):
 
     isInstalled, message = deploy_program(compiled_app, manifest, app_key, engine_key, program_id, True)
 
-    # TODO: test the set_app_status not working
+    #
+    #  TODO: test the set_app_status not working
     if not isInstalled:
         sm.set_app_status(app_key, STATUS_UNSUPPORTED)
         # sm.apps[app_key]['status'] = STATUS_UNSUPPORTED

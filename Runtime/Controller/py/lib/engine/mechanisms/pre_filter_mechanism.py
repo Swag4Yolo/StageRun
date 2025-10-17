@@ -145,7 +145,7 @@ class GenericFwd(BaseTable):
 
     def drop(self, pkt_id, port, program_id):
         keys = GenericFwdKeys(pkt_id, program_id)
-        action = BaseAction("drop", pkt_id, port)
+        action = BaseAction("drop")
         self.add_entry(keys, action)
     
     def fwd(self, pkt_id, port, program_id):

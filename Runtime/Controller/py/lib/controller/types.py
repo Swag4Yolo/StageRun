@@ -29,9 +29,9 @@ recirc_ports):
             recirc_ports = dict["recirc_ports"]
         )
 
-class RunningEngine():
-    def __init__(self, engine_key):
-        pass
+# class RunningEngine():
+#     def __init__(self, engine_key):
+#         pass
 
 class App():
     def __init__(self, app_key, tag, version, status, comment, timestamp,
