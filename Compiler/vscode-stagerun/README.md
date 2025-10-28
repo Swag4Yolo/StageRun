@@ -8,7 +8,7 @@
     npm install -g @vscode/vsce
     vsce package
     code --uninstall-extension stagerun-syntax
-    code --install-extension stagerun-syntax-0.0.1.vsix
+    code --install-extension stagerun-syntax-*.vsix
 
 
 ```

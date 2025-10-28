@@ -27,6 +27,10 @@ echo "Initializing ${VENV} Environment"
 
 cd ..
 
+echo "Removing old Compiled Files"
+    rm -rf ${PROGRAMS_DIR}/**/*.out
+    rm -rf ${PROGRAMS_DIR}/**/*.log
+
 echo "Compiling Programs"
 
 for file in "${PROGRAMS_DIR}"/**/*.srun; do
@@ -41,7 +45,7 @@ for file in "${PROGRAMS_DIR}"/**/*.srun; do
 
         if [[ "$extension" == "srun" ]]; then 
             echo -e "\t Compiling Program => ${filename}"
-            python3 "${PROGRAM}" "${file}" -o "${dir_path}/${filename}.out" > "${dir_path}/${filename}.log" 2>&1
+            time -p python3 "${PROGRAM}" "${file}" -o "${dir_path}/${filename}.out" > "${dir_path}/${filename}.log" 2>&1
         fi
     fi
 done

@@ -1,0 +1,46 @@
+import "constants.spine"
+
+Procedure crossfire_mitigation(Var oldNBytes, Var nBytes, Var nSlowFlows, Var toBlock, Reg slowFlowCounter, Reg numBytesFlow):
+    input:  [pin]
+    output: [pout]
+
+    with p from pin:
+        when () -> ():
+            body:
+                HASH host_pair {p.ip.src, p.ip.dst}
+                HASH flow_key  {p.ip.src, p.ip.dst, p.l4.sport, p.l4.dport, p.ip.proto}
+
+                # oldNBytes, nBytes = numBytesFlow[flow_key] += PKT_SIZE
+                oldNBytes = numBytesFlow[flow_key]
+                nBytes = numBytesFlow[flow_key] += PKT_SIZE
+
+                if oldNBytes == 0 && nBytes < 1000:
+                    nSlowFlows = slowFlowCounter[host_pair] += 1
+
+                elif oldNBytes < 1000 && nBytes > 1000:
+                    nSlowFlows = slowFlowCounter[host_pair] -= 1
+
+                else:
+                    nSlowFlows = slowFlowCounter[host_pair]
+                    
+                IF nSlowFlows > 1:
+                    DROP
+
+
+Program CrossFire:
+        PORT pFromExternal     (io: IN,  speed: 100)
+        PORT pToExternal       (io: OUT, speed: 100)
+        PORT pFromInternal     (io: IN,  speed: 100)
+        PORT pToInternal       (io: OUT, speed: 100)
+
+    # Resource Declaration
+        Var oldNBytes, nBytes, nSlowFlows, toBlock
+        Reg slowFlowCounter, numBytesFlow
+        
+
+    # Procedure Instantiation
+        PROC crossfire_module = crossfire_mitigation(oldNBytes, nBytes, nSlowFlows, toBlock, slowFlowCounter, numBytesFlow)
+
+    # Programmatic Model
+        [pFromExternal] -> [pin]crossfire_module[pout]    -> [pToInternal]
+        [pFromInternal] -> _ -> [pToExternal]

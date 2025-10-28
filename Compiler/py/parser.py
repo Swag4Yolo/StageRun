@@ -56,6 +56,9 @@ class StageRunTransformer(Transformer):
     def hinc_instr(self, target, value):
         # Target e Value já foram limpos pelos métodos key_name/SIGNED_NUMBER
         return HeaderIncrementInstruction(target=target, value=value)
+    
+    def assign_instr(self, target, value):
+        return AssignmentInstruction(target=target, value=value)
 
     # Regras de Cláusula
     def key_clause(self, key_name, value): # A regra Lark tem 'KEY' key_name '==' value

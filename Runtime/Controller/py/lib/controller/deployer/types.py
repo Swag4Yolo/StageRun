@@ -327,10 +327,10 @@ class Installer:
         kwargs["pkt_id"] = pkt_id
 
 
-        print("keys=",keys)
+        # print("keys=",keys)
 
-        print("instr=",instr)
-        print("kwargs=",kwargs)
+        # print("instr=",instr)
+        # print("kwargs=",kwargs)
 
 
         # Choose table
@@ -349,8 +349,8 @@ class Installer:
         """
         default = prefilter.default_action
 
-        print("Inside Install_default_action")
-        print(default)
+        # print("Inside Install_default_action")
+        # print(default)
         if (default):
             instr = default.instr_name
             kwargs = default.kwargs
@@ -395,8 +395,8 @@ class Installer:
             cf_id = cfg.initial_cf_id_f1
             cf_id_2 = cfg.initial_cf_id_f2
 
-            print("PrefilterName:")
-            print(cfg_name)
+            # print("PrefilterName:")
+            # print(cfg_name)
 
             # 1. Keys
             self.install_prefilter_key(prefilter, cf_id, cf_id_2, pkt_id)

@@ -1,0 +1,15 @@
+PORT InternalPort
+PORT ExternalPort
+
+PREFILTER FromExternal
+  KEY PKT.PORT == ExternalPort
+  DEFAULT FWD InternalPort
+  BODY
+    ASSIGN IPV4.ID 1023
+  END
+END
+
+PREFILTER FromInternal
+  KEY PKT.PORT == InternalPort
+  DEFAULT FWD ExternalPort
+END

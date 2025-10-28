@@ -1,0 +1,96 @@
+switches:
+    S1:
+        comment: "Tofino1 32p ..."
+        model: "Tofino1"
+        server_ip:   10.0.0.1
+        server_port: 9090
+        arch: tf1 
+        ports:
+            - 49/-:
+                speed: 100
+                loopback: no
+            - 50/-:
+                speed: 100
+                loopback: no
+            - 51/-:
+                speed: 100
+                loopback: no
+                connections: 52/-
+            - 52/-:
+                speed: 100
+                loopback: no
+                connections: 51/-
+            - 53/-:
+                speed: 100
+                loopback: no
+                connections: 55/-
+            - 54/-:
+                comment: "connected to other Tofino"
+                speed: 100
+            - 55/-:
+                speed: 100
+                loopback: no
+                connections: 53/-
+            - 56/-:
+                comment: "connected to other Tofino"
+                speed: 100
+            - 57/-:
+                loopback: optional
+                speed: 100
+
+# This version uses both Tofinos
+network:
+    ditto_network:
+        S1: 
+            Program: "Ditto"
+            HW: True
+            Endpoints:
+                P_INPUT:
+                    port: 49/-
+                
+                ### For Patterns
+                P1_IN:
+                    port: 51/-
+                P1_OUT:
+                    port: 52/-
+# >>> calculate_packet_rates([1500, 1600], 100000000)
+# Packet size: 1500 bytes, Rate: 48387096.00 Kbps
+# Packet size: 1600 bytes, Rate: 51612903.00 Kbps
+# [48387096, 51612903]
+                    speed: 47903225
+                    burst: 10000
+
+                # Priority Queues 
+                P2_IN:
+                    port: 52/-
+                P2_OUT:
+                    port: 51/-
+                    speed: 51096773
+                    burst: 10000
+
+                PC1_IN:
+                    port: 53/-
+                PC2_IN:
+                    port: 55/-
+
+                # Used for Mirroring 
+                PC1_OUT:
+                    port: 53/-
+                PC2_OUT:
+                    port: 55/-
+                
+
+                P_RECIRC_IN:
+                    port: 57/-
+                P_RECIRC_OUT:
+                    port: 57/-
+                PRR_OUT:
+                    port: 54/-
+                ### Ports From Tofino2 to Server
+                P_FROM_TF2:
+                    port: 56/-
+                P_TO_SERVER:
+                    port: 50/-
+                    
+Deploy: [ditto_network]
+            

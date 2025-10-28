@@ -13,13 +13,12 @@ from lib.engine.mechanisms.hash_mechanism import *
 from lib.engine.mechanisms.random_mechanism import *
 from lib.engine.mechanisms.write_phase_conditional_mechanism_after_reg import *
 from lib.engine.mechanisms.program_id_mechanism import *
+from lib.engine.mechanisms.register import *
 
 
 from lib.engine.configurations.padding_configuration import *
 from lib.engine.configurations.write_phase_configuration import *
-# from lib.utils.manifest_parser import PortInfo, SwitchInfo
 
-from time import sleep
 
 class EngineFlow():
     def __init__(self, bfrt_runtime:bfrt_runtime, flow_number: int):
@@ -50,6 +49,17 @@ class EngineFlow():
             self.i8_multi = MultiInstructionLastStage(self.runtime, f"SwitchIngress.f{flow_number}_i8")
 
         self.i9_multi = MultiInstructionLastStage(self.runtime, f"SwitchIngress.f{flow_number}_i9")
+
+        # Registers Creation
+        self.reg1_i1 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i1")
+        self.reg1_i2 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i2")
+        self.reg1_i3 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i3")
+        self.reg1_i4 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i4")
+        self.reg1_i5 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i5")
+        self.reg1_i6 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i6")
+        self.reg1_i7 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i7")
+        self.reg1_i8 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i8")
+        self.reg1_i9 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i9")
 
 
 class EngineWritePhase():
@@ -254,3 +264,30 @@ class EngineController():
         self.program_enabler_mechanism.enable_program()
         
         print(f"[✓] Program switched to {app_key} with pid {pid}")
+
+    def clear_state(self):
+        regs = [
+            # Flow 1
+            self.f1.reg1_i1,
+            self.f1.reg1_i2,
+            self.f1.reg1_i3,
+            self.f1.reg1_i4,
+            self.f1.reg1_i5,
+            self.f1.reg1_i6,
+            self.f1.reg1_i7,
+            self.f1.reg1_i8,
+            self.f1.reg1_i9,
+
+            # Flow 2
+            self.f2.reg1_i1,
+            self.f2.reg1_i2,
+            self.f2.reg1_i3,
+            self.f2.reg1_i4,
+            self.f2.reg1_i5,
+            self.f2.reg1_i6,
+            self.f2.reg1_i7,
+            self.f2.reg1_i8,
+            self.f2.reg1_i9,
+        ]
+        for reg in regs:
+            reg.clear()

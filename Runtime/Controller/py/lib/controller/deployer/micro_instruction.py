@@ -87,14 +87,6 @@ class MicroInstructionParser():
                     # "port": 0,  # or None if not used by drop()
                     "program_id": pid
                 }
-            # return [{
-            #     "instr": "drop",
-            #     "kwargs": {
-            #         "pkt_id": 0,
-            #         # "port": 0,  # or None if not used by drop()
-            #         "program_id": pid
-            #     }
-            # }]
 
         elif op == "FWD":
             # Forward to a specific port
@@ -108,14 +100,6 @@ class MicroInstructionParser():
                     "port": dev_port,
                     "program_id": pid
                 }
-            # return [{
-            #     "instr": "fwd",
-            #     "kwargs": {
-            #         "pkt_id": 0,
-            #         "port": dev_port,
-            #         "program_id": pid
-            #     }
-            # }]
 
         elif op in ("FWD_ENQUEUE", "FWD_AND_ENQUEUE"):
             # Forward and enqueue to queue
@@ -148,6 +132,16 @@ class MicroInstructionParser():
 
     @staticmethod
     def translate_instr_to_micro(instr, manifest, pid) -> List[MicroInstruction]:
+        headers = {
+            'IPV4.TTL': HEADER_IPV4_TTL,
+            'IPV4.DST': HEADER_IPV4_DST,
+            'IPV4.SRC': HEADER_IPV4_SRC,
+            'TCP.ACK_NO': HEADER_TCP_ACK_NO,
+            'TCP.SEQ_NO': HEADER_TCP_SEQ_NO,
+            'TCP.FLAGS': HEADER_TCP_FLAGS,
+            'IPV4.ID': HEADER_IPV4_IDENTIFICATION,
+        }
+
         if instr['op'] == FWD:
             front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
@@ -159,11 +153,15 @@ class MicroInstructionParser():
             if instr['args']['target'] == "IPV4.TTL":
                 return [
                     MicroInstruction(instr_name='fetch_ipv4_ttl', kwargs={}),
-                    MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}),
+                    MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val": instr['args']['value']}),
                         ]
+        
+        elif instr['op'] == ASSIGNMENT:
+            tofino_header = headers[instr['args']['target']]            
+            return [
+                MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": tofino_header, "const_val": instr['args']['value']}),
+                    ]
 
-                # return [{"instr": "fetch_ipv4_ttl", "kwargs":{}}, 
-                        # {"instr": "sum_ni", "kwargs":{"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}}]
     @classmethod
     def translate_body_to_micro(self, prefilter, manifest, pid):
         micro_instrs = []
@@ -181,9 +179,9 @@ class MicroInstructionParser():
             keys = self.translate_keys_to_micro(prefilter, manifest, pid)
             action = self.translate_default_action_to_micro(prefilter, manifest, pid)
 
-            print("To_micro ACTION:")
-            print(action.instr_name)
-            print(action.kwargs)
+            # print("To_micro ACTION:")
+            # print(action.instr_name)
+            # print(action.kwargs)
             body = self.translate_body_to_micro(prefilter, manifest, pid)
 
             pf = PreFilter(name, keys, action, body)

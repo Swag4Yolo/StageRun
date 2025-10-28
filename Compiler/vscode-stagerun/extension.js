@@ -9,7 +9,7 @@ function activate(context) {
     // A extensão stagerun-syntax foi ativada.
     // Se esta mensagem aparecer no log "Extension Host (Remote)",
     // significa que a extensão está a ser executada no servidor.
-    console.log('Parabéns, a extensão "stagerun-syntax" está ativa!');
+    console.log('"stagerun-syntax" activated!');
 
     // Nota: Para este caso, a principal contribuição (sintaxe)
     // é feita via 'contributes' no package.json, e é tratada pela parte 'ui'.

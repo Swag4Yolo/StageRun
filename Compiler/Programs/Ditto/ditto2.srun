@@ -1,0 +1,118 @@
+### Configurations
+
+# QSET [NAME] [TYPE] [NUM_QUEUES]
+# TYPE: 
+# 1. 'PRIO' for priority queues, the bigger the number the higher priority it has
+# 2. 'RR' for round robin queues, the priority is the same for a bunch of queues
+
+#PCONFIG [NAME] [SPEED LIMITER %]
+QSET prio_queues PRIO 2
+QSET rr_queues RR 2
+
+### For Real Traffic and Chaff Injection
+PIN  P_INPUT
+
+### Priority Queues 
+PIN  P1_IN
+PIN  P2_IN
+POUT P1_OUT prio_queues
+POUT P2_OUT prio_queues
+
+### Used for Cloning
+PIN  PC1_IN
+PIN  PC2_IN
+POUT PC1_OUT
+POUT PC2_OUT
+
+### Used for Recirc 
+PIN  P_RECIRC_IN
+POUT P_RECIRC_OUT
+
+### Used for Talking w TF2
+PIN  P_FROM_TF2
+POUT PRR_OUT rr_queues # to tf2
+POUT P_TO_SERVER # to receive final traffic w/timestamps from tf2
+
+
+##############################
+####### Cloned Packets #######
+##############################
+
+PREFILTER gen_p1_clone
+  KEY PKT.PORT == PC1_IN
+  DEFAULT FWD_AND_ENQUEUE P1_OUT 0
+  BODY
+    CLONE PC2_OUT
+  END
+END
+
+PREFILTER gen_p2_clone
+  KEY PKT.PORT == PC2_IN
+  DEFAULT FWD_AND_ENQUEUE P2_OUT 0
+  BODY
+    CLONE PC1_OUT
+  END
+END
+
+##############################
+#######    Patterns    #######
+##############################
+
+PREFILTER pat1
+  KEY PKT.PORT == P1_IN
+  DEFAULT FWD_AND_ENQUEUE PRR_OUT 0
+END
+
+PREFILTER pat2
+  KEY PKT.PORT == P2_IN
+  DEFAULT FWD_AND_ENQUEUE PRR_OUT 1
+END
+
+##############################
+##### Incoming  Traffic ######
+##############################
+PREFILTER input
+  KEY PKT.PORT == P_INPUT
+  BODY
+    PADTTERN 1500 1600
+    # 1. Chaff Traffic Initially Sent
+    # 2. Real Traffic
+    # 3. Recirc Packets that require more than x1 pass
+    IF IPV4.PROTO == 200 && PKT.SIZE == 1500:
+      FWD PC2_OUT
+    ELIF IPV4.PROTO == 200 && PKT.SIZE == 1600:
+      FWD PC1_OUT
+    ELIF PKT.SIZE == 1500:
+      FWD_AND_ENQUEUE P1_OUT 1
+    ELIF PKT.SIZE == 1600:
+      FWD_AND_ENQUEUE P2_OUT 1
+    ELSE:
+      FWD P_RECIRC_OUT
+    ENDIF
+  END
+END
+
+PREFILTER input_recirc_port
+  KEY PKT.PORT == P_RECIRC_IN
+  BODY
+    PADTTERN 1500 1600
+    IF PKT.SIZE == 1500:
+      FWD FWD_AND_ENQUEUE P1_OUT 1
+    ELIF PKT.SIZE == 1600:
+      FWD FWD_AND_ENQUEUE P2_OUT 1
+    ELSE:
+      FWD P_RECIRC_OUT
+    ENDIF
+  END
+END
+
+##############################
+#####     2nd Tofino    ######
+##############################
+PREFILTER from_tf2
+  KEY PKT.PORT == P_FROM_TF2
+  DEFAULT FWD P_TO_SERVER
+END
+
+# DISABLED RECIRC_PORTS FOR THIS ENGINE SINCE WE DO NOT HAVE ENOUGH PORTS
+# RECIRC NEEDS TO BE AT RUNTIME, AND SO DEPLOYER CANNOT PUT FIXED RECIRC PATH

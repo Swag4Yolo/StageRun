@@ -30,8 +30,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     filename="controller.log",
-    filemode="w" #w para sobrescrever
+    filemode="a" #w para sobrescrever
 )
+logging.root.setLevel(logging.DEBUG)
 logger = logging.getLogger("controller")
 
 # # Redirect stdout and stderr

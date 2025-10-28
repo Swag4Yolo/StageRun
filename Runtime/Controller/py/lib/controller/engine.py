@@ -305,7 +305,8 @@ async def install_engine(tag: str, version: str):
                 }
 
 async def uninstall_engine():
-    if sm.get_running_engine_key == "":
+    
+    if not sm.is_an_engine_running():
         return {"status": "error", "message": f"There it not an Engine Installed."}
 
     engine_key = sm.get_running_engine_key()

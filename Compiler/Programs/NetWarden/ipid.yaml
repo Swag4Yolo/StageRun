@@ -1,0 +1,25 @@
+switch:
+    comment: "Tofino1 32p ..."
+    model: "Tofino1"
+    # server_ip:   10.0.0.1
+    # server_port: 9090 
+    arch: tf1
+    ports:
+        - 49/-:
+            speed: 100
+            loopback: no
+        - 50/-:
+            speed: 100
+            loopback: no
+
+# Declare the other switches that we have and their respective configurations
+
+program:
+    Program: "NetWarden IPID"
+    HW: True
+    Endpoints:
+        InternalPort:
+            port: 49/-
+        ExternalPort:
+            port: 50/-
+

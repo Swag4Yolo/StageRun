@@ -1,6 +1,20 @@
 Initializing compiler_env Environment
 Requirement already satisfied: lark in ./compiler_env/lib/python3.10/site-packages (from -r requirements.txt (line 1)) (1.2.2)
+Removing old Compiled Files
 Compiling Programs
 	 Compiling Program => 1
+real 0,10
+user 0,09
+sys 0,00
 	 Compiling Program => 2
+real 0,10
+user 0,09
+sys 0,00
 	 Compiling Program => nethide
+real 0,10
+user 0,09
+sys 0,01
+	 Compiling Program => ipid
+real 0,10
+user 0,09
+sys 0,01

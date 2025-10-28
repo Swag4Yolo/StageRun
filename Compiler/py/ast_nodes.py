@@ -21,6 +21,11 @@ class HeaderIncrementInstruction(_Ast):
     value: int
 
 @dataclass
+class AssignmentInstruction(_Ast):
+    target: str      
+    value: int
+
+@dataclass
 class DropInstr(_Ast):
     pass
 

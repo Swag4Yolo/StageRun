@@ -25,11 +25,14 @@ body_clause: "BODY" instr* "END"
 ?instr: fwd_instr
       | hinc_instr
       | drop_instr
+      | assign_instr
 
 
 fwd_instr: "FWD" NAME
 hinc_instr: "HINC" header_operand SIGNED_NUMBER
 drop_instr: "DROP"
+// TODO: change assign_instr
+assign_instr: "ASSIGN" header_operand SIGNED_NUMBER
 
 key_name:  NAME "." NAME
 header_operand: NAME "." NAME

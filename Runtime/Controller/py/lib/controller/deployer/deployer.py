@@ -4,17 +4,16 @@ import traceback
 # Custom Imports
 from lib.controller.deployer.types import *
 from lib.controller.deployer.micro_instruction import *
+from lib.utils.utils import Timer
 
-# def cidr_to_range(ip_str, mask):
-#     net = ipaddress.ip_network(f"{ip_str}/{mask}", strict=False)
-#     return (int(net.network_address), int(net.broadcast_address))
+timer = Timer()
 
 def check_instruction_in_stage(pipeline, micro_instr, stage):
     stages_tables = pipeline[stage]
 
     for table in stages_tables:
-        print("Table")
-        print(table)
+        # print("Table")
+        # print(table)
         if micro_instr['instr'] in stages_tables[table]:
             return table
     return None
@@ -34,12 +33,12 @@ def install_micro_instr(micro_instr, current_stage):
 
         table = check_instruction_in_stage(pipeline, micro_instr, stage)
         
-        print("Table detected")
-        print(table)
-        print("stage_number")
-        print(stage_num)
-        print("instruction_num")
-        print(instruction_num)
+        # print("Table detected")
+        # print(table)
+        # print("stage_number")
+        # print(stage_num)
+        # print("instruction_num")
+        # print(instruction_num)
 
         if table:
             table_to_install_rule = None
@@ -116,13 +115,22 @@ def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, targ
         """
 
         # 2. Control Flow Graph
+        timer.start()
         cfg_graphs = CFGBuilder.build(stagerun_micro_program)
+        timer.finish()
+        timer.calc("ControlFlowGraph =>")
 
         # 3. Planning Phase
+        timer.start()
         cfg_graphs = Planner.plan(stagerun_micro_program, cfg_graphs)
+        timer.finish()
+        timer.calc("Planner Phase =>")
 
         # 4. Install
+        timer.start()
         Installer.install(stagerun_micro_program, cfg_graphs)
+        timer.finish()
+        timer.calc("Install Phase =>")
 
         # pipeline = sm.get_engine_ISA(sm.get_running_engine_key())['pipeline']
         # rules_to_install = planning_phase(cfg, pipeline)

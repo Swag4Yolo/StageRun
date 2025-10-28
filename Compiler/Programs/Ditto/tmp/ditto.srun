@@ -1,0 +1,137 @@
+### Configurations
+
+# QSET [NAME] [TYPE] [NUM_QUEUES]
+# TYPE: 
+# 1. 'PRIO' for priority queues, the bigger the number the higher priority it has
+# 2. 'RR' for round robin queues, the priority is the same for a bunch of queues
+
+#PCONFIG [NAME] [SPEED LIMITER %]
+QSET prio_queues PRIO 2
+QSET rr_queues RR 2
+
+### For Real Traffic and Chaff Injection
+PIN  P_INPUT
+
+### Priority Queues 
+PIN  P1_IN
+PIN  P2_IN
+POUT P1_OUT prio_queues
+POUT P2_OUT prio_queues
+
+### Used for Cloning
+PIN  PC1_IN
+PIN  PC2_IN
+POUT PC1_OUT
+POUT PC2_OUT
+
+### Used for Recirc 
+PIN  P_RECIRC_IN
+POUT P_RECIRC_OUT
+
+### Used for Talking w TF2
+PIN  P_FROM_TF2
+POUT PRR_OUT rr_queues # to tf2
+POUT P_TO_SERVER # to receive final traffic w/timestamps from tf2
+
+
+##############################
+####### Cloned Packets #######
+##############################
+
+PREFILTER gen_p1_clone
+  KEY PKT.PORT == PC1_IN
+  DEFAULT FWD_AND_ENQUEUE P1_OUT 0
+  BODY
+    CLONE PC2_OUT
+  END
+END
+
+PREFILTER gen_p2_clone
+  KEY PKT.PORT == PC2_IN
+  DEFAULT FWD_AND_ENQUEUE P2_OUT 0
+  BODY
+    CLONE PC1_OUT
+  END
+END
+
+##############################
+#######    Patterns    #######
+##############################
+
+PREFILTER pat1
+  KEY PKT.PORT == P1_IN
+  DEFAULT FWD_AND_ENQUEUE PRR_OUT 0
+END
+
+PREFILTER pat2
+  KEY PKT.PORT == P2_IN
+  DEFAULT FWD_AND_ENQUEUE PRR_OUT 1
+END
+
+##############################
+##### Incoming  Traffic ######
+##############################
+PREFILTER input
+  KEY PKT.PORT == P_INPUT
+  BODY
+    PADTTERN 1500 1600
+  END
+END
+
+##############################
+#####     2nd Tofino    ######
+##############################
+PREFILTER from_tf2
+  KEY PKT.PORT == P_FROM_TF2
+  DEFAULT FWD P_TO_SERVER
+END
+
+##############################
+#####    CHAFF TRAFFIC  ######
+##############################
+
+POSFILTER INPUT_CF_P1
+  KEY PKT.PORT == P_INPUT 
+  KEY IPV4.PROTO == 200 #PROTO_GEN
+  KEY PKT.SIZE == 1500 
+  DEFAULT FWD PC2_OUT
+END
+POSFILTER INPUT_CF_P2
+  KEY PKT.PORT == P_INPUT 
+  KEY IPV4.PROTO == 200 #PROTO_GEN
+  KEY PKT.SIZE == 1600 
+  DEFAULT FWD PC1_OUT
+END
+
+##############################
+#####    REAL  TRAFFIC  ######
+##############################
+
+POSFILTER INPUT_P1
+  KEY PKT.PORT == P_INPUT 
+  KEY PKT.SIZE == 1500 
+  DEFAULT FWD_AND_ENQUEUE P1_OUT 1
+END
+
+POSFILTER INPUT_P2
+  KEY PKT.PORT == P_INPUT 
+  KEY PKT.SIZE == 1600 
+  DEFAULT FWD_AND_ENQUEUE P2_OUT 1
+END
+
+# DISABLED RECIRC_PORTS FOR THIS ENGINE SINCE WE DO NOT HAVE ENOUGH PORTS
+# RECIRC NEEDS TO BE AT RUNTIME, AND SO DEPLOYER CANNOT PUT FIXED RECIRC PATH
+POSFILTER RECIRC_P1
+  KEY PKT.PORT == P_RECIRC_IN 
+  KEY PKT.SIZE == 1500 
+  DEFAULT FWD_AND_ENQUEUE P1_OUT 1
+END
+POSFILTER RECIRC_P2
+  KEY PKT.PORT == P_RECIRC_IN 
+  KEY PKT.SIZE == 1600 
+  DEFAULT FWD_AND_ENQUEUE P2_OUT 1
+END
+POSFILTER RECIRC
+  KEY PKT.PORT == P_RECIRC_IN 
+  DEFAULT FWD P_RECIRC_OUT 
+END

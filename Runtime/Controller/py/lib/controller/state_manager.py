@@ -10,9 +10,10 @@ from lib.tofino.constants import *
 from lib.utils.status import *
 from lib.engine.engine_controller import EngineController
 # from lib.utils.manifest_parser import parse_manifest
-from lib.utils.utils import parse_json
+from lib.utils.utils import parse_json, Timer
 
-logger = logging.getLogger("controller")
+logger = logging.getLogger(__name__)
+timer = Timer()
 ###########################################################
 #                       Engine State                      #
 ###########################################################
@@ -470,7 +471,7 @@ def install_port_cat(category):
             match = re.search(r"(\d+)/", front_port)
             if match:
                 p_num = match.group(1)
-                print("p_num", p_num)
+                # print("p_num", p_num)
             else:
                 #TODO: error
                 print("ERROR")
@@ -482,11 +483,11 @@ def install_port_cat(category):
             loopback = PORT_LOOPBACK_BF[port['loopback']]
             fec = PORT_FEC_BF.get( (speed, loopback), FEC_NONE)
 
-            print("Port configs:")
-            print("p_num", p_num)
-            print("speed", speed)
-            print("loopback", loopback)
-            print("fec", fec)
+            # print("Port configs:")
+            # print("p_num", p_num)
+            # print("speed", speed)
+            # print("loopback", loopback)
+            # print("fec", fec)
 
             tofino_controller.port_mechanism.add_port(front_port=int(p_num), speed=speed, loopback=loopback, fec=fec)
 
@@ -507,19 +508,54 @@ def run_program(app_key):
         running_app_category = get_ports_cat(prev_run_app_key)
 
     if prev_run_app_key == None:
+        if __debug__:
+            timer.start()
         install_port_cat(new_cat)
+        if __debug__:
+            timer.finish()
+            timer.calc(f"Time for Installing Ports {app_key}")
         # Configure Engine (change pid to pid of new app, and put ports => pid)
+        if __debug__:
+            timer.start()
         engine_controller.run_program(app_key, pid, new_ports)
+        if __debug__:
+            timer.finish()
+            timer.calc("Time for changing the Running Program")
 
     elif check_port_compatibility(port_sets[running_app_category]["ports"], port_sets[new_cat]["ports"]) == "compatible":
         engine_controller.run_program(app_key, pid, new_ports)
     else:
+        logger.debug(f"Chaning Tofino Ports {app_key}")
         # old_cat = get_ports_cat(prev_run_app_key)
         # remove_ports(old_cat)
+        if __debug__:
+            timer.start()
         tofino_controller.port_mechanism.clear_ports()
+        if __debug__:
+            timer.finish()
+            timer.calc(f"Time for Clearing Ports {app_key}")
 
+        if __debug__:
+            timer.start()
         install_port_cat(new_cat)
+        if __debug__:
+            timer.finish()
+            timer.calc(f"Time for Installing Ports {app_key}")
+        
+        if __debug__:
+            timer.start()
         engine_controller.run_program(app_key, pid, new_ports)
+        if __debug__:
+            timer.finish()
+            timer.calc(f"Time for Changing the Running Program {app_key}")
+        
+
+    # Clearing the Registers
+    # connect_tofino()
+    # timer.start()
+    # engine_controller.clear_state()
+    # timer.finish()
+    # timer.calc(f"Cleaned Registers for App {app_key}")
 
 def get_app_key(tag, version):
     return f"{tag}_v{version}"

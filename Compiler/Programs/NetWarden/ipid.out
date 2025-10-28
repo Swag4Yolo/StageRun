@@ -1,0 +1,54 @@
+{
+  "program": "ipid",
+  "compiler_version": 0.1,
+  "schema_version": 1,
+  "data": {
+    "ports": [
+      "InternalPort",
+      "ExternalPort"
+    ]
+  },
+  "prefilters": [
+    {
+      "name": "FromExternal",
+      "keys": [
+        {
+          "field": "PKT.PORT",
+          "value": "ExternalPort"
+        }
+      ],
+      "default": {
+        "op": "FWD",
+        "args": {
+          "dest": "InternalPort"
+        }
+      },
+      "body": [
+        {
+          "id": 1,
+          "op": "ASSIGN",
+          "args": {
+            "target": "IPV4.ID",
+            "value": 1023
+          }
+        }
+      ]
+    },
+    {
+      "name": "FromInternal",
+      "keys": [
+        {
+          "field": "PKT.PORT",
+          "value": "InternalPort"
+        }
+      ],
+      "default": {
+        "op": "FWD",
+        "args": {
+          "dest": "ExternalPort"
+        }
+      },
+      "body": []
+    }
+  ]
+}

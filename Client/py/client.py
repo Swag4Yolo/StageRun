@@ -6,9 +6,42 @@ import os
 import argparse
 import re
 import shlex
+import time       
+import logging
 
 COMPILATION_LOGS_DIR_PATH = None
 VERSION_PATTERN = r'^\d+\.\d+$'
+
+
+LOG_FILENAME = 'client.log'
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+
+logging.basicConfig(
+    filename=LOG_FILENAME, 
+    level=logging.INFO, 
+    format=LOG_FORMAT,
+    filemode='a', 
+)
+
+logger = logging.getLogger(__name__)
+
+class Timer:
+    def __init__(self):
+        self.start_time = None
+        self.finish_time = None
+        self.time_diff = None
+
+    def start(self):
+        self.start_time = time.perf_counter()
+
+    def finish(self):
+        self.finish_time = time.perf_counter()
+
+    def calc(self, msg:str):
+        self.time_diff = self.finish_time - self.start_time
+        logger.info(f"{msg} took {self.time_diff:.6f} seconds")
+
+timer = Timer()
 
 class StageRunClient(cmd.Cmd):
     system_name = "StageRun"
@@ -87,7 +120,13 @@ class StageRunClient(cmd.Cmd):
                 "comment": args.comment,
             }
 
+            timer.start()
+            timer.finish()
+
             resp = requests.post(f"{self.base_url}/upload_engine", files=files, data=data)
+    
+            timer.calc(f"upload_engine -t {args.tag} -v {args.version}")
+    
             print(resp.json())
 
         except SystemExit:
@@ -103,7 +142,14 @@ class StageRunClient(cmd.Cmd):
         Usage: list_engines
         """
         try:
+
+            timer.start()
+            timer.finish()
+
             resp = requests.get(f"{self.base_url}/list_engines")
+            
+            timer.calc(f"list_engines")
+
             if resp.status_code == 200:
                 engines = resp.json()
                 print("Engines on controller:")
@@ -189,8 +235,12 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
+            timer.start()
+
             response = requests.post(f"{self.base_url}/install_engine", params={"tag": args.tag, "version": args.version})
 
+            timer.finish()
+            timer.calc(f"install_engine -t {args.tag} -v {args.version}")
 
             if response.status_code == 200:
                 data = response.json()
@@ -228,8 +278,12 @@ class StageRunClient(cmd.Cmd):
 
         try:
             
+            timer.start()
+
             response = requests.post(f"{self.base_url}/uninstall_engine")
 
+            timer.finish()
+            timer.calc(f"uninstall_engine")
 
             if response.status_code == 200:
                 data = response.json()
@@ -265,8 +319,12 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
+            timer.start()
+
             response = requests.delete(f"{self.base_url}/remove_engine", params={"tag": args.tag, "version": args.version})
 
+            timer.finish()
+            timer.calc(f"remove_engine -t {args.tag} -v {args.version}")
 
             if response.status_code == 200:
                 data = response.json()
@@ -322,7 +380,13 @@ class StageRunClient(cmd.Cmd):
                 "comment": args.comment,
             }
 
+            timer.start()
+
             resp = requests.post(f"{self.base_url}/upload_app", files=files, data=data)
+
+            timer.finish()
+            timer.calc(f"upload_app -t {args.tag} -v {args.version}")
+            
             print(resp.json())
 
         except SystemExit:
@@ -338,7 +402,13 @@ class StageRunClient(cmd.Cmd):
         Usage: list_apps
         """
         try:
+            timer.start()
+
             resp = requests.get(f"{self.base_url}/list_apps")
+
+            timer.finish()
+            timer.calc(f"list_apps")
+            
             if resp.status_code == 200:
                 apps = resp.json()
                 print("Apps on controller:")
@@ -369,8 +439,12 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
+            timer.start()
+
             response = requests.delete(f"{self.base_url}/remove_app", params={"tag": args.tag, "version": args.version})
 
+            timer.finish()
+            timer.calc(f"remove_app -t {args.tag} -v {args.version}")
 
             if response.status_code == 200:
                 data = response.json()
@@ -403,7 +477,12 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
+            timer.start()
+
             response = requests.get(f"{self.base_url}/install_app", params={"tag": args.tag, "version": args.version})
+
+            timer.finish()
+            timer.calc(f"install_app -t {args.tag} -v {args.version}")
 
 
             if response.status_code == 200:
@@ -442,20 +521,14 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
 
-            import time            
-            start_time = time.perf_counter()
+            timer.start()
 
             response = requests.get(f"{self.base_url}/run_app", params={"tag": args.tag, "version": args.version})
             
-            # Record finish time
-
+            timer.finish()
+            timer.calc(f"run_app -t {args.tag} -v {args.version}")
 
             if response.status_code == 200:
-                finish_time = time.perf_counter()
-                # Compute elapsed time
-                time_diff = finish_time - start_time
-                print(f"Function took {time_diff:.6f} seconds")
-
                 data = response.json()
                 if "status" in data and "error" in data["status"]:
                     print(f"Installation failed:")
@@ -491,7 +564,12 @@ class StageRunClient(cmd.Cmd):
                 print(f"Error: Version must contain only digits such as '31.01' instead of '{args.version}'")
                 return
             
+            timer.start()
+
             response = requests.get(f"{self.base_url}/uninstall_app", params={"tag": args.tag, "version": args.version})
+            
+            timer.finish()
+            timer.calc(f"uninstall_app -t {args.tag} -v {args.version}")
 
 
             if response.status_code == 200:

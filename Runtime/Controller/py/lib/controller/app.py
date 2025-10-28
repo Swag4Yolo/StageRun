@@ -30,6 +30,8 @@ async def upload_app(
         - The app file format is .out
         - The manifest file format is .yaml
     """
+    logger.debug(f"upload_app {tag} v{version}")
+
     app_key = sm.get_app_key(tag, version)
 
     logger.info(f"Received upload request for App '{app_key}'")
@@ -85,6 +87,8 @@ async def upload_app(
     return {"status": "ok", "msg": f"App '{app_key}' uploaded successfully"}
 
 async def list_apps():
+    logger.debug(f"list_apps")
+
     if len(sm.apps) == 0:
         raise HTTPException(404, "No apps have been uploaded to the controller.")
 
@@ -100,6 +104,8 @@ async def list_apps():
     return grouped
 
 async def remove_app(tag: str, version: str):
+    
+    logger.debug(f"remove_app {tag} v{version}")
 
     app_key = sm.get_app_key(tag, version)
 
@@ -216,6 +222,8 @@ def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
 
 async def install_app(tag: str, version: str):
 
+    logger.debug(f"Installing app {tag} v{version}")
+
     app_key = sm.get_app_key(tag, version)
 
     if not sm.is_an_engine_running():
@@ -290,6 +298,8 @@ async def install_app(tag: str, version: str):
 
 
 async def run_app(tag: str, version: str):
+
+    logger.debug(f"run_app {tag} v{version}")
     # [X] 1. If is 1st app to run then pre rules need to be installed
     # [] 1.1 Install Ports
     # [] 2. If not:
@@ -329,6 +339,8 @@ async def run_app(tag: str, version: str):
     
 
 async def uninstall_app(tag: str, version: str):
+
+    logger.debug(f"uninstall_app {tag} v{version}")
     # 0. If the app is running, cannot uninstall
     # 1. free program_id
     # 2. Delete all table entries with that program_id

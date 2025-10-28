@@ -1,0 +1,39 @@
+import "constants.spine"
+
+Procedure detection_mechanism(Var nBytes, Var nFlows, Var oldNumBytes):
+    input:  [pin]
+    output: [pout]
+
+    with p from pin:
+        when () -> ():
+            body:
+                HASH five_t {ip.src, ip.dst, l4.sport, l4.dport, ip.proto}
+                oldNumBytes = numBytesFlow[five_t]
+                numBytesFlow[five_t] += PKT_SIZE
+                
+                nBytes = numBytesPort[ING_PORT] += PKT_SIZE
+                IF oldNumBytes == 0:
+                    nFlows = numFlowsPort[ING_PORT] += 1
+                ELSE:
+                    nFlows = numFlowsPort[ING_PORT]
+                IF nBytes > 1000 && nFlows > 2:
+                    Activate(CrossFire) 
+
+
+Program MewSimplified:
+        PORT pFromExternal     (io: IN,  speed: 100)
+        PORT pToExternal       (io: OUT, speed: 100)
+        PORT pFromInternal     (io: IN,  speed: 100)
+        PORT pToInternal       (io: OUT, speed: 100)
+
+    # Resource Declaration
+        Var nBytes, nFlows, oldNumBytes
+        Reg numBytesPort, numBytesFlow, numFlowsPort
+        
+
+    # Procedure Instantiation
+        PROC detect_module = detection_mechanism(nBytes, nFlows, oldNumBytes)
+
+    # Programmatic Model
+        [pFromExternal] -> [pin]detection_mechanism[pout]    -> [pToInternal]
+        [pFromInternal] -> _ -> [pToExternal]

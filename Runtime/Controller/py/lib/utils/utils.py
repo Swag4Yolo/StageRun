@@ -1,6 +1,10 @@
 import os
 import importlib.util
 import json
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 def load_stagerun_program(filepath, class_name="SystemApp"):
     """
@@ -61,6 +65,22 @@ def calculate_packet_interval(speed, packet_size_in_bytes, unit='Gbps'):
 def parse_json(json_path:str) -> json:
     with open(json_path) as f:
         return json.load(f)
+
+class Timer:
+    def __init__(self):
+        self.start_time = None
+        self.finish_time = None
+        self.time_diff = None
+
+    def start(self):
+        self.start_time = time.perf_counter()
+
+    def finish(self):
+        self.finish_time = time.perf_counter()
+
+    def calc(self, func:str):
+        self.time_diff = self.finish_time - self.start_time
+        logger.debug(f"Function {func} took {self.time_diff:.6f} seconds")
 
 
 # def calculate_pps_interval(pps):

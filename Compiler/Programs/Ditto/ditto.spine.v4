@@ -1,0 +1,91 @@
+import "constants.spine"
+
+Procedure PadAndFwd(Pattern pattern, int p1, int p2):
+    input:  pInput
+    output: q_p1, q_p2, p_chaff_p1, p_chaff_p2, p_recirc
+
+    with p from pInput:
+        when (p.proto == PROTO_GEN) -> ():
+            body:
+                PADTO pattern
+            (p.size == p1) -> fwd(p_chaff_p1)
+            (p.size == p2) -> fwd(p_chaff_p2)
+
+        when () -> ():
+            body:
+                PADTO pattern
+            (p.size == p1) -> fwd(q_p1)
+            (p.size == p2) -> fwd(q_p2)
+            () -> fwd(p_recirc)
+
+Procedure ChaffMechanism():
+    input:  pin
+    output: q_pattern, pcloned
+
+    with p from pin:    
+        when () -> fwd(q_pattern)
+        body:
+            CLONE pcloned
+        
+Program DittoPad:
+    # PORT && Queues Declaration
+        CONST max_speed = 100
+        CONST p1 = 600
+        CONST p2 = 1600
+        CONST p1_speed = max_speed / (p1/(p1+p2))
+        CONST p2_speed = max_speed / (p2/(p1+p2))
+
+        QSET prio_p1     (num:2, type: PRIO)
+        QSET prio_p2     (num:2, type: PRIO)
+        QSET rr_q        (num:2, type: RR)
+
+        PORT PInput_In   (io: IN,  speed: max_speed)
+
+        PORT P1_In       (io: IN,  speed: p1_speed)
+        PORT P2_In       (io: IN,  speed: p2_speed)
+        PORT P1_Out      (io: OUT, speed: p1_speed, connect:P2_In, qset=prio_p1)
+        PORT P2_Out      (io: OUT, speed: p2_speed, connect:P1_In, qset=prio_p2)
+
+        PORT P1C_In      (io: IN, speed: 100)
+        PORT P2C_In      (io: IN, speed: 100)
+        PORT P1C_Out     (io: OUT, speed: 100, connect:P2C_In)
+        PORT P2C_Out     (io: OUT, speed: 100, connect:P1C_In)
+
+        PORT Recirc_In   (io: IN,  speed: 100)
+        PORT Recirc_Out  (io: OUT, speed: 100, recirc: true)
+        PORT RR_Out      (io: OUT, speed: 100, qset=rr_q)
+
+    # Resource Declaration
+        Pattern pat p1 p2 # [600, 1600]
+
+    # Procedure Instantiation
+        PROC input_port  PadAndFwd(pattern, p1, p2)
+        PROC recirc_port PadAndFwd(pattern, p1, p2)
+        PROC chaff_p1    ChaffMechanism()
+        PROC chaff_p2    ChaffMechanism()
+
+    # Programmatic Model
+        # Real Traffic Will go to Real queues
+        PInput_In -> [pInput]input_port[q_p1] -> [1]prio_p1 -> P1_Out
+        PInput_In -> [pInput]input_port[q_p2] -> [1]prio_p2 -> P2_Out
+
+        # Note that chaff_p1 will go to P2C so that it can ingress in P1C, since they are physically connected, so this is normal
+        PInput_In -> [pInput]input_port[p_chaff_p1] -> P2C_Out -> P1C_In
+        PInput_In -> [pInput]input_port[p_chaff_p2] -> P1C_Out
+
+        # Other traffic will go to the Recirc port
+        PInput_In -> [pInput]input_port[p_recirc] -> Recirc_Out
+
+        #Recirculation Port Logic
+        Recirc_In -> [pInput]recirc_port[q_p1] -> [1]prio_p1 -> P1_Out
+        Recirc_In -> [pInput]recirc_port[q_p2] -> [1]prio_p2 -> P2_Out
+        #Recirc_In -> [pInput]recirc_port[p_chaff_p1] -> P2C_Out
+        #Recirc_In -> [pInput]recirc_port[p_chaff_p2] -> P1C_Out
+        Recirc_In -> [pInput]recirc_port[p_recirc] -> Recirc_Out
+
+        P1C -> [pin]chaff_p1[q_pattern] -> [0]prio_p1 -> P1_Out
+        P1C -> [pin]chaff_p1[pcloned] -> P2C_Out
+
+        P2C -> [pin]chaff_p2[q_pattern] -> [0]prio_p2 -> P2_Out
+        P2C -> [pin]chaff_p2[pcloned] -> P1C_Out
+

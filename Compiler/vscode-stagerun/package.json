@@ -2,7 +2,7 @@
   "name": "stagerun-syntax",
   "displayName": "StageRun Language Support",
   "description": "Syntax highlighting for StageRun assembly-like programs",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "publisher": "swag4yolo",
   "engines": {
     "vscode": "^1.70.0"

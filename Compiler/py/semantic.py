@@ -6,12 +6,12 @@ from ast_nodes import *
 class SemanticError(Exception):
     pass
 
-SUPPORTED_HEADERS = {"IPV4.TTL"}
+SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID"}
 
 def semantic_check(ast_nodes: List[_Ast], program_name: str) -> Dict[str, Any]:
     ports: List[str] = []
     port_set = set()
-    instructions: List[Dict[str, Any]] = []
+    # instructions: List[Dict[str, Any]] = []
     instr_id = 1
     prefilters: List[Dict[str, Any]] = []
 
@@ -57,6 +57,10 @@ def semantic_check(ast_nodes: List[_Ast], program_name: str) -> Dict[str, Any]:
                         body_instructions.append({"id": instr_id, "op": "HINC", "args": {"target": instr.target, "value": instr.value}})
                     elif isinstance(instr, DropInstr):
                         body_instructions.append({"id": instr_id, "op": "DROP", "args": {}})
+                    elif isinstance(instr, AssignmentInstruction):
+                        if instr.target not in SUPPORTED_HEADERS:
+                            raise SemanticError(f"Unsupported header field '{instr.target}' in PREFILTER BODY '{node.name}'")
+                        body_instructions.append({"id": instr_id, "op": "ASSIGN", "args": {"target": instr.target, "value": instr.value}})
                     else:
                         raise SemanticError(f"Unsupported instruction in PREFILTER BODY '{node.name}'")
                     instr_id += 1
