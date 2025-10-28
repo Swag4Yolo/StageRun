@@ -1,0 +1,8 @@
+PreFilterKey(field='PKT.PORT', operand='EQ', value='PC1_IN')
+PreFilterKey(field='PKT.PORT', operand='EQ', value='PC2_IN')
+PreFilterKey(field='PKT.PORT', operand='EQ', value='P1_IN')
+PreFilterKey(field='PKT.PORT', operand='EQ', value='P2_IN')
+PreFilterKey(field='PKT.PORT', operand='EQ', value='P_INPUT')
+PreFilterKey(field='PKT.PORT', operand='EQ', value='P_RECIRC_IN')
+PreFilterKey(field='PKT.PORT', operand='EQ', value='P_FROM_TF2')
+Compiled Programs/Ditto/ditto2.srun -> Programs/Ditto/ditto2.out

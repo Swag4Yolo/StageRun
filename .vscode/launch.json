@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug StageRun Compiler",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/Compiler/py/stagerun_compiler.py",
+      "args": [
+        "${workspaceFolder}/Compiler/Programs/Ditto/ditto2.srun",
+        "-o",
+        "${workspaceFolder}/Compiler/Programs/Ditto/ditto2.out"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      },
+      // "envFile": "${workspaceFolder}/.vscode/.env"
+    }
+  ]
+}

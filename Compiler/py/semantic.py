@@ -1,82 +1,88 @@
-# src/stagerun_compiler/semantic.py
-from typing import List, Dict, Any, Optional
-from ast_nodes import _Ast
-from ast_nodes import *
+from typing import Dict, Any, List, Optional
+from Core.ast_nodes import *
+from Core.serializer import save_program
+
 
 class SemanticError(Exception):
     pass
 
-SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID"}
 
-def semantic_check(ast_nodes: List[_Ast], program_name: str) -> Dict[str, Any]:
-    ports: List[str] = []
-    port_set = set()
-    # instructions: List[Dict[str, Any]] = []
-    instr_id = 1
-    prefilters: List[Dict[str, Any]] = []
+SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN"}
 
 
-    # 1. Collect ports
-    for node in ast_nodes:
-        if isinstance(node, PortDecl):
-            if node.name in port_set:
-                raise SemanticError(f"Duplicate PORT '{node.name}'")
-            port_set.add(node.name)
-            ports.append(node.name)
+def semantic_check(program: ProgramNode, program_name: str):
+    """Perform semantic validation, then delegate serialization."""
 
-    # 2. Process Prefilters
-    for node in ast_nodes:
-        if isinstance(node, PreFilter):
-            keys = []
-            for k in node.keys:
-                keys.append({"field": k.field, "value": k.value})
+    # 1. Ensure Unique Port Names
+    seen = set()
+    duplicates = []
+    qset_names = {qset.name for qset in getattr(program, "qsets", [])}
 
-            default_action: Optional[Dict[str, Any]] = None
-            if node.default:
-                action = node.default.action
-                if isinstance(action, ForwardInstr):
-                    if action.dest not in port_set:
-                        raise SemanticError(f"Undefined port '{action.dest}' in DEFAULT of PREFILTER '{node.name}'")
-                    default_action = {"op": "FWD", "args": {"dest": action.dest}}
-                elif isinstance(action, DropInstr):
-                    default_action = {"op": "DROP", "args": {}}
+        
+    # === 1. Ensure unique port names ===
+
+    # check all input ports
+    for port in program.ports_in:
+        if port.name in seen:
+            duplicates.append(port.name)
+        seen.add(port.name)
+
+    # check all output ports
+    for port in program.ports_out:
+        if port.name in seen:
+            duplicates.append(port.name)
+        seen.add(port.name)
+
+        qset_name = port.qset
+        print("qset_name")
+        print(qset_name)
+        if qset_name != "" and qset_name not in qset_names:
+            port_name = getattr(port, "name", str(port))
+            raise SemanticError(f"Queue set '{qset_name}' referenced by port '{port_name}' is not defined")
+
+    if duplicates:
+        dups = ", ".join(duplicates)
+        raise SemanticError(f"Duplicate port name(s): {dups}")
+    
+
+    # === 2. Validate Prefilters ===
+    for prefilter in program.prefilters:
+        # 1. Validate Keys
+        # 2. Validate Default Action
+        # 3. Validate Body
+
+        # --- default ---
+        if prefilter.default_action:
+            action = prefilter.default_action
+            if isinstance(action, ForwardInstr):
+                if action.target not in program.ports_out:
+                    raise SemanticError(f"Port '{action.target}' not found as POUT port. Error on DEFAULT of PREFILTER '{prefilter.name}'")
+            elif isinstance(action, ForwardAndEnqueueInstr):
+                if action.target not in program.ports_out:
+                    raise SemanticError(f"Port '{action.target}' not found as POUT port. Error on DEFAULT of PREFILTER '{prefilter.name}'")
+                # TODO: validate qid ?
+            elif isinstance(action, DropInstruction):
+                pass
+            else:
+                raise SemanticError(f"Unsupported DEFAULT instruction in PREFILTER '{prefilter.name}'")
+
+        # --- body ---
+        if prefilter.body:
+            for instr in prefilter.body.instructions:
+                if isinstance(instr, ForwardInstr):
+                    if instr.target not in program.ports_out:
+                        raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
+                # TODO: add qid validation
+                elif isinstance(instr, ForwardAndEnqueueInstr):
+                    if instr.target not in program.ports_out:
+                        raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
+                elif isinstance(instr, HeaderIncrementInstruction):
+                    if instr.target not in SUPPORTED_HEADERS:
+                        raise SemanticError(f"Unsupported header '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
+                elif isinstance(instr, AssignmentInstruction):
+                    if instr.target not in SUPPORTED_HEADERS:
+                        raise SemanticError(f"Unsupported header '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
+                elif isinstance(instr, (DropInstruction, ForwardAndEnqueueInstr, HtoVarInstr, IfNode)):
+                    continue
                 else:
-                    raise SemanticError(f"Unsupported DEFAULT instruction in PREFILTER '{node.name}'")
-
-            body_instructions: List[Dict[str, Any]] = []
-            if node.body:
-                for instr in node.body.statements:
-
-                    if isinstance(instr, ForwardInstr):
-                        if instr.dest not in port_set:
-                            raise SemanticError(f"Undefined port '{instr.dest}' in PREFILTER BODY '{node.name}'")
-                        body_instructions.append({"id": instr_id, "op": "FWD", "args": {"dest": instr.dest}})
-                    elif isinstance(instr, HeaderIncrementInstruction):
-                        if instr.target not in SUPPORTED_HEADERS:
-                            raise SemanticError(f"Unsupported header field '{instr.target}' in PREFILTER BODY '{node.name}'")
-                        body_instructions.append({"id": instr_id, "op": "HINC", "args": {"target": instr.target, "value": instr.value}})
-                    elif isinstance(instr, DropInstr):
-                        body_instructions.append({"id": instr_id, "op": "DROP", "args": {}})
-                    elif isinstance(instr, AssignmentInstruction):
-                        if instr.target not in SUPPORTED_HEADERS:
-                            raise SemanticError(f"Unsupported header field '{instr.target}' in PREFILTER BODY '{node.name}'")
-                        body_instructions.append({"id": instr_id, "op": "ASSIGN", "args": {"target": instr.target, "value": instr.value}})
-                    else:
-                        raise SemanticError(f"Unsupported instruction in PREFILTER BODY '{node.name}'")
-                    instr_id += 1
-
-            prefilters.append({
-                "name": node.name,
-                "keys": keys,
-                "default": default_action,
-                "body": body_instructions
-            })
-
-    ir = {
-        "program": program_name,
-        "compiler_version": 0.1,
-        "schema_version": 1,
-        "data": {"ports": ports},
-        "prefilters": prefilters
-    }
-    return ir
+                    raise SemanticError(f"Unsupported instruction '{type(instr).__name__}' in PREFILTER BODY '{prefilter.name}'")

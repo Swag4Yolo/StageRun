@@ -2,45 +2,109 @@
 
 start: statement+
 
-?statement: port_declr
+?statement: port_in_decl
+          | port_out_decl
+          | qset_decl
           | prefilter
 
-// port_declr: Os items são "PORT" e NAME
-port_declr: "PORT" NAME
+// PORTS
+// port_declr: "PORT" NAME
+port_in_decl: "PIN" NAME
+port_out_decl: "POUT" NAME NAME*
 
-prefilter: "PREFILTER" NAME prefilter_body "END"
+// QUEUES
+qset_decl: "QSET" NAME NAME INT
 
-// prefilter_body: O Lark agrupará numa lista. O ast_utils.create_transformer
-// tentará mapear esta lista para os campos de PreFilter.
-prefilter_body: (key_clause | default_clause | body_clause)*
+// Resources
+// var_decl: "VAR" NAME
+// reg_decl: "REG" NAME
 
-key_clause: "KEY" key_name "==" value
+// Prefilter
+prefilter: "PREFILTER" NAME (key_clause | default_clause | body_clause)* "END"
+key_clause: "KEY" key_ref comp_op value
 default_clause: "DEFAULT" default_instr
 body_clause: "BODY" instr* "END" 
 
 ?default_instr: fwd_instr
               | drop_instr
+              | fwd_queue_instr
 
 
 ?instr: fwd_instr
+      | fwd_queue_instr
       | hinc_instr
       | drop_instr
       | assign_instr
+      | clone_instr
+      | paddtern_instr
+      | htovar_instr
+      | if_block
 
 
+// Instructions List
 fwd_instr: "FWD" NAME
-hinc_instr: "HINC" header_operand SIGNED_NUMBER
+fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
+hinc_instr: "HINC" header_ref SIGNED_INT
 drop_instr: "DROP"
 // TODO: change assign_instr
-assign_instr: "ASSIGN" header_operand SIGNED_NUMBER
+assign_instr: "ASSIGN" header_ref SIGNED_INT
+clone_instr: "CLONE" NAME
+paddtern_instr: "PADTTERN" INT+
+htovar_instr: "HTOVAR" header_ref "->" NAME
 
-key_name:  NAME "." NAME
-header_operand: NAME "." NAME
+
+if_block: if_clause elif_clause* else_clause? "ENDIF"
+if_clause: "IF" bool_expr ":" instr+
+elif_clause: "ELIF" bool_expr ":" instr+
+else_clause: "ELSE" ":" instr+
+
+// =====================
+// Expressões booleanas SEM headers
+//   - var_ref: NAME simples (p.ex., proto, size)
+//   - constantes: inteiros (suporta sinal)
+//   - operadores: &&, ||, !, parêntesis, comparações
+// =====================
+?bool_expr: or_expr
+
+?or_expr: and_expr
+        | or_expr "||" and_expr
+
+?and_expr: not_expr
+         | and_expr "&&" not_expr
+
+?not_expr: comparison
+         | "!" not_expr
+         | "(" bool_expr ")"
+
+?comparison: arith_val comp_op arith_val
+           | "(" comparison ")"
+
+EQ: "=="
+NE: "!="
+LT: "<"
+LE: "<="
+GT: ">"
+GE: ">="
+
+comp_op: EQ | NE | LT | LE | GT | GE
+
+?arith_val: var_ref
+          | SIGNED_INT
+          | "(" arith_val ")"
+
+// Atenção: var_ref é APENAS NAME (sem ponto); nada de headers aqui.
+
+
+
+key_ref:  NAME "." NAME
+header_ref: NAME "." NAME
+var_ref: NAME
 value: NAME | STRING
 
 NAME: /[A-Za-z_][A-Za-z0-9_]*/
 STRING: /"[^"]*"/
-%import common.SIGNED_NUMBER
+%import common.INT
+%import common.SIGNED_INT
 %import common.WS
 %ignore WS
 %ignore /#[^\n]*/

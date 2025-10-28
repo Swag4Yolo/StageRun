@@ -1,109 +1,180 @@
-# src/stagerun_compiler/parser.py
 from pathlib import Path
-from lark import Lark, Transformer
-from lark.visitors import v_args
-import sys
+from lark import Lark, Transformer, v_args, Token
+from Core.ast_nodes import *
 
-# Importa as dataclasses (agora sem o ast_utils.Ast inheritance)
-from ast_nodes import * # Mantenha a importação, mas remova o '_Ast' e o ast_utils do ast_nodes.py
+# Resolve path relative to this file (parser.py)
+GRAMMAR_PATH = Path(__file__).parent / "grammar" / "stagerun_grammar.lark"
 
-GRAMMAR_PATH = "py/grammar/stagerun_grammar.lark"
+with open(GRAMMAR_PATH, "r") as f:
+    GRAMMAR = f.read()
 
+parser = Lark(GRAMMAR, start="start", parser="lalr")
 
-# Usamos v_args(inline=True) para que o Lark nos envie os argumentos por posição.
 @v_args(inline=True)
 class StageRunTransformer(Transformer):
     """
-    Constrói a AST StageRun (dataclasses) a partir do Lark Tree,
-    sem depender do ast_utils.create_transformer.
+    Transforms the Lark parse tree into a fully-typed AST (dataclasses only).
+    Important: No Lark Token or Tree escapes this layer.
     """
-    
-    # --- Métodos de Limpeza/Tokens ---
-    
-    def value(self, item): 
-        # item é o Token ('NAME' ou 'STRING').
-        val = item.value
-        if item.type == 'STRING':
-            return val[1:-1] # Remove as aspas
-        return val
 
-    def SIGNED_NUMBER(self, item):
-        return int(item.value)
-    
-    def key_name(self, name1, name2):
-        # name1 e name2 são Tokens, o '.' é ignorado
-        return f"{name1.value}.{name2.value}"
+    # --- Terminal normalization (remove quotes / cast ints) -----------------
+    def NAME(self, t: Token):
+        return str(t)
 
-    def header_operand(self, name1, name2):
-        return f"{name1.value}.{name2.value}"
+    def STRING(self, t: Token):
+        # strip enclosing quotes
+        s = str(t)
+        return s[1:-1] if len(s) >= 2 and s[0] == s[-1] == '"' else s
 
-    # --- Métodos de Construção da AST (Correspondência de Regra) ---
-    
+    def INT(self, t: Token):
+        return int(str(t))
+
+    def SIGNED_INT(self, t: Token):
+        return int(str(t))
+
+    # --- Atoms: dotted refs -------------------------------------------------
+    def header_ref(self, left, right):
+        # "IPV4" "." "TTL" -> "IPV4.TTL"
+        return f"{left}.{right}"
+
+    def key_ref(self, left, right):
+        # "PKT" "." "PORT" -> "PKT.PORT"
+        return f"{left}.{right}"
+
+    # --- Top-level program assembly ----------------------------------------
     def start(self, *statements):
-        # A regra 'start' (statement+) retorna a lista final de nós AST
-        return list(statements)
-
-    def port_declr(self, name): # Mantenha o nome da regra (port_declr)
-        return PortDecl(name=name.value) 
-
-    # Regras de Instrução
-    def fwd_instr(self, dest):
-        return ForwardInstr(dest=dest.value)
-
-    def drop_instr(self): # Não recebe argumentos além de self
-        return DropInstr()
-        
-    def hinc_instr(self, target, value):
-        # Target e Value já foram limpos pelos métodos key_name/SIGNED_NUMBER
-        return HeaderIncrementInstruction(target=target, value=value)
-    
-    def assign_instr(self, target, value):
-        return AssignmentInstruction(target=target, value=value)
-
-    # Regras de Cláusula
-    def key_clause(self, key_name, value): # A regra Lark tem 'KEY' key_name '==' value
-        # O "KEY" e o "==" são ignorados.
-        return KeyClause(field=key_name, value=value)
-
-    def default_instr(self, action): # Regra que apenas encaminha para FWD/DROP
-        return action # Retorna o nó FwdInstr ou DropInstr
-
-    def default_clause(self, action): # A regra Lark é 'DEFAULT' default_instr
-        return DefaultClause(action=action)
-
-    # Correção do problema de iterabilidade e agrupamento
-    def body_clause(self, *statements):
-        # A tupla *statements contém 0 ou mais nós de instrução. list() é sempre uma lista.
-        return BodyClause(statements=list(statements)) 
-
-    # Regra de Agrupamento Intermédio
-    def prefilter_body(self, *items):
-        # Agrupa a lista de cláusulas em chaves, default, body
-        keys = [item for item in items if isinstance(item, KeyClause)]
-        default = next((item for item in items if isinstance(item, DefaultClause)), None)
-        body = next((item for item in items if isinstance(item, BodyClause)), None)
-        
-        # Devolve um dicionário temporário que a regra 'prefilter' irá consumir.
-        return {'keys': keys, 'default': default, 'body': body}
-
-    # Regra Final
-    def prefilter(self, name, body_data):
-        # name é o Token (NAME)
-        return PreFilter(
-            name=name.value,
-            keys=body_data['keys'],
-            default=body_data['default'],
-            body=body_data['body']
+        ports_in, ports_out, qsets, vars_, prefilters = [], [], [], [], []
+        for s in statements:
+            if isinstance(s, PortDecl):
+                (ports_in if s.direction == "IN" else ports_out).append(s)
+            elif isinstance(s, QueueSetDecl):
+                qsets.append(s)
+            elif isinstance(s, VarDecl):
+                vars_.append(s.name)
+            elif isinstance(s, PreFilterNode):
+                prefilters.append(s)
+        return ProgramNode(
+            ports_in=ports_in,
+            ports_out=ports_out,
+            qsets=qsets,
+            vars=vars_,
+            prefilters=prefilters,
         )
 
+    # --- Declarations -------------------------------------------------------
+    def port_in_decl(self, name):
+        # "PIN" NAME
+        return PortDecl(direction="IN", name=str(name), qset="")
 
-# ------------------------------
-# Parser
-# ------------------------------
+    def port_out_decl(self, name, *qset):
+        # "POUT" NAME
+        if not qset:
+            return PortDecl(direction="OUT", name=str(name),qset="")
+        return PortDecl(direction="OUT", name=str(name), qset=str(qset[0]))
 
-parser = Lark.open(str(GRAMMAR_PATH), parser="lalr", propagate_positions=True)
+    def qset_decl(self, name, port, size):
+        # "QSET" NAME NAME INT
+        return QueueSetDecl(name=str(name), port=str(port), size=int(size))
 
-def parse_program(text: str):
+    def var_decl(self, name):
+        # "VAR" NAME
+        return VarDecl(name=str(name))
+
+    # --- Prefilter + clauses ------------------------------------------------
+    def key_clause(self, key_ref, op, val):
+        return PreFilterKey(field=key_ref,  operand=op, value=str(val))
+
+    def default_clause(self, instr):
+        # instr já é, por exemplo, ForwardInstr ou DropInstruction
+        return PreFilterDefault(instr=instr)
+
+    def body_clause(self, *instrs):
+        return BodyNode(instructions=list(instrs))
+
+    def prefilter(self, name, *clauses):
+        keys, default, body = [], None, None
+
+        for c in clauses:
+            if isinstance(c, PreFilterKey):
+                print(c)
+                keys.append(c)
+            elif isinstance(c, PreFilterDefault):
+                default = c.instr
+            elif isinstance(c, BodyNode):
+                body = c
+        return PreFilterNode(name=str(name), keys=keys,
+                            default_action=default, body=body)
+
+    # --- Instructions -------------------------------------------------------
+    def fwd_instr(self, target):
+        return ForwardInstr(target=str(target))
+    
+    def fwd_queue_instr(self, target, qid):
+        return ForwardAndEnqueueInstr(target=str(target), qid=int(qid))
+
+    def drop_instr(self):
+        return DropInstruction()
+
+    def assign_instr(self, hdr_ref, value):
+        return AssignmentInstruction(target=str(hdr_ref), value=int(value))
+
+    def hinc_instr(self, hdr_ref, value):
+        return HeaderIncrementInstruction(target=str(hdr_ref), value=int(value))
+
+    def htovar_instr(self, hdr_ref, varname):
+        return HtoVarInstr(target=str(hdr_ref), var_name=str(varname))
+
+    def paddtern_instr(self, *pattern):
+        return PadToPatternInstr(pattern=pattern)
+
+    # --- IF / ELIF / ELSE / ENDIF ------------------------------------------
+    def if_block(self, if_clause, *rest):
+        branches = [ConditionBlock(condition=if_clause[0], body=if_clause[1])]
+        else_body = None
+        for part in rest:
+            if isinstance(part, tuple):       # elif
+                branches.append(ConditionBlock(condition=part[0], body=part[1]))
+            elif isinstance(part, list):      # else
+                else_body = part
+        return IfNode(branches=branches, else_body=else_body)
+
+    def if_clause(self, cond_text, *instrs):
+        return (BooleanExpression(text=str(cond_text)), list(instrs))
+
+    def elif_clause(self, cond_text, *instrs):
+        return (BooleanExpression(text=str(cond_text)), list(instrs))
+
+    def else_clause(self, *instrs):
+        return list(instrs)
+
+    # --- Boolean expressions → canonical string ----------------------------
+    # We render a safe, fully-parenthesized textual form so semantics/IR
+    # never see Tokens/Trees and the controller can parse/evaluate later.
+
+    def bool_expr(self, x):        return str(x)
+    def or_expr(self, a, b=None):
+        # LALR may call with two or with fully reduced child; guard both.
+        return f"({a}) || ({b})" if b is not None else str(a)
+    def and_expr(self, a, b=None):
+        return f"({a}) && ({b})" if b is not None else str(a)
+    def not_expr(self, *args):
+        if len(args) == 2 and str(args[0]) == "!":
+            return f"!({args[1]})"
+        return str(args[-1])
+    def comparison(self, l, op, r):
+        return f"({l} {op} {r})"
+    # Note: each token has two properties: t.type and t.value
+    def comp_op(self, t):          return str(t.type)
+    def arith_val(self, x):        return str(x)
+    def var_ref(self, name):       return str(name)
+
+    # --- Default
+    def __default__(self, data, children, meta):
+        if len(children) == 1:
+            return children[0]
+        return children
+
+
+def parse_stagerun_program(text: str) -> ProgramNode:
     tree = parser.parse(text)
-    # Apenas o seu transformer é usado.
     return StageRunTransformer().transform(tree)

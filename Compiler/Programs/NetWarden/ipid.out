@@ -3,9 +3,13 @@
   "compiler_version": 0.1,
   "schema_version": 1,
   "data": {
-    "ports": [
-      "InternalPort",
-      "ExternalPort"
+    "ingress_ports": [
+      "InternalPortIN",
+      "ExternalPortIN"
+    ],
+    "egress_ports": [
+      "InternalPortOUT",
+      "ExternalPortOUT"
     ]
   },
   "prefilters": [
@@ -14,18 +18,20 @@
       "keys": [
         {
           "field": "PKT.PORT",
-          "value": "ExternalPort"
+          "operand": "EQ",
+          "value": "ExternalPortIN"
         }
       ],
       "default": {
+        "id": 1,
         "op": "FWD",
         "args": {
-          "dest": "InternalPort"
+          "dest": "InternalPortOUT"
         }
       },
       "body": [
         {
-          "id": 1,
+          "id": 2,
           "op": "ASSIGN",
           "args": {
             "target": "IPV4.ID",
@@ -39,13 +45,15 @@
       "keys": [
         {
           "field": "PKT.PORT",
-          "value": "InternalPort"
+          "operand": "EQ",
+          "value": "InternalPortIN"
         }
       ],
       "default": {
+        "id": 3,
         "op": "FWD",
         "args": {
-          "dest": "ExternalPort"
+          "dest": "ExternalPortOUT"
         }
       },
       "body": []
