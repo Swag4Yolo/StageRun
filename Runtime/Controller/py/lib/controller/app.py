@@ -16,6 +16,9 @@ from lib.utils.utils import *
 from lib.tofino.tofino_controller import *
 from lib.controller.deployer.deployer import deploy_program
 
+from Core.ast_nodes import ProgramNode
+from Core.serializer import load_program
+
 logger = logging.getLogger("controller")
 
 async def upload_app(
@@ -175,8 +178,12 @@ def assign_program_to_category(app_key: str, new_ports: dict):
     return new_cat, "new"
 
 
-def validate_compiled_app(compiled_app, manifest, app_key, engine_key):
+def validate_compiled_app(app_file_path, manifest, app_key, engine_key):
     try:
+        # 1. Open the App
+        app = ProgramNode(load_program(app_file_path, ProgramNode))
+        
+
         # 0. controller.config.compiler_version == app.compiler_version
         app_compiler_version = compiled_app["compiler_version"]
         if app_compiler_version != sm.COMPILER_VERSION:
@@ -252,10 +259,10 @@ async def install_app(tag: str, version: str):
     compiled_app_file_path = app.app_path
     manifest_file_path = app.manifest_path
    
-    compiled_app = parse_json(compiled_app_file_path)
+    # compiled_app = parse_json(compiled_app_file_path)
     manifest = parse_manifest(manifest_file_path)
 
-    valid_app, msg = validate_compiled_app(compiled_app, manifest, app_key, engine_key)
+    valid_app, msg, compiled_app = validate_compiled_app(compiled_app_file_path, manifest, app_key, engine_key)
 
     if not valid_app:
         return {"status": "error", "message": msg}

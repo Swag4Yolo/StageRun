@@ -26,9 +26,9 @@ class PortDecl(ASTNode):
 
 @dataclass
 class QueueSetDecl(ASTNode):
-    """QSET <queue_name> <port> <size>."""
+    """QSET <queue_name> <type> <size>."""
     name: str
-    port: str
+    type: str
     size: int
 
 
@@ -54,29 +54,29 @@ class InstructionNode(ASTNode):
 
 
 @dataclass
-class ForwardInstr(InstructionNode):
+class FwdInstr(InstructionNode):
     target: str  # port name
 
 @dataclass
-class DropInstruction(InstructionNode):
+class DropInstr(InstructionNode):
     pass
 
 
 @dataclass
-class ForwardAndEnqueueInstr(InstructionNode):
+class FwdAndEnqueueInstr(InstructionNode):
     target: str
     qid: int
 
 
 @dataclass
-class HeaderIncrementInstruction(InstructionNode):
+class HeaderIncrementInstr(InstructionNode):
     """HINC IPV4.TTL <value>."""
     target: str         # e.g., "IPV4.TTL"
     value: int
 
 
 @dataclass
-class AssignmentInstruction(InstructionNode):
+class AssignmentInstr(InstructionNode):
     """ASSIGN IPV4.ID <value>."""
     target: str         # e.g., "IPV4.ID"
     value: int

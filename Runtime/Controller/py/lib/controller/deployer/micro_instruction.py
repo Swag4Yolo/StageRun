@@ -6,6 +6,8 @@ from lib.tofino.constants import *
 from lib.utils.manifest_parser import get_pnum_from_endpoints
 import lib.controller.state_manager as sm
 
+from Core.ast_nodes import *
+import json
 
 
 def cidr_to_ip_and_mask(ip_cidr: str):
@@ -15,6 +17,9 @@ def cidr_to_ip_and_mask(ip_cidr: str):
     mask_int = int(network.netmask)
     return ip_int, mask_int
 
+class MicroInstructionError(Exception):
+    pass
+
 
 class MicroInstructionParser():
 
@@ -22,7 +27,7 @@ class MicroInstructionParser():
         pass
 
     @staticmethod
-    def translate_keys_to_micro(prefilter, manifest, pid) -> PreFilterKeys:
+    def translate_keys_to_micro(prefilter:PreFilterNode, manifest, pid) -> PreFilterKeys:
         # Defaults para todos os campos aceites pelo set_pkt_id()
         args = {
             # Table Keys
@@ -45,42 +50,40 @@ class MicroInstructionParser():
         }
 
         # Preenche com base nas keys do prefilter
-        for key in prefilter["keys"]:
-            field = key["field"]
-            value = key["value"]
+        for key in prefilter.keys:
+            field = key.field
+            operand = key.operand
+            value = key.value
 
-            if field == "PKT.PORT":
-                port = get_pnum_from_endpoints(manifest, value)
-                dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(port, 0)
-                args["ig_port"] = [dev_port, MASK_PORT]
+            if operand == "EQ":
+                if field == "PKT.PORT":
+                    port = get_pnum_from_endpoints(manifest, value)
+                    dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(port, 0)
+                    args["ig_port"] = [dev_port, MASK_PORT]
 
-            elif field == "IPV4.DST":
-                ip_cidr = value  # e.g. "10.10.1.0/24"
-                ip_int, mask_int = cidr_to_ip_and_mask(ip_cidr)
-                args["ipv4_dst_addr"] = [ip_int, mask_int]
-
-
-            # Podes ir adicionando outros campos (SRC, TCP ports, etc.)
+                elif field == "IPV4.DST":
+                    ip_cidr = value  # e.g. "10.10.1.0/24"
+                    ip_int, mask_int = cidr_to_ip_and_mask(ip_cidr)
+                    args["ipv4_dst_addr"] = [ip_int, mask_int]
+            #TODO: implement the other operands
+            # TODO: implement other fields for the KEY
 
         return PreFilterKeys(instr_name='set_pkt_id',kwargs=args)
         # return [{"instr": "set_pkt_id", "kwargs": args}]
 
     @staticmethod
-    def translate_default_action_to_micro(prefilter, manifest, pid) -> DefaultAction:
+    def translate_default_action_to_micro(prefilter: PreFilterNode, manifest, pid) -> DefaultAction:
         """
         Translate a default action (like FWD, DROP, FWD_AND_ENQUEUE) 
         into a list of micro-instructions ready for installation.
         """
-        default_action = prefilter['default']
-        op = default_action["op"].upper()
-        args = default_action.get("args", {})
+        default_action = prefilter.default_action
 
         instr = ""
         kwargs = ""
 
-        if op == "DROP":
+        if isinstance(default_action, DropInstr):
             # Drop action
-
             instr = "drop"
             kwargs = {
                     "pkt_id": 0,
@@ -88,9 +91,9 @@ class MicroInstructionParser():
                     "program_id": pid
                 }
 
-        elif op == "FWD":
+        elif isinstance(default_action, FwdInstr):
             # Forward to a specific port
-            dest = args.get("dest")
+            dest = default_action.target
             front_port = get_pnum_from_endpoints(manifest, dest)
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
 
@@ -101,10 +104,10 @@ class MicroInstructionParser():
                     "program_id": pid
                 }
 
-        elif op in ("FWD_ENQUEUE", "FWD_AND_ENQUEUE"):
+        elif isinstance(default_action, FwdAndEnqueueInstr):
             # Forward and enqueue to queue
-            dest = args.get("dest")
-            qid = args.get("qid", 0)
+            dest = default_action.target
+            qid = default_action.qid
             front_port = get_pnum_from_endpoints(manifest, dest)
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
 
@@ -126,12 +129,12 @@ class MicroInstructionParser():
             # }]
 
         else:
-            raise ValueError(f"Unknown default action: {op}")
+            raise ValueError(f"Unknown default action: {type(default_action)}")
         
         return DefaultAction(instr_name=instr, kwargs=kwargs)
 
     @staticmethod
-    def translate_instr_to_micro(instr, manifest, pid) -> List[MicroInstruction]:
+    def translate_instr_to_micro(instr:InstructionNode, manifest, pid) -> List[MicroInstruction]:
         headers = {
             'IPV4.TTL': HEADER_IPV4_TTL,
             'IPV4.DST': HEADER_IPV4_DST,
@@ -142,13 +145,19 @@ class MicroInstructionParser():
             'IPV4.ID': HEADER_IPV4_IDENTIFICATION,
         }
 
-        if instr['op'] == FWD:
+        if isinstance(instr, FwdInstr):
             front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
             # return [{"instr": "fwd_ni", "kwargs":{"port": dev_port, "program_id": pid}}]
             return [MicroInstruction(instr_name='fwd_ni', kwargs={"port": dev_port, "program_id": pid})]
         
-        elif instr['op'] == HINC:
+        elif isinstance(instr, FwdAndEnqueueInstr):
+            front_port = get_pnum_from_endpoints(manifest, instr["args"]["dest"])
+            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
+            # return [{"instr": "fwd_ni", "kwargs":{"port": dev_port, "program_id": pid}}]
+            return [MicroInstruction(instr_name='fwd_ni', kwargs={"port": dev_port, "program_id": pid, "qid": instr.qid})]
+        
+        elif isinstance(instr, HeaderIncrementInstr):
             # sum_ni(ni=current_instr, pkt_id=[pkt_id, MASK_PKT_ID], instr_id=next_instruct, header_update=1, header_id=HEADER_IPV4_TTL, const_val=1)
             if instr['args']['target'] == "IPV4.TTL":
                 return [
@@ -156,26 +165,50 @@ class MicroInstructionParser():
                     MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val": instr['args']['value']}),
                         ]
         
-        elif instr['op'] == ASSIGNMENT:
+        elif isinstance(instr, AssignmentInstr):
             tofino_header = headers[instr['args']['target']]            
             return [
                 MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": tofino_header, "const_val": instr['args']['value']}),
                     ]
+        
+        raise MicroInstructionError(f"Unsupported micro instruction '{type(instr).__name__} of type {type(instr)}'")
 
     @classmethod
-    def translate_body_to_micro(self, prefilter, manifest, pid):
+    def translate_body_to_micro(self, prefilter:PreFilterNode, manifest, pid):
         micro_instrs = []
-        for instr in prefilter['body']:
+        for instr in prefilter.body.instructions:
             micro_instrs.extend(self.translate_instr_to_micro(instr, manifest, pid))
         return micro_instrs
 
+    # @classmethod
+    # def to_micro(self, program, manifest, pid) -> StageRunMicroProgram:
+    #     stagerun_micro_program = StageRunMicroProgram(program['program'])
+
+    #     for prefilter in program['prefilters']:
+
+    #         name = prefilter['name']
+    #         keys = self.translate_keys_to_micro(prefilter, manifest, pid)
+    #         action = self.translate_default_action_to_micro(prefilter, manifest, pid)
+
+    #         # print("To_micro ACTION:")
+    #         # print(action.instr_name)
+    #         # print(action.kwargs)
+    #         body = self.translate_body_to_micro(prefilter, manifest, pid)
+
+    #         pf = PreFilter(name, keys, action, body)
+            
+    #         stagerun_micro_program.prefilters.append(pf)
+
+    #     return stagerun_micro_program
+
     @classmethod
-    def to_micro(self, program, manifest, pid) -> StageRunMicroProgram:
-        stagerun_micro_program = StageRunMicroProgram(program['program'])
+    def to_micro(self, program:ProgramNode, manifest:json, pid:int) -> StageRunMicroProgram:
+        name=""
+        prefilters, ports_in, ports_out, qsets = [], [], [], []
 
-        for prefilter in program['prefilters']:
+        for prefilter in program.prefilters:
 
-            name = prefilter['name']
+            name = prefilter.name
             keys = self.translate_keys_to_micro(prefilter, manifest, pid)
             action = self.translate_default_action_to_micro(prefilter, manifest, pid)
 
@@ -184,8 +217,21 @@ class MicroInstructionParser():
             # print(action.kwargs)
             body = self.translate_body_to_micro(prefilter, manifest, pid)
 
-            pf = PreFilter(name, keys, action, body)
-            
-            stagerun_micro_program.prefilters.append(pf)
+            prefilters.append(PreFilter(name, keys, action, body))
+        
+        for port in program.ports_in:
+            ports_in.append(InPort(port.name)) 
+        for port in program.ports_out:
+            ports_out.append(OutPort(port.name, port.qset)) 
+        for qset in program.qsets:
+            qsets.append(Qset(name=qset.name,
+                                 type=qset.type,
+                                 size=qset.size)) 
 
-        return stagerun_micro_program
+        return StageRunMicroProgram(
+            name=name,
+            prefilters=prefilters,
+            ports_in=ports_in,
+            ports_out=ports_out,
+            qsets=qsets
+        )

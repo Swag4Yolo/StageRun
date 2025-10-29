@@ -8,22 +8,6 @@ from typing import List, Dict, Optional, Tuple, Set
 from dataclasses import dataclass, field
 from lib.controller.constants import *
 
-
-class StageRunMicroProgram():
-    def __init__(self, name = ""):
-        # Parsing the IR (from the compiler)
-        self.name = name
-        self.prefilters = []
-        self.posfilters = []
-
-        # Generating the Graph
-        # self.graphs: dict[str, ControlFlowGraph] = {}
-
-    def show(self):
-        for prefilter in self.prefilters:
-            prefilter.show()
-
-
 @dataclass
 class PreFilterKeys:
     instr_name: str   # e.g. "set_pkt_id"
@@ -61,6 +45,34 @@ class PreFilter:
         for instr in self.body:
             print(instr)
 
+@dataclass
+class InPort:
+    name: str
+
+@dataclass
+class OutPort:
+    name: str
+    qset: str
+
+@dataclass
+class Qset:
+    name: str
+    type: str
+    size:  int
+
+
+@dataclass
+class StageRunMicroProgram:
+    name: str
+    prefilters: List[PreFilter] = field(default_factory=list)
+    ports_in:   List[InPort] = field(default_factory=list)
+    ports_out:  List[OutPort] = field(default_factory=list)
+    qsets:      List[Qset] = field(default_factory=list)
+    # posfilters: List[PosFilter] = field(default_factory=list)
+
+    def show(self):
+        for prefilter in self.prefilters:
+            prefilter.show()
 
 
 @dataclass

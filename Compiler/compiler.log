@@ -1,32 +1,37 @@
 Initializing compiler_env Environment
 Requirement already satisfied: lark in ./compiler_env/lib/python3.10/site-packages (from -r requirements.txt (line 1)) (1.2.2)
+Collecting dill
+  Downloading dill-0.4.0-py3-none-any.whl (119 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 119.7/119.7 KB 2.9 MB/s eta 0:00:00
+Installing collected packages: dill
+Successfully installed dill-0.4.0
 Removing old Compiled Files
 Compiling Programs
 	 Compiling Program => 1
-real 0,12
+real 0,14
+user 0,13
+sys 0,00
+	 Compiling Program => 2
+real 0,13
 user 0,11
 sys 0,01
-	 Compiling Program => 2
-real 0,12
-user 0,11
-sys 0,00
 	 Compiling Program => ditto2
-real 0,12
-user 0,11
+real 0,13
+user 0,13
 sys 0,00
 	 Compiling Program => mew_crossfire
-real 0,11
-user 0,11
-sys 0,00
+real 0,13
+user 0,12
+sys 0,01
 	 Compiling Program => mew
 real 0,12
-user 0,10
+user 0,11
 sys 0,01
 	 Compiling Program => nethide
-real 0,11
-user 0,10
-sys 0,01
-	 Compiling Program => ipid
-real 0,12
-user 0,11
+real 0,13
+user 0,12
 sys 0,00
+	 Compiling Program => ipid
+real 0,13
+user 0,12
+sys 0,01

@@ -1,94 +1,134 @@
-from typing import Dict, Any, List, Optional
+"""
+semantic.py
+- Pure semantic validation of the parsed ProgramNode
+- Returns minimal 'resources' dict for the controller/exporter
+- Raises SemanticError on invalid programs
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any, Dict, List, Set
+
+# Import AST types
 from Core.ast_nodes import *
-from Core.serializer import save_program
 
-
+# -------------------------
+# Errors
+# -------------------------
 class SemanticError(Exception):
     pass
 
 
-SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN"}
+SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN", "IPV4.PROTO"}
 
 
-def semantic_check(program: ProgramNode, program_name: str):
-    """Perform semantic validation, then delegate serialization."""
+def _collect_ports(program: ProgramNode) -> tuple[List[str], List[str]]:
+    pin = [p.name for p in program.ports_in]
+    pout = [p.name for p in program.ports_out]
 
-    # 1. Ensure Unique Port Names
-    seen = set()
-    duplicates = []
-    qset_names = {qset.name for qset in getattr(program, "qsets", [])}
-    out_port_names = []
+    # uniqueness across all ports
+    seen: Set[str] = set()
+    dups: List[str] = []
+    for n in pin + pout:
+        if n in seen:
+            dups.append(n)
+        seen.add(n)
+    if dups:
+        raise SemanticError(f"Duplicate port name(s): {', '.join(dups)}")
+    return pin, pout
 
+
+def _validate_prefilter(pf: PreFilterNode, ports_in: Set[str], ports_out: Set[str]) -> Dict[str, Any]:
+    # keys
+    keys = []
+    for k in pf.keys or []:
+        if not isinstance(k, PreFilterKey):
+            raise SemanticError(f"PREFILTER '{pf.name}': invalid key entry")
+        # field like "PKT.PORT" or "HDR.FIELD"
+        field = k.field
+        value = k.value
+        # basic checks: port key must reference existing port names
+        if field == "PKT.PORT":
+            if value not in ports_in and value not in ports_out:
+                raise SemanticError(f"PREFILTER '{pf.name}': KEY references unknown port '{value}'")
+        keys.append({"field": field, "value": value})
+
+    # default action (only DROP, FWD, FWD_AND_ENQUEUE are allowed here)
+    default_action = None
+    if pf.default_action is not None:
+        da = pf.default_action
         
-    # === 1. Ensure unique port names ===
+        if isinstance(da, FwdInstr):
+            if da.target not in ports_out:
+                raise SemanticError(f"PREFILTER '{pf.name}': DEFAULT FWD to undefined egress '{da.target}'")
+            default_action = {"op": "FWD", "args": {"dest": da.target}}
 
-    # check all input ports
-    for port in program.ports_in:
-        if port.name in seen:
-            duplicates.append(port.name)
-        seen.add(port.name)
+        elif isinstance(da, FwdAndEnqueueInstr):
+            if da.target not in ports_out:
+                raise SemanticError(f"PREFILTER '{pf.name}': DEFAULT FWD_AND_ENQUEUE to undefined egress '{da.target}'")
+            default_action = {"op": "FWD_AND_ENQUEUE", "args": {"dest": da.target, "qid": da.qid}}
+        
+        elif isinstance(da, DropInstr):
+            default_action = {"op": "DROP", "args": {}}
+        else:
+            raise SemanticError(f"PREFILTER '{pf.name}': unsupported DEFAULT instruction")
 
-    # check all output ports
-    for port in program.ports_out:
-        if port.name in seen:
-            duplicates.append(port.name)
-        out_port_names.append(port.name)
-        seen.add(port.name)
-
-        if port.qset != "" and port.qset not in qset_names:
-            port_name = getattr(port, "name", str(port))
-            raise SemanticError(f"Queue set '{port.qset}' referenced by port '{port_name}' is not defined")
-
-    if duplicates:
-        dups = ", ".join(duplicates)
-        raise SemanticError(f"Duplicate port name(s): {dups}")
-    
-
-    # === 2. Validate Prefilters ===
-    for prefilter in program.prefilters:
-        # 1. Validate Keys
-        # 2. Validate Default Action
-        # 3. Validate Body
-
-        # --- default ---
-        if prefilter.default_action:
-            action = prefilter.default_action
-            if isinstance(action, ForwardInstr):
-                if action.target not in out_port_names:
-                    raise SemanticError(f"Port '{action.target}' not found as POUT port. Error on DEFAULT of PREFILTER '{prefilter.name}'")
-            elif isinstance(action, ForwardAndEnqueueInstr):
-                if action.target not in out_port_names:
-                    raise SemanticError(f"Port '{action.target}' not found as POUT port. Error on DEFAULT of PREFILTER '{prefilter.name}'")
-                # TODO: validate qid ?
-            elif isinstance(action, DropInstruction):
+    # body checks (headers validity, ports existence)
+    if pf.body and isinstance(pf.body, BodyNode):
+        for instr in pf.body.instructions:
+            if isinstance(instr, FwdInstr):
+                if instr.target not in ports_out:
+                    raise SemanticError(f"PREFILTER '{pf.name}': FWD to undefined egress '{instr.target}'")
+            elif isinstance(instr, FwdAndEnqueueInstr):
+                if instr.target not in ports_out:
+                    raise SemanticError(f"PREFILTER '{pf.name}': FWD_AND_ENQUEUE to undefined egress '{instr.target}'")
+            elif isinstance(instr, DropInstr):
                 pass
+            elif isinstance(instr, AssignmentInstr):
+                if instr.target not in SUPPORTED_HEADERS:
+                    raise SemanticError(f"PREFILTER '{pf.name}': ASSIGN unsupported header '{instr.target}'")
+            elif isinstance(instr, HeaderIncrementInstr):
+                if instr.target not in SUPPORTED_HEADERS:
+                    raise SemanticError(f"PREFILTER '{pf.name}': HINC unsupported header '{instr.target}'")
+            elif isinstance(instr, HtoVarInstr):
+                # allow any header here; If you want, restrict to SUPPORTED_HEADERS
+                if instr.target not in SUPPORTED_HEADERS:
+                    raise SemanticError(f"PREFILTER '{pf.name}': HTOVAR unsupported header '{instr.target}'")
+            elif isinstance(instr, PadToPatternInstr):
+                for pat in instr.pattern:
+                    if pat < 64:
+                        raise SemanticError(f"PREFILTER '{pf.name}': element present in PADTTERN cannot be under 64 => '{pat}'")
             else:
-                raise SemanticError(f"Unsupported DEFAULT instruction in PREFILTER '{prefilter.name}'")
+                # block-level structures (IfNode etc.) are allowed — CFG builder tratará depois
+                # Se quiseres ser estrito: testar nomes de classe aqui.
+                pass
 
-        # --- body ---
-        if prefilter.body:
-            for instr in prefilter.body.instructions:
-                if isinstance(instr, ForwardInstr):
-                    if instr.target not in out_port_names:
-                        raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
-                # TODO: add qid validation
-                elif isinstance(instr, ForwardAndEnqueueInstr):
-                    if instr.target not in out_port_names:
-                        raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
-                elif isinstance(instr, HeaderIncrementInstruction):
-                    if instr.target not in SUPPORTED_HEADERS:
-                        raise SemanticError(f"Unsupported header '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
-                elif isinstance(instr, AssignmentInstruction):
-                    if instr.target not in SUPPORTED_HEADERS:
-                        raise SemanticError(f"Unsupported header '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
-                elif isinstance(instr, (DropInstruction, ForwardAndEnqueueInstr, HtoVarInstr, IfNode)):
-                    continue
-                elif isinstance(instr, CloneInstr):
-                    if instr.target not in out_port_names:
-                        raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
-                elif isinstance(instr, PadToPatternInstr):
-                    for el in instr.pattern:
-                        if not type(el) == int:
-                            raise SemanticError(f"Unsupported pattern for PADTTERN instruction in 'PREFILTER BODY '{prefilter.name}'")
-                else:
-                    raise SemanticError(f"Unsupported instruction '{type(instr).__name__}' in PREFILTER BODY '{prefilter.name}'")
+    return {"name": pf.name, "keys": keys, "default": default_action}
+
+
+def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
+    """
+    Validate ProgramNode. Return a dict containing 'resources' for the exporter.
+    Raise SemanticError on failures.
+    """
+    ports_in_set, ports_out_set = _collect_ports(program)
+    #TODO: implement functions for queues, hashes, registers, clones
+
+    # validate prefilters independently
+    for pf in program.prefilters or []:
+        if not isinstance(pf, PreFilterNode):
+            raise SemanticError("Invalid prefilter node in AST")
+        _validate_prefilter(pf, ports_in_set, ports_out_set)
+
+    # Build a resources summary for the controller/exporter
+    resources = {
+        "ingress_ports": ports_in_set,
+        "egress_ports": ports_out_set,
+        # leave the below to be extended by later passes:
+        "queues": [],       # e.g., [{"port":"P1_OUT","qid":1}]
+        "hashes": [],
+        "registers": [],
+        "clones": [],
+    }
+
+    return {"resources": resources}

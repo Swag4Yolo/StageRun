@@ -77,7 +77,7 @@ class StageRunTransformer(Transformer):
 
     def qset_decl(self, name, port, size):
         # "QSET" NAME NAME INT
-        return QueueSetDecl(name=str(name), port=str(port), size=int(size))
+        return QueueSetDecl(name=str(name), type=str(port), size=int(size))
 
     def var_decl(self, name):
         # "VAR" NAME
@@ -110,19 +110,19 @@ class StageRunTransformer(Transformer):
 
     # --- Instructions -------------------------------------------------------
     def fwd_instr(self, target):
-        return ForwardInstr(target=str(target))
+        return FwdInstr(target=str(target))
     
     def fwd_queue_instr(self, target, qid):
-        return ForwardAndEnqueueInstr(target=str(target), qid=int(qid))
+        return FwdAndEnqueueInstr(target=str(target), qid=int(qid))
 
     def drop_instr(self):
-        return DropInstruction()
+        return DropInstr()
 
     def assign_instr(self, hdr_ref, value):
-        return AssignmentInstruction(target=str(hdr_ref), value=int(value))
+        return AssignmentInstr(target=str(hdr_ref), value=int(value))
 
     def hinc_instr(self, hdr_ref, value):
-        return HeaderIncrementInstruction(target=str(hdr_ref), value=int(value))
+        return HeaderIncrementInstr(target=str(hdr_ref), value=int(value))
 
     def htovar_instr(self, hdr_ref, varname):
         return HtoVarInstr(target=str(hdr_ref), var_name=str(varname))

@@ -1,3 +1,0 @@
-PreFilterKey(field='PKT.PORT', operand='EQ', value='ExternalPortIN')
-PreFilterKey(field='PKT.PORT', operand='EQ', value='InternalPortIN')
-Compiled Programs/NetWarden/ipid.srun -> Programs/NetWarden/ipid.out
