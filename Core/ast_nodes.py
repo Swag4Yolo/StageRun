@@ -88,6 +88,11 @@ class PadToPatternInstr(InstructionNode):
     """HTOVAR IPV4.PROTO -> proto."""
     pattern: List[int]        
 
+@dataclass
+class CloneInstr(InstructionNode):
+    """CLONE P1_OUT"""
+    target: str  
+
 # ======================
 # Conditionals
 # ======================

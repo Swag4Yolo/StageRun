@@ -5,24 +5,26 @@ start: statement+
 ?statement: port_in_decl
           | port_out_decl
           | qset_decl
+          | var_decl
+          | reg_decl
           | prefilter
 
 // PORTS
 // port_declr: "PORT" NAME
-port_in_decl: "PIN" NAME
-port_out_decl: "POUT" NAME NAME*
+port_in_decl: "PIN" NAME ";"
+port_out_decl: "POUT" NAME NAME? ";"
 
 // QUEUES
-qset_decl: "QSET" NAME NAME INT
+qset_decl: "QSET" NAME NAME INT ";"
 
 // Resources
-// var_decl: "VAR" NAME
-// reg_decl: "REG" NAME
+var_decl: "VAR" NAME ";"
+reg_decl: "REG" NAME ";"
 
 // Prefilter
 prefilter: "PREFILTER" NAME (key_clause | default_clause | body_clause)* "END"
-key_clause: "KEY" key_ref comp_op value
-default_clause: "DEFAULT" default_instr
+key_clause: "KEY" key_ref comp_op value ";"
+default_clause: "DEFAULT" default_instr ";"
 body_clause: "BODY" instr* "END" 
 
 ?default_instr: fwd_instr
@@ -30,22 +32,22 @@ body_clause: "BODY" instr* "END"
               | fwd_queue_instr
 
 
-?instr: fwd_instr
-      | fwd_queue_instr
-      | hinc_instr
-      | drop_instr
-      | assign_instr
-      | clone_instr
-      | paddtern_instr
-      | htovar_instr
+?instr: fwd_instr ";"
+      | fwd_queue_instr ";"
+      | hinc_instr ";"
+      | drop_instr ";"
+      | assign_instr ";"
+      | clone_instr ";"
+      | paddtern_instr ";"
+      | htovar_instr ";"
       | if_block
 
 
 // Instructions List
 fwd_instr: "FWD" NAME
 fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
-hinc_instr: "HINC" header_ref SIGNED_INT
 drop_instr: "DROP"
+hinc_instr: "HINC" header_ref SIGNED_INT
 // TODO: change assign_instr
 assign_instr: "ASSIGN" header_ref SIGNED_INT
 clone_instr: "CLONE" NAME

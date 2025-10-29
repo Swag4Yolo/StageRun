@@ -17,6 +17,7 @@ def semantic_check(program: ProgramNode, program_name: str):
     seen = set()
     duplicates = []
     qset_names = {qset.name for qset in getattr(program, "qsets", [])}
+    out_port_names = []
 
         
     # === 1. Ensure unique port names ===
@@ -31,14 +32,12 @@ def semantic_check(program: ProgramNode, program_name: str):
     for port in program.ports_out:
         if port.name in seen:
             duplicates.append(port.name)
+        out_port_names.append(port.name)
         seen.add(port.name)
 
-        qset_name = port.qset
-        print("qset_name")
-        print(qset_name)
-        if qset_name != "" and qset_name not in qset_names:
+        if port.qset != "" and port.qset not in qset_names:
             port_name = getattr(port, "name", str(port))
-            raise SemanticError(f"Queue set '{qset_name}' referenced by port '{port_name}' is not defined")
+            raise SemanticError(f"Queue set '{port.qset}' referenced by port '{port_name}' is not defined")
 
     if duplicates:
         dups = ", ".join(duplicates)
@@ -55,10 +54,10 @@ def semantic_check(program: ProgramNode, program_name: str):
         if prefilter.default_action:
             action = prefilter.default_action
             if isinstance(action, ForwardInstr):
-                if action.target not in program.ports_out:
+                if action.target not in out_port_names:
                     raise SemanticError(f"Port '{action.target}' not found as POUT port. Error on DEFAULT of PREFILTER '{prefilter.name}'")
             elif isinstance(action, ForwardAndEnqueueInstr):
-                if action.target not in program.ports_out:
+                if action.target not in out_port_names:
                     raise SemanticError(f"Port '{action.target}' not found as POUT port. Error on DEFAULT of PREFILTER '{prefilter.name}'")
                 # TODO: validate qid ?
             elif isinstance(action, DropInstruction):
@@ -70,11 +69,11 @@ def semantic_check(program: ProgramNode, program_name: str):
         if prefilter.body:
             for instr in prefilter.body.instructions:
                 if isinstance(instr, ForwardInstr):
-                    if instr.target not in program.ports_out:
+                    if instr.target not in out_port_names:
                         raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
                 # TODO: add qid validation
                 elif isinstance(instr, ForwardAndEnqueueInstr):
-                    if instr.target not in program.ports_out:
+                    if instr.target not in out_port_names:
                         raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
                 elif isinstance(instr, HeaderIncrementInstruction):
                     if instr.target not in SUPPORTED_HEADERS:
@@ -84,5 +83,12 @@ def semantic_check(program: ProgramNode, program_name: str):
                         raise SemanticError(f"Unsupported header '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
                 elif isinstance(instr, (DropInstruction, ForwardAndEnqueueInstr, HtoVarInstr, IfNode)):
                     continue
+                elif isinstance(instr, CloneInstr):
+                    if instr.target not in out_port_names:
+                        raise SemanticError(f"Undefined port '{instr.target}' in PREFILTER BODY '{prefilter.name}'")
+                elif isinstance(instr, PadToPatternInstr):
+                    for el in instr.pattern:
+                        if not type(el) == int:
+                            raise SemanticError(f"Unsupported pattern for PADTTERN instruction in 'PREFILTER BODY '{prefilter.name}'")
                 else:
                     raise SemanticError(f"Unsupported instruction '{type(instr).__name__}' in PREFILTER BODY '{prefilter.name}'")

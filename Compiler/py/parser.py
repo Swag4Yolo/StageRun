@@ -127,6 +127,9 @@ class StageRunTransformer(Transformer):
     def paddtern_instr(self, *pattern):
         return PadToPatternInstr(pattern=pattern)
 
+    def clone_instr(self, target):
+        return CloneInstr(target=str(target))
+
     # --- IF / ELIF / ELSE / ENDIF ------------------------------------------
     def if_block(self, if_clause, *rest):
         branches = [ConditionBlock(condition=if_clause[0], body=if_clause[1])]
