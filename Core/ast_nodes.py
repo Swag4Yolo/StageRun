@@ -37,6 +37,11 @@ class VarDecl(ASTNode):
     """VAR <name>."""
     name: str
 
+@dataclass
+class RegDecl(ASTNode):
+    """REG <name>."""
+    name: str
+
 
 # ======================
 # Instructions
@@ -157,4 +162,5 @@ class ProgramNode(ASTNode):
     ports_out: List[PortDecl] = field(default_factory=list)
     qsets: List[QueueSetDecl] = field(default_factory=list)
     vars: List[VarDecl] = field(default_factory=list)
+    regs: List[RegDecl] = field(default_factory=list)
     prefilters: List[PreFilterNode] = field(default_factory=list)

@@ -43,21 +43,24 @@ class StageRunTransformer(Transformer):
 
     # --- Top-level program assembly ----------------------------------------
     def start(self, *statements):
-        ports_in, ports_out, qsets, vars_, prefilters = [], [], [], [], []
+        ports_in, ports_out, qsets, program_vars, regs, prefilters = [], [], [], [], [], []
         for s in statements:
             if isinstance(s, PortDecl):
                 (ports_in if s.direction == "IN" else ports_out).append(s)
             elif isinstance(s, QueueSetDecl):
                 qsets.append(s)
             elif isinstance(s, VarDecl):
-                vars_.append(s.name)
+                program_vars.append(s)
+            elif isinstance(s, RegDecl):
+                regs.append(s)
             elif isinstance(s, PreFilterNode):
                 prefilters.append(s)
         return ProgramNode(
             ports_in=ports_in,
             ports_out=ports_out,
             qsets=qsets,
-            vars=vars_,
+            vars=program_vars,
+            regs=regs,
             prefilters=prefilters,
         )
 

@@ -1,22 +1,22 @@
 # Ports
-PIN  fromExternal
-PIN  fromInternal
-POUT toExternal
-POUT toInternal
+PIN  fromExternal;
+PIN  fromInternal;
+POUT toExternal;
+POUT toInternal;
 
 # Resources Allocation
-HASH five_t {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
+HASH five_t {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO};
 
-REG numBytesPort
-REG numBytesFlow
-REG numFlowsPort
-VAR nBytes
-VAR nFlows
-VAR oldNumBytes
+REG numBytesPort;
+REG numBytesFlow;
+REG numFlowsPort;
+VAR nBytes;
+VAR nFlows;
+VAR oldNumBytes;
 
 PREFILTER from_external
-KEY PKT.PORT == fromExternal
-DEFAULT FWD toInternal
+KEY PKT.PORT == fromExternal;
+DEFAULT FWD toInternal;
   BODY
     MINC numBytesFlow[five_t] PKT.SIZE -> oldNumBytes (OLD)
     MINC numBytesPort[PKT.PORT] PKT.SIZE -> nBytes (NEW)
