@@ -59,9 +59,9 @@ def _validate_prefilter(pf: PreFilterNode, ports_in: Set[str], ports_out: Set[st
         da = pf.default_action
         
         if isinstance(da, FwdInstr):
-            if da.target not in ports_out:
-                raise SemanticError(f"PREFILTER '{pf.name}': DEFAULT FWD to undefined egress '{da.target}'")
-            default_action = {"op": "FWD", "args": {"dest": da.target}}
+            if da.port not in ports_out:
+                raise SemanticError(f"PREFILTER '{pf.name}': DEFAULT FWD to undefined egress '{da.port}'")
+            default_action = {"op": "FWD", "args": {"dest": da.port}}
 
         elif isinstance(da, FwdAndEnqueueInstr):
             if da.target not in ports_out:
@@ -77,14 +77,14 @@ def _validate_prefilter(pf: PreFilterNode, ports_in: Set[str], ports_out: Set[st
     if pf.body and isinstance(pf.body, BodyNode):
         for instr in pf.body.instructions:
             if isinstance(instr, FwdInstr):
-                if instr.target not in ports_out:
-                    raise SemanticError(f"PREFILTER '{pf.name}': FWD to undefined egress '{instr.target}'")
+                if instr.port not in ports_out:
+                    raise SemanticError(f"PREFILTER '{pf.name}': FWD to undefined egress '{instr.port}'")
             elif isinstance(instr, FwdAndEnqueueInstr):
                 if instr.target not in ports_out:
                     raise SemanticError(f"PREFILTER '{pf.name}': FWD_AND_ENQUEUE to undefined egress '{instr.target}'")
             elif isinstance(instr, DropInstr):
                 pass
-            elif isinstance(instr, AssignmentInstr):
+            elif isinstance(instr, HeaderAssignInstr):
                 if instr.target not in SUPPORTED_HEADERS:
                     raise SemanticError(f"PREFILTER '{pf.name}': ASSIGN unsupported header '{instr.target}'")
             elif isinstance(instr, HeaderIncrementInstr):

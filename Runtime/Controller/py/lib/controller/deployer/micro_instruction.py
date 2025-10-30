@@ -93,7 +93,7 @@ class MicroInstructionParser():
 
         elif isinstance(default_action, FwdInstr):
             # Forward to a specific port
-            dest = default_action.target
+            dest = default_action.port
             front_port = get_pnum_from_endpoints(manifest, dest)
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
 
@@ -165,7 +165,7 @@ class MicroInstructionParser():
                     MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val": instr['args']['value']}),
                         ]
         
-        elif isinstance(instr, AssignmentInstr):
+        elif isinstance(instr, HeaderAssignInstr):
             tofino_header = headers[instr['args']['target']]            
             return [
                 MicroInstruction(instr_name='sum_ni', kwargs={"program_id": pid, "header_update":1, "header_id": tofino_header, "const_val": instr['args']['value']}),

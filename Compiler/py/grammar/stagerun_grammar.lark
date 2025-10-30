@@ -36,7 +36,7 @@ body_clause: "BODY" instr* "END"
       | fwd_queue_instr ";"
       | hinc_instr ";"
       | drop_instr ";"
-      | assign_instr ";"
+      | header_assign_instr ";"
       | clone_instr ";"
       | paddtern_instr ";"
       | htovar_instr ";"
@@ -48,8 +48,8 @@ fwd_instr: "FWD" NAME
 fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
 drop_instr: "DROP"
 hinc_instr: "HINC" header_ref SIGNED_INT
-// TODO: change assign_instr
-assign_instr: "ASSIGN" header_ref SIGNED_INT
+// TODO: change header_assign_instr
+header_assign_instr: "HASSIGN" header_ref SIGNED_INT
 clone_instr: "CLONE" NAME
 paddtern_instr: "PADTTERN" INT+
 htovar_instr: "HTOVAR" header_ref "->" NAME

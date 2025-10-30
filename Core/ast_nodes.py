@@ -1,3 +1,5 @@
+# to use future references (BooleanExpression)
+from __future__ import annotations 
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -55,7 +57,7 @@ class InstructionNode(ASTNode):
 
 @dataclass
 class FwdInstr(InstructionNode):
-    target: str  # port name
+    port: str  # port name
 
 @dataclass
 class DropInstr(InstructionNode):
@@ -76,8 +78,8 @@ class HeaderIncrementInstr(InstructionNode):
 
 
 @dataclass
-class AssignmentInstr(InstructionNode):
-    """ASSIGN IPV4.ID <value>."""
+class HeaderAssignInstr(InstructionNode):
+    """HASSIGN IPV4.ID <value>."""
     target: str         # e.g., "IPV4.ID"
     value: int
 
@@ -96,7 +98,7 @@ class PadToPatternInstr(InstructionNode):
 @dataclass
 class CloneInstr(InstructionNode):
     """CLONE P1_OUT"""
-    target: str  
+    port: str  
 
 # ======================
 # Conditionals
@@ -104,8 +106,10 @@ class CloneInstr(InstructionNode):
 
 @dataclass
 class BooleanExpression(ASTNode):
-    """Boolean expression represented as canonical string (no tokens/trees)."""
-    text: str
+    left: str | BooleanExpression | None
+    op: str
+    right: str | BooleanExpression | None
+
 
 
 @dataclass

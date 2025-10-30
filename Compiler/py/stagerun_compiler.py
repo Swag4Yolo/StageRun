@@ -31,12 +31,11 @@ def build_stage_run_graphs(program: ProgramNode, program_name: str):
     """Build one StageRunGraph per PREFILTER (only BODY statements are graphed)."""
     graphs = []
     for pf in program.prefilters:
-        body = getattr(pf, "body", None)
-        stmts = getattr(body, "instructions", []) if body else []
-        # cf_id: program:prefilter
-        cf_id = f"{program_name}:{pf.name}"
-        builder = StageRunGraphBuilder(graph_id=cf_id)
-        g = builder.build_from_instructions(pf.name, stmts)
+        body = []
+        if pf.body:
+            body = pf.body.instructions
+        builder = StageRunGraphBuilder(graph_id=pf.name)
+        g = builder.build_from_instructions(pf.name, body)
         graphs.append(g)
     return graphs
 
@@ -78,11 +77,11 @@ def main():
 
     # 4) Export JSON (+ checksum header)
     checksum = export_stage_run_graphs(
-        graphs=graphs,
-        output_path=out_path,
         program_name=program_name,
-        schema_version=args.schema_version,
-        resources=resources
+        graphs=graphs,
+        resources=resources,
+        output_path=out_path,
+        schema_version=args.schema_version
     )
 
     print(f"✔ Compiled {src_path.name}")

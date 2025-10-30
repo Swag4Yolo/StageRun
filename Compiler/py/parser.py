@@ -110,7 +110,7 @@ class StageRunTransformer(Transformer):
 
     # --- Instructions -------------------------------------------------------
     def fwd_instr(self, target):
-        return FwdInstr(target=str(target))
+        return FwdInstr(port=str(target))
     
     def fwd_queue_instr(self, target, qid):
         return FwdAndEnqueueInstr(target=str(target), qid=int(qid))
@@ -118,8 +118,8 @@ class StageRunTransformer(Transformer):
     def drop_instr(self):
         return DropInstr()
 
-    def assign_instr(self, hdr_ref, value):
-        return AssignmentInstr(target=str(hdr_ref), value=int(value))
+    def header_assign_instr(self, hdr_ref, value):
+        return HeaderAssignInstr(target=str(hdr_ref), value=int(value))
 
     def hinc_instr(self, hdr_ref, value):
         return HeaderIncrementInstr(target=str(hdr_ref), value=int(value))
@@ -131,7 +131,7 @@ class StageRunTransformer(Transformer):
         return PadToPatternInstr(pattern=pattern)
 
     def clone_instr(self, target):
-        return CloneInstr(target=str(target))
+        return CloneInstr(port=str(target))
 
     # --- IF / ELIF / ELSE / ENDIF ------------------------------------------
     def if_block(self, if_clause, *rest):
@@ -144,32 +144,38 @@ class StageRunTransformer(Transformer):
                 else_body = part
         return IfNode(branches=branches, else_body=else_body)
 
-    def if_clause(self, cond_text, *instrs):
-        return (BooleanExpression(text=str(cond_text)), list(instrs))
+    def if_clause(self, cond_expr, *instrs):
+        # cond_expr já é BooleanExpression vindo do transformer
+        return (cond_expr, list(instrs))
 
-    def elif_clause(self, cond_text, *instrs):
-        return (BooleanExpression(text=str(cond_text)), list(instrs))
+    def elif_clause(self, cond_expr, *instrs):
+        return (cond_expr, list(instrs))
 
     def else_clause(self, *instrs):
         return list(instrs)
 
+
     # --- Boolean expressions → canonical string ----------------------------
     # We render a safe, fully-parenthesized textual form so semantics/IR
     # never see Tokens/Trees and the controller can parse/evaluate later.
+    def comparison(self, left, op, right):
+        return BooleanExpression(left=str(left), op=str(op), right=str(right))
 
-    def bool_expr(self, x):        return str(x)
-    def or_expr(self, a, b=None):
-        # LALR may call with two or with fully reduced child; guard both.
-        return f"({a}) || ({b})" if b is not None else str(a)
-    def and_expr(self, a, b=None):
-        return f"({a}) && ({b})" if b is not None else str(a)
+    def and_expr(self, left, right):
+        return BooleanExpression(left=left, op="&&", right=right)
+
+    def or_expr(self, left, right):
+        return BooleanExpression(left=left, op="||", right=right)
+
     def not_expr(self, *args):
+        # Ex: !expr  → args = ['!', <BooleanExpression>]
         if len(args) == 2 and str(args[0]) == "!":
-            return f"!({args[1]})"
-        return str(args[-1])
-    def comparison(self, l, op, r):
-        return f"({l} {op} {r})"
-    # Note: each token has two properties: t.type and t.value
+            expr = args[1]
+            return BooleanExpression(left=None, op="!", right=expr)
+
+        # Ex: (expr) ou comparação direta → apenas devolve a expressão
+        return args[-1]
+
     def comp_op(self, t):          return str(t.type)
     def arith_val(self, x):        return str(x)
     def var_ref(self, name):       return str(name)

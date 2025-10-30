@@ -14,17 +14,14 @@ class StageRunEffect:
 @dataclass
 class StageRunNode:
     id: int
-    kind: str               # "INSTR" ou "IF"
     instr: Any              # AST node original
     effect: StageRunEffect
-    # label: Optional[str] = None
 
 @dataclass
 class StageRunEdge:
     src: int
     dst: int
     dep: DepType
-    # label: Optional[str] = None
 
 @dataclass
 class StageRunGraph:
@@ -35,6 +32,6 @@ class StageRunGraph:
     def add_node(self, node: StageRunNode):
         self.nodes[node.id] = node
 
-    def add_edge(self, src: int, dst: int, dep: DepType, label: Optional[str] = None):
+    def add_edge(self, src: int, dst: int, dep: DepType):
         self.edges.append(StageRunEdge(src, dst, dep))
         # self.edges.append(StageRunEdge(src, dst, dep, label))
