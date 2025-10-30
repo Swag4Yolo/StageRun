@@ -20,24 +20,10 @@ if str(ROOT_DIR) not in sys.path:
 # Imports from codebase
 from Compiler.py.parser import parse_stagerun_program
 from Compiler.py.semantic import semantic_check, SemanticError
-from Core.stagerun_graph.graph_builder import StageRunGraphBuilder
 from Core.stagerun_graph.exporter import export_stage_run_graphs
 
 # Types
 from Core.ast_nodes import ProgramNode  # only for type hints
-
-
-def build_stage_run_graphs(program: ProgramNode, program_name: str):
-    """Build one StageRunGraph per PREFILTER (only BODY statements are graphed)."""
-    graphs = []
-    for pf in program.prefilters:
-        body = []
-        if pf.body:
-            body = pf.body.instructions
-        builder = StageRunGraphBuilder(graph_id=pf.name)
-        g = builder.build_from_instructions(pf.name, body)
-        graphs.append(g)
-    return graphs
 
 
 def main():
@@ -65,27 +51,21 @@ def main():
 
     # 2) Semantic validation (returns resources for controller)
     try:
-        sem_out = semantic_check(program, program_name)
+        semantic_check(program, program_name)
     except SemanticError as e:
         print(f"Semantic Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    resources = sem_out.get("resources", {})
-
-    # 3) Build StageRunGraph(s)
-    graphs = build_stage_run_graphs(program, program_name)
-
-    # 4) Export JSON (+ checksum header)
+    # 3) Export JSON (+ checksum header)
     checksum = export_stage_run_graphs(
+        program=program,
         program_name=program_name,
-        graphs=graphs,
-        resources=resources,
         output_path=out_path,
         schema_version=args.schema_version
     )
 
     print(f"✔ Compiled {src_path.name}")
-    print(f"   → graphs: {len(graphs)} prefilter(s)")
+    # print(f"   → graphs: {len(graphs)} prefilter(s)")
     print(f"   → wrote: {out_path}")
     print(f"   → checksum: {checksum}")
 

@@ -25,8 +25,9 @@ from pathlib import Path
 from typing import Any, Dict
 import dataclasses
 
+from Core.stagerun_graph.graph_builder import StageRunGraphBuilder
 from Core.stagerun_graph.graph_core import StageRunGraph, StageRunNode, StageRunEdge
-from Core.ast_nodes import IfNode, BooleanExpression
+from Core.ast_nodes import IfNode, BooleanExpression, ProgramNode
 
 
 # ============================================================
@@ -148,15 +149,56 @@ def _serialize_graph(graph: StageRunGraph) -> Dict[str, Any]:
         "edges": [_serialize_edge(e) for e in graph.edges],
     }
 
+def _serialize_resources(program: ProgramNode):
+    pin = [p.name for p in program.ports_in]
+    pout = [p.name for p in program.ports_out]
+    qsets = [{"name": qset.name, "type": qset.type, "size": qset.size} for qset in program.qsets]
+    regs = [reg.name for reg in program.regs]
+    vars = [var.name for var in program.vars]
+    resources = {
+        "ingress_ports": pin,
+        "egress_ports": pout,
+        "queues": qsets,       # e.g., [{"port":"P1_OUT","qid":1}]
+        # "hashes": program.hashes,
+        "registers": regs,
+        "vars": vars,
+        # "clones": program.,
+    }
 
+    return resources
+
+def _build_stagerun_graphs(program: ProgramNode):
+    """Build one StageRunGraph per PREFILTER (only BODY statements are graphed)."""
+    graphs = []
+    for pf in program.prefilters:
+        body = []
+        if pf.body:
+            body = pf.body.instructions
+        builder = StageRunGraphBuilder(graph_id=pf.name)
+        g = builder.build_from_instructions(pf.name, body)
+        graphs.append(g)
+    return graphs
+
+def _build_stagerun_resources(program: ProgramNode):
+    # Build a resources summary for the controller/exporter
+    resources = {
+        "ingress_ports": program.ports_in,
+        "egress_ports": program.ports_out,
+        "queues": program.qsets,       # e.g., [{"port":"P1_OUT","qid":1}]
+        # "hashes": program.hashes,
+        "registers": program.regs,
+        "vars": program.vars,
+        # "clones": program.,
+    }
+
+    return resources
 # ============================================================
 # Main Export Function
 # ============================================================
 
 def export_stage_run_graphs(
+    program: ProgramNode,
     program_name: str,
-    graphs: list[StageRunGraph],
-    resources: Dict[str, Any],
     output_path: str | Path,
     schema_version: int = 1.0
 ) -> str:
@@ -169,11 +211,16 @@ def export_stage_run_graphs(
     :param output_path: Path to output JSON file
     :return: SHA-256 checksum string
     """
+
+    # 1. Build StageRunGraph(s)
+    graphs = _build_stagerun_graphs(program)
+    # resources = _build_stagerun_resources(program)
+
     payload = {
         "program": program_name,
         "schema_version": schema_version,
         "graphs": [_serialize_graph(g) for g in graphs],
-        "resources": resources,
+        "resources": _serialize_resources(program),
     }
 
     json_bytes = json.dumps(payload, indent=2, sort_keys=False).encode("utf-8")

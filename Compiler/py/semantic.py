@@ -22,7 +22,7 @@ class SemanticError(Exception):
 SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN", "IPV4.PROTO"}
 
 
-def _collect_ports(program: ProgramNode) -> tuple[List[str], List[str]]:
+def _validate_ports(program: ProgramNode) -> tuple[List[str], List[str]]:
     pin = [p.name for p in program.ports_in]
     pout = [p.name for p in program.ports_out]
 
@@ -111,7 +111,7 @@ def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
     Validate ProgramNode. Return a dict containing 'resources' for the exporter.
     Raise SemanticError on failures.
     """
-    ports_in_set, ports_out_set = _collect_ports(program)
+    ports_in_set, ports_out_set = _validate_ports(program)
     #TODO: implement functions for queues, hashes, registers, clones
 
     # validate prefilters independently
@@ -119,16 +119,3 @@ def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
         if not isinstance(pf, PreFilterNode):
             raise SemanticError("Invalid prefilter node in AST")
         _validate_prefilter(pf, ports_in_set, ports_out_set)
-
-    # Build a resources summary for the controller/exporter
-    resources = {
-        "ingress_ports": ports_in_set,
-        "egress_ports": ports_out_set,
-        # leave the below to be extended by later passes:
-        "queues": [],       # e.g., [{"port":"P1_OUT","qid":1}]
-        "hashes": [],
-        "registers": [],
-        "clones": [],
-    }
-
-    return {"resources": resources}
