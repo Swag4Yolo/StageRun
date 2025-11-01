@@ -132,12 +132,7 @@ class IfNode(InstructionNode):
 class PreFilterKey(ASTNode):
     field: str
     operand: str
-    value: str
-
-
-@dataclass
-class PreFilterDefault(ASTNode):
-    instr: InstructionNode
+    value: str | int
 
 @dataclass
 class PreFilterDefault(ASTNode):

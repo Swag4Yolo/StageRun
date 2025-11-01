@@ -1,10 +1,21 @@
-import traceback
-# import ipaddress
+from __future__ import annotations
+import json
+from pathlib import Path
+from typing import Any, Dict, List
 
+import traceback
+import os
 # Custom Imports
 from lib.controller.deployer.types import *
 from lib.controller.deployer.micro_instruction import *
 from lib.utils.utils import Timer
+
+from Core.stagerun_graph.importer import load_stage_run_graphs  # lê JSON do compilador (com checksum)
+from .micro_instruction import MicroInstructionParser
+from .planner import Planner   # implementas o MVP acima
+# from .installer import install_plan # já tens base para instalar tables
+# from .resources import apply_resources, cleanup_resources
+
 
 timer = Timer()
 
@@ -70,10 +81,164 @@ def install_micro_instr(micro_instr, current_stage):
     return None
 	
 
-#def generate_cfg(micro_program: StageRunProgram, manifest, program_id):
 
 
-def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
+# ---------------------------------------------------------------------------
+# Utils de IO
+# ---------------------------------------------------------------------------
+def load_json(path: str | Path) -> Dict[str, Any]:
+    with Path(path).open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+def load_compiled_program(compiled_path: str | Path) -> Dict[str, Any]:
+    """
+    Lê o JSON produzido pelo compilador (exporter), contendo os StageRunGraphs.
+    Espera um dicionário com pelo menos: {"graphs": [...], ...}
+    """
+    payload = load_json(compiled_path)
+    # Se tiveres um importer dedicado, poderias usar:
+    # graphs = import_stage_run_graphs_from_json(payload)
+    # return {"graphs": graphs, "meta": { ... }}
+    return payload
+
+# ---------------------------------------------------------------------------
+# Serialização leve do plan_result (só para logging / debug)
+# ---------------------------------------------------------------------------
+def plan_result_to_dict(plan_result) -> Dict[str, Any]:
+    """
+    Converte o retorno do Planner para um dicionário serializável em JSON
+    (sem perder infos úteis para debugging).
+    """
+    def node_to_dict(n: MicroNode) -> Dict[str, Any]:
+        # n.instr tem (instr, kwargs)
+        instr_name = getattr(n.instr, "instr", None)
+        kwargs = getattr(n.instr, "kwargs", {}) or {}
+        return {
+            "id": n.id,
+            "instr": instr_name,
+            "kwargs": kwargs,
+            "allocated_stage": getattr(n, "allocated_stage", None),
+            "allocated_flow": getattr(n, "allocated_flow", None),
+            "flow_id": getattr(n, "flow_id", None),
+            "parent_node_id": getattr(n, "parent_node_id", None),
+            "graph_id": getattr(n, "graph_id", None),
+            "var_slot_map": getattr(g, "var_slot_map", {}),
+            # "nodes": [...],
+
+        }
+
+    def edge_to_dict(e: MicroEdge) -> Dict[str, Any]:
+        return {"src": e.src, "dst": e.dst, "dep": e.dep}
+
+    graphs_out: List[Dict[str, Any]] = []
+    for g in plan_result.graphs:
+        graphs_out.append({
+            "graph_id": g.graph_id,
+            "keys" : g.keys,
+            "default_action": g.default_action,
+            "nodes": [node_to_dict(n) for n in g.nodes.values()],
+            "edges": [edge_to_dict(e) for e in g.edges],
+            # ChoiceGroups normalmente são resolvidos no Planner; se ainda houver, serializa:
+            "choices": getattr(g, "choices", []),
+        })
+
+    stats = getattr(plan_result, "stats", None)
+    stats_out = {
+        "stages_used": getattr(stats, "stages_used", None),
+        "total_nodes": getattr(stats, "total_nodes", None),
+        "total_choices": getattr(stats, "total_choices", None),
+        "total_flows": getattr(stats, "total_flows", None),
+        "write_phases_inserted": getattr(stats, "write_phases_inserted", None),
+    } if stats else None
+
+    return {"graphs": graphs_out, "stats": stats_out}
+
+
+# ------------------------------------------------------
+def deploy_program(
+    compiled_app: str,
+    manifest: str,
+    app_key: str,
+    engine_key:str,
+    program_id: int,
+    *,
+    deploy_hw: bool = True,
+    return_dict: bool = False,
+    pretty_print: bool = True,
+) -> Dict[str, Any] | None:
+    """
+    1) Lê o JSON do compilador (StageRun graphs)
+    2) Constrói MicroGraphs via MicroInstructionParser.to_micro()
+    3) Corre o Planner para obter plan_result
+    4) Devolve (ou imprime) um dicionário com o plano (sem instalar nada)
+    """
+
+    # try: 
+    sm.connect_tofino()
+    print("Inside Deploy Program")
+
+    # compiled_app = load_compiled_program(compiled_json_path)
+    # manifest = load_json(manifest_path)
+    isa = sm.get_engine_ISA(sm.get_running_engine_key())
+
+    stage_run_graphs = compiled_app.get("graphs", [])
+    if not stage_run_graphs:
+        raise ValueError("Compiled program JSON has no 'graphs' entry.")
+
+    # 2) StageRun → Micro
+    mip = MicroInstructionParser(isa=isa, manifest=manifest)
+    micro_graphs: List[MicroGraph] = mip.to_micro(stage_run_graphs)
+
+    if __debug__:
+        with open("MicroGraphs.log", "w") as f:
+            pass
+        with open("MicroGraphsPlanned.log", "w") as f:
+            pass
+        for mg in micro_graphs:
+            mg.debug_print()
+
+    # 3) Planner
+    planner = Planner(isa=isa)
+    plan_result = planner.plan(micro_graphs, pid=program_id)
+
+    if __debug__:
+        for mg in plan_result.graphs:
+            mg.debug_print(show_effects=True, filepath="MicroGraphsPlanned.log")
+
+    # 4) Serializar para debug / output
+    plan_dict = plan_result_to_dict(plan_result)
+
+    if pretty_print:
+        with open("deployer.log.json", "w") as f:
+            f.write(json.dumps(plan_dict, indent=2, ensure_ascii=False))
+
+    # 5. Configure resources
+    resources = compiled_app["resources"]
+    # TOO: save state regarding queues so that when the program runs it installs the necessary queues 
+    # "resources" : {
+    #    "queues": {
+    #     "prio_queues": {
+    #       "type": "PRIO",
+    #       "size": 2,
+    #       "ports": [
+    #         "P1_OUT",
+    #         "P2_OUT"
+    #       ]
+    #     },
+    #     "rr_queues": {
+    #       "type": "RR",
+    #       "size": 2,
+    #       "ports": [
+    #         "PRR_OUT"
+    #       ]
+    #     }
+    #   }
+    # }
+
+    return False, "NotImplementedError: Installer is still being developed"
+    # return plan_dict if return_dict else None
+
+def deploy_program_old(compiled_app, manifest, app_key, engine_key, program_id, target_hw=True):
 
     try:
         sm.connect_tofino()
@@ -131,21 +296,6 @@ def deploy_program(compiled_app, manifest, app_key, engine_key, program_id, targ
         Installer.install(stagerun_micro_program, cfg_graphs)
         timer.finish()
         timer.calc("Install Phase =>")
-
-        # pipeline = sm.get_engine_ISA(sm.get_running_engine_key())['pipeline']
-        # rules_to_install = planning_phase(cfg, pipeline)
-
-        # install_rules_in_hw(rules_to_install)
-
-
-
-        # print("micro_program")
-        # print(micro_program)
-        # stage = "s2"
-        # for micro_instr in micro_program:
-        #     stage = install_micro_instr(micro_instr, stage)
-        #     if not stage:
-        #         return False, f"Failed to allocate a stage sequence for the application."
         
         sm.engine_controller.write_phase_mechanism.set_write_phases(program_id=program_id, write_s10=1)
 

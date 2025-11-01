@@ -85,7 +85,7 @@ class StageRunTransformer(Transformer):
 
     # --- Prefilter + clauses ------------------------------------------------
     def key_clause(self, key_ref, op, val):
-        return PreFilterKey(field=key_ref,  operand=op, value=str(val))
+        return PreFilterKey(field=key_ref,  operand=op, value=val)
 
     def default_clause(self, instr):
         # instr já é, por exemplo, ForwardInstr ou DropInstruction

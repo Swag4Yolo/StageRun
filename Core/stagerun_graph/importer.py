@@ -31,16 +31,22 @@ def load_graph_objects(input_path: str | Path) -> list[StageRunGraph]:
     graphs = []
     for g in data["graphs"]:
         srg = StageRunGraph(graph_id=g["graph_id"])
+
+        # 1. Add Keys
+        srg.keys = g["keys"]
+        # 2. Add Default Action
+        srg.default_action = g["default_action"]
+        # 3. Add Nodes
         for n in g["nodes"]:
             node = StageRunNode(
                 id=n["id"],
                 kind=n["kind"],
                 instr=None,  # Controller não conhece AST original
-                effect=None,
+                effect=n.get("effect"),
                 # label=n.get("label")
             )
             srg.add_node(node)
         for e in g["edges"]:
-            srg.add_edge(e["src"], e["dst"], e["dep"], label=e.get("label"))
+            srg.add_edge(e["src"], e["dst"], e["dep"])
         graphs.append(srg)
     return graphs

@@ -15,9 +15,10 @@ from lib.utils.manifest_parser import *
 from lib.utils.utils import *
 from lib.tofino.tofino_controller import *
 from lib.controller.deployer.deployer import deploy_program
+from Core.stagerun_isa import ISA
 
 from Core.ast_nodes import ProgramNode
-from Core.serializer import load_program
+from Core.stagerun_graph.importer import load_stage_run_graphs
 
 logger = logging.getLogger("controller")
 
@@ -178,52 +179,59 @@ def assign_program_to_category(app_key: str, new_ports: dict):
     return new_cat, "new"
 
 
-def validate_compiled_app(app_file_path, manifest, app_key, engine_key):
+def validate_compiled_app(compiled_app_file_path, manifest_file_path, app_key, engine_key):
     try:
-        # 1. Open the App
-        app = ProgramNode(load_program(app_file_path, ProgramNode))
-        
+
+        compiled_app = load_stage_run_graphs(compiled_app_file_path)
+        manifest = parse_manifest(manifest_file_path)
 
         # 0. controller.config.compiler_version == app.compiler_version
-        app_compiler_version = compiled_app["compiler_version"]
-        if app_compiler_version != sm.COMPILER_VERSION:
+        isa_version = compiled_app["isa_version"]
 
-            return False, f"Application Compiled Version {app_compiler_version} not the supported compiler version for controller {sm.COMPILER_VERSION}"
+        if isa_version != ISA.VERSION.value:
+            return False, f"Application ISA Version {isa_version} not supported for by current controller with ISA {ISA.VERSION.value}"
 
+        # 1. ISA must be known by controller
         # 1. engine ISA must support instr
+        isa_list = ISA.get_ISA_values()
         engine_isa = sm.get_engine_ISA(engine_key)
         # TODO: do POSFILTERS
-        for prefilter in compiled_app['prefilters']:
-            for instr in prefilter['body']:
+        for graph in compiled_app['graphs']:
+            for instr in graph['nodes']:
                 opcode = instr["op"]
+                if opcode not in isa_list:
+                    return False, f"Instruction {opcode} is not supported by the controller.", None, None
+
                 if opcode not in engine_isa['ISA']:
-                    return False, f"Instruction {opcode} is not supported by the running engine."
+                    return False, f"Instruction {opcode} is not supported by the running engine.", None, None
 
         # 2. Validate Manifest structure
         if not 'switch' in manifest or not 'ports' in manifest['switch']:
             sm.set_app_status(app_key, STATUS_BAD_MANIFEST)
-            return {"status": "error", "message": f"Bad Manifest File. Missing 'switch' or 'ports' in switch"}
+            return False, {"status": "error", "message": f"Bad Manifest File. Missing 'switch' or 'ports' in switch"}, None, None
 
         endpoints = manifest['program']['Endpoints']
-        for port_name in compiled_app['data']['ports']:
+        ports = compiled_app['resources']['ingress_ports']
+        ports.extend(compiled_app['resources']['egress_ports'])
+        for port_name in ports:
             # 2.1 Validate Manifest has the necessary ports names for the apps
             if port_name not in endpoints:
                 sm.set_app_status(app_key, STATUS_BAD_MANIFEST)
-                return False, f"Port '{port_name}' not presented in the manifest file of the application"
+                return False, f"Port '{port_name}' not presented in the manifest file of the application", None, None
             # 2.2 Validate that all endpoints are in the setup
             if endpoints[port_name]['port'] not in manifest['switch']['ports']:
                 sm.set_app_status(app_key, STATUS_BAD_MANIFEST)
-                return False, f"Manifest Error: All Endpoints must be specified in the setup"
+                return False, f"Manifest Error: All Endpoints must be specified in the setup", None, None
             
         # 3. engine recirc ports must be compatible with the current testbed
         if sm.check_port_compatibility(manifest['switch']['ports'], sm.get_engine_recirc_ports(engine_key)) not in ['extend', 'compatible']:
-            return False, "Ports are incompatible with existing engine"
+            return False, "Ports are incompatible with existing engine", None, None
 
-        return True, ""
+        return True, "", compiled_app, manifest
     
     except Exception as e:
         print(traceback.format_exc())
-        return False, f"Failed to Validate the Compiled Application. {repr(e)}"
+        return False, f"Failed to Validate the Compiled Application. {repr(e)}", None, None
 
 
 
@@ -259,17 +267,16 @@ async def install_app(tag: str, version: str):
     compiled_app_file_path = app.app_path
     manifest_file_path = app.manifest_path
    
-    # compiled_app = parse_json(compiled_app_file_path)
-    manifest = parse_manifest(manifest_file_path)
 
-    valid_app, msg, compiled_app = validate_compiled_app(compiled_app_file_path, manifest, app_key, engine_key)
+
+    valid_app, msg, compiled_app, manifest = validate_compiled_app(compiled_app_file_path, manifest_file_path, app_key, engine_key)
 
     if not valid_app:
         return {"status": "error", "message": msg}
 
     program_id = sm.allocate_pid()
 
-    isInstalled, message = deploy_program(compiled_app, manifest, app_key, engine_key, program_id, True)
+    isInstalled, message = deploy_program(compiled_app, manifest, app_key, engine_key, program_id)
 
     #
     #  TODO: test the set_app_status not working

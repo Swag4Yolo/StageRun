@@ -28,6 +28,9 @@ class StageRunGraph:
     graph_id: str
     nodes: Dict[int, StageRunNode] = field(default_factory=dict)
     edges: List[StageRunEdge] = field(default_factory=list)
+    keys: List[Dict] = field(default_factory=list)
+    default_action: Dict | None = None
+
 
     def add_node(self, node: StageRunNode):
         self.nodes[node.id] = node

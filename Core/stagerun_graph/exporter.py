@@ -28,7 +28,7 @@ import dataclasses
 from Core.stagerun_graph.graph_builder import StageRunGraphBuilder
 from Core.stagerun_graph.graph_core import StageRunGraph, StageRunNode, StageRunEdge
 from Core.ast_nodes import IfNode, BooleanExpression, ProgramNode
-
+from Core.stagerun_isa import ISA
 
 # ============================================================
 # Helpers
@@ -61,6 +61,16 @@ def _serialize_bool_expr(expr: BooleanExpression):
 # ============================================================
 # Instruction serialization
 # ============================================================
+_instructions_dict = {
+    "FwdInstr": ISA.FWD,
+    "DropInstr": ISA.DROP,
+    "FwdAndEnqueueInstr": ISA.FWD_AND_ENQUEUE,
+    "HeaderIncrementInstr": ISA.HINC,
+    "HeaderAssignInstr": ISA.HASSIGN,
+    "HtoVarInstr": ISA.HTOVAR,
+    "PadToPatternInstr": ISA.PADTTERN,
+    "CloneInstr": ISA.CLONE,
+}
 
 def _serialize_instr(instr: Any) -> Dict[str, Any]:
     """
@@ -82,7 +92,7 @@ def _serialize_instr(instr: Any) -> Dict[str, Any]:
         if instr.else_body:
             else_body = [_serialize_instr(i) for i in instr.else_body]
         return {
-            "op": "IF",
+            "op": ISA.IF.value,
             "args": {
                 "branches": branches,
                 "else_body": else_body,
@@ -90,7 +100,7 @@ def _serialize_instr(instr: Any) -> Dict[str, Any]:
         }
 
     # Generic path for dataclasses or objects with attributes
-    op = type(instr).__name__
+    op = _instructions_dict[type(instr).__name__].value
     try:
         args = dataclasses.asdict(instr)
     except TypeError:
@@ -145,14 +155,31 @@ def _serialize_graph(graph: StageRunGraph) -> Dict[str, Any]:
     """Serialize a full StageRunGraph."""
     return {
         "graph_id": graph.graph_id,
+        "keys": graph.keys,
+        "default_action": graph.default_action,
         "nodes": [_serialize_node(n) for n in graph.nodes.values()],
         "edges": [_serialize_edge(e) for e in graph.edges],
     }
 
 def _serialize_resources(program: ProgramNode):
     pin = [p.name for p in program.ports_in]
-    pout = [p.name for p in program.ports_out]
-    qsets = [{"name": qset.name, "type": qset.type, "size": qset.size} for qset in program.qsets]
+    pout = []
+    # pout = [p.name for p in program.ports_out]
+    qsets = {}
+
+    for qset in program.qsets:
+        qsets[qset.name] = {
+            "type": qset.type, 
+            "size": qset.size,
+            "ports": []
+            }
+
+    for p in program.ports_out:
+        pout.append(p.name)
+        qset_name = p.qset
+        if qset_name and qset_name in qsets:
+            qsets[qset_name]["ports"].append(p.name)
+
     regs = [reg.name for reg in program.regs]
     vars = [var.name for var in program.vars]
     resources = {
@@ -171,11 +198,16 @@ def _build_stagerun_graphs(program: ProgramNode):
     """Build one StageRunGraph per PREFILTER (only BODY statements are graphed)."""
     graphs = []
     for pf in program.prefilters:
+        keys = []
+        default_action = None
         body = []
+        if pf.keys:
+            keys = pf.keys
+        if pf.default_action:
+            default_action = pf.default_action
         if pf.body:
             body = pf.body.instructions
-        builder = StageRunGraphBuilder(graph_id=pf.name)
-        g = builder.build_from_instructions(pf.name, body)
+        g = StageRunGraphBuilder(graph_id=pf.name).build(keys, default_action, body)
         graphs.append(g)
     return graphs
 
@@ -218,6 +250,7 @@ def export_stage_run_graphs(
 
     payload = {
         "program": program_name,
+        "isa_version": ISA.VERSION.value,
         "schema_version": schema_version,
         "graphs": [_serialize_graph(g) for g in graphs],
         "resources": _serialize_resources(program),

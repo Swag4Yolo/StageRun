@@ -101,7 +101,7 @@ comp_op: EQ | NE | LT | LE | GT | GE
 key_ref:  NAME "." NAME
 header_ref: NAME "." NAME
 var_ref: NAME
-value: NAME | STRING
+value: NAME | STRING | SIGNED_INT
 
 NAME: /[A-Za-z_][A-Za-z0-9_]*/
 STRING: /"[^"]*"/

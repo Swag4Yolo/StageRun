@@ -11,7 +11,7 @@ TOOLS_DIR="/home/tofino/tools"
 SDE_DIR="/home/tofino/bf-sde-9.13.2"
 
 echo "Zipping Controller"
-zip -r ${ZIP_NAME} py/ run.sh config.yaml -x "py/controller_env/*"
+zip -r ${ZIP_NAME} py/ run.sh config.yaml ../../Core/ -x "py/controller_env/*"
 
 echo "Cleaning remote ZIP_DIR and recreating..."
 ssh ${TUNNEL_SSH_ENTITY} "
@@ -30,6 +30,7 @@ ssh -t -L ${TUNNEL_PORT}:${TUNNEL_HOST}:${TUNNEL_PORT} ${TUNNEL_SSH_ENTITY} "
     send-keys 'cd ${ZIP_DIR}' C-m \; \
     send-keys 'unzip -o ${ZIP_NAME}' C-m \; \
     send-keys 'chmod +x run.sh' C-m \; \
+    send-keys 'rm -rf /home/tofino/Work/PhD/StageRun/Core; mv Core/ /home/tofino/Work/PhD/StageRun' C-m \; \
     send-keys './run.sh' C-m
 "
 

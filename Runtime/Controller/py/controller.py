@@ -1,9 +1,22 @@
+# Installed Libraries
+from pathlib import Path
 import yaml
 import uvicorn
 import logging
 from fastapi import FastAPI
+import sys
+
+# StageRun Libraries
+ROOT_DIR = Path(__file__).resolve().parents[2]  
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+print(str(ROOT_DIR))
+
+
 from lib.controller.engine import *
 from lib.controller.app import *
+
+
 
 # ------------------------
 # Logging Setup
