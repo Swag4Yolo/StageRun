@@ -210,6 +210,9 @@ def deploy_program(
         with open("deployer.log.json", "w") as f:
             f.write(json.dumps(plan_dict, indent=2, ensure_ascii=False))
 
+
+    # Installer().install(plan_result)
+
     # 5. Configure resources
     resources = compiled_app["resources"]
     # TOO: save state regarding queues so that when the program runs it installs the necessary queues 

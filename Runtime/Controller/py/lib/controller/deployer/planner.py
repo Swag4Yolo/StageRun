@@ -53,8 +53,8 @@ class Planner:
         self._flow_counter = 0  # global flow_id counter
         self._internal_node_counter = {}
         self._pkt_id = 0
-        self._wp_reserved: Dict[int, Set[int]] = {}
-        self._occupied_stages: Dict[int, set[int]] = {} 
+        self._wp_reserved: Set[int] = set()
+        self._occupied_stages: Set[int] = set()
 
     def _new_flow_id(self) -> int:
         """Generates a globally unique flow_id."""
@@ -122,6 +122,9 @@ class Planner:
 
             if __debug__:
                 logger.debug(f"Number of reserved WP: {self._wp_reserved}")
+
+
+        self._insert_global_write_phases_all(planned_graphs, pid)
 
         return PlanningResult(planned_graphs, PlannerStats(write_phases_inserted=self._wp_reserved))
     # ============================================================
@@ -217,6 +220,8 @@ class Planner:
                                 placed = True
                                 current_stage = s_idx
 
+                                # self._mark_stage_occupied_by_instr(s_idx)
+
                                 # # --- Extra rule: PADTTERN (initialize_pad_ni) forces recirculation ---
                                 # if node.instr.name == "initialize_pad_ni":
                                 #     if __debug__:
@@ -230,7 +235,7 @@ class Planner:
                                 #     # 3️⃣ Reiniciar a contagem de stages (recirculação volta ao início do pipeline)
                                 #     current_stage = 0
                                 #     flow_id = new_flow
-                                # break
+                                break
 
                     if placed:
                         # if node.instr.name not in self.isa["pipeline"][f"s{node.allocated_stage}"][node.allocated_flow][node.allocated_table]:
@@ -260,7 +265,7 @@ class Planner:
                 current_stage = 0
 
                 # ⚙️ manter reservas globais — não sobrescreve write phases existentes
-                current_stage = self._is_stage_free(pid, current_stage + 1)
+                current_stage = self._retrieve_next_free_stage(current_stage + 1)
 
                 # ⚙️ tentar novamente colocar o nó neste novo fluxo
                 placed = False
@@ -297,7 +302,7 @@ class Planner:
             current_stage = max(current_stage, node.allocated_stage + 1)
 
         # --- 6️⃣ Inserir write-phases globais no fim (fallback) ---
-        self._insert_global_write_phases(g=g, ordered_nodes=order, pid=pid)
+        # self._insert_global_write_phases(g=g, ordered_nodes=order, pid=pid)
 
     # ============================================================
     # HELPERS: ISA pick / topo / recirc / write-phase / decide
@@ -586,51 +591,6 @@ class Planner:
     #  WRITE PHASE MANAGEMENT
     # ==========================================================
 
-    # def _insert_global_write_phases(self, g: MicroGraph, ordered_nodes: List[MicroNode], pid: int) -> None:
-    #     """
-    #     Scans the micro-graph and inserts write-phase nodes wherever dependencies
-    #     between writes and subsequent reads require a memory synchronization.
-
-    #     Uses a greedy approach: first write followed by read in next stage.
-    #     """
-    #     if __debug__:
-    #         logger.debug(f"[Planner] Inserting global write-phases for graph '{g.graph_id}'")
-    #         logger.debug(f"[Planner][Order] → {[n.id for n in ordered_nodes]}")
-
-
-    #     current_stage = 0
-    #     # nodes_sorted = sorted(g.nodes.values(), key=lambda n: n.id)
-
-    #     for node in ordered_nodes:
-    #         stage_val = getattr(node, "allocated_stage", None)
-    #         op = getattr(node.instr, "name", "UNKNOWN")
-
-    #         if stage_val is None:
-    #             # skip nodes without a stage (e.g. recirculations)
-    #             continue
-
-    #         needs_wp = self._needs_write_phase(node=node, ordered_nodes=ordered_nodes)
-
-    #         if __debug__:
-    #             logger.debug(f"[Planner][Check] node={node.id} op={op} stage={stage_val} needs_wp={needs_wp}")
-
-    #         if needs_wp:
-    #             wp_stage = self._wp_next_free(pid, stage_val + 1)
-    #             self._wp_reserve(pid, wp_stage)
-    #             self._insert_write_phase_between(g, node, pid, wp_stage)
-                
-    #             if __debug__:
-    #                 logger.debug(f"[Planner][Insert] Added write-phase after node {node.id} at stage {wp_stage}")
-
-    #         current_stage = max(current_stage, stage_val + 1)
-
-    #     # Debug summary
-    #     wp_nodes = [n for n in g.nodes.values() if "write_phase" in getattr(n.instr, "name", "")]
-
-    #     if __debug__:
-    #         logger.debug(f"[Planner][Summary] total write-phases inserted: {len(wp_nodes)}")
-
-
     def _insert_global_write_phases(self, g: MicroGraph, ordered_nodes: List[MicroNode], pid: int) -> None:
         """
         Inserir write_phase_t depois de dependências write→read.
@@ -644,9 +604,9 @@ class Planner:
 
         # Pré-carregar 'occupied' com as alocações deste grafo também
         # (como segurança, no caso de _mark_occupied ainda não ter sido chamado em todos)
-        for n in g.nodes.values():
-            if getattr(n, "allocated_stage", None) is not None:
-                self._mark_occupied(pid, n.allocated_stage)
+        # for n in g.nodes.values():
+        #     if getattr(n, "allocated_stage", None) is not None:
+        #         self._mark_stage_occupied_by_instr(n.allocated_stage)
 
         for node in ordered_nodes:
             stage = getattr(node, "allocated_stage", None)
@@ -665,18 +625,16 @@ class Planner:
             if dirty_reads:
                 last_dirty_stage = max(pending_writes[v] for v in dirty_reads)
 
-                # bloquear stages já ocupados por este programa (globais) e reservas de WP
-                blocked: set[int] = set()  # (podes adicionar aqui bloqueios específicos do grafo, se quiseres)
-                wp_stage = self._wp_next_free(pid, last_dirty_stage + 1, g.graph_id, blocked=blocked)
+                wp_stage = self._wp_next_free(last_dirty_stage + 1)
 
                 # segurança extra: write-phase tem de ser DEPOIS do node atual
-                if wp_stage <= stage:
-                    wp_stage = self._wp_next_free(pid, stage + 1, g.graph_id, blocked=blocked)
+                # if wp_stage <= stage:
+                #     wp_stage = self._wp_next_free(pid, stage + 1, blocked=blocked)
 
                 # reservar e inserir
-                self._wp_reserve(pid, wp_stage, g.graph_id)
+                self._wp_reserve(wp_stage)
                 self._insert_write_phase_between(g, node, pid, wp_stage)
-                self._mark_occupied(pid, wp_stage)  # write-phase também ocupa o stage globalmente
+                # self._mark_stage_occupied_by_instr(wp_stage)  # write-phase também ocupa o stage globalmente
 
                 inserted_wp += 1
                 logger.debug(f"[Planner][Insert] write-phase at stage {wp_stage} (last_dirty_stage={last_dirty_stage})")
@@ -693,9 +651,164 @@ class Planner:
 
         logger.debug(f"[Planner][Summary] total write-phases inserted: {inserted_wp}")
 
+    def _insert_global_write_phases_all(self, graphs: list["MicroGraph"], pid: int) -> None:
+        """
+        Single global pass:
+        - detect the need for a write-phase (write→read across ALL graphs)
+        - choose ONE global wp_stage for this pid
+        - insert ONE write-phase node (attach to first graph for now)
+        - for each graph, reallocate any instruction currently at wp_stage:
+            * insert a recirculation before that node (new flow_id)
+            * re-place the node from pipeline head, skipping wp_stage
+        """
+        # 0) flatten and order all nodes (by stage then id for determinism)
+        all_nodes: list["MicroNode"] = []
+        for g in graphs:
+            all_nodes.extend([n for n in g.nodes.values() if getattr(n, "allocated_stage", None) is not None])
+        ordered = sorted(all_nodes, key=lambda n: (n.allocated_stage, n.id))
+
+        # 1) detect needs via pending_writes (global)
+        pending_writes: dict[str, int] = {}
+        needs_wp = False
+        last_dirty_stage = None
+
+        for node in ordered:
+            eff = getattr(node, "effect", None)
+            if not eff:
+                continue
+            reads, writes = eff.reads or set(), eff.writes or set()
+
+            dirty_reads = {v for v in reads if v in pending_writes}
+            if dirty_reads:
+                needs_wp = True
+                s = max(pending_writes[v] for v in dirty_reads)
+                last_dirty_stage = s if last_dirty_stage is None else max(last_dirty_stage, s)
+                # don’t clear pending yet; we only discover the global need here
+
+            for v in writes:
+                pending_writes[v] = node.allocated_stage
+
+        if not needs_wp:
+            if __debug__:
+                logger.debug("[Planner][WP] Global pass: no write-phase needed.")
+            return
+
+        # 2) choose ONE global wp_stage (stage 1 forbidden)
+        #    NOTE: _wp_next_free must be GLOBAL per pid, and should reuse an existing wp if any
+        start = (last_dirty_stage or 1) + 1
+        wp_stage = self._wp_next_free(start_stage=start)  # DO NOT pass graph_id
+        self._wp_reserve(wp_stage)                        # global reservation
+        # self._mark_occupied(wp_stage)                     # exclude for future usage
+
+        if __debug__:
+            logger.debug(f"[Planner][WP] Global write-phase chosen at stage {wp_stage} for pid={pid}")
+
+        # 3) insert ONE write-phase node (attach to the first graph with nodes)
+        host_graph = None
+        for g in graphs:
+            if g.nodes:
+                host_graph = g
+                break
+        if host_graph is None:
+            # should not happen
+            return
+
+        wp_node_id = self._new_internal_id(host_graph.graph_id)
+        wp_instr = MicroInstruction(name="configure_write_phase", kwargs={"program_id": pid, "stage": wp_stage})
+        wp_node = MicroNode(
+            id=wp_node_id,
+            instr=wp_instr,
+            graph_id=host_graph.graph_id,
+            allocated_stage=wp_stage,
+            allocated_table="write_phase_t",
+            flow_id=None,   # stage-level sync; installer can read program_id & stage
+            effect=None,
+        )
+        host_graph.nodes[wp_node_id] = wp_node
+        # no edges needed; write-phase is a stage-only operation
+
+        # 4) reallocate conflicts in EACH graph
+
+        for g in graphs:
+            conflicts = [
+                n for n in g.nodes.values()
+                if getattr(n, "allocated_stage", None) == wp_stage
+            ]
+            if not conflicts:
+                continue
+
+            topo = self._topo_sort(g)
+            topo_ids = [n.id for n in topo]
+            conflicts.sort(key=lambda n: topo_ids.index(n.id))
+
+            for node in conflicts:
+                # ✅ Skip write-phase nodes themselves
+                instr_name = getattr(node.instr, "name", None)
+                if instr_name in ("write_phase_t", "configure_write_phase"):
+                    if __debug__:
+                        print(f"[Planner][WP] Skip reallocation of write-phase node {node.id} at stage {wp_stage}")
+                    continue
+
+
+                # insert recirc BEFORE node
+                old_flow = getattr(node, "flow_id", None)
+                new_flow = self._insert_recirc_before(g, node, pid, old_flow)
+                self._propagate_flow_id_forward(g, start_node=node, new_flow_id=new_flow)
+
+                # re-place the node from pipeline head, skipping the wp_stage
+                s_idx, flow_name, table_name = self._try_place_instr(node, start_stage_idx=0, forbidden_stage=wp_stage)
+                if s_idx is None:
+                    # last-resort: try full pipeline including alternative names again
+                    s_idx, flow_name, table_name = self._try_place_instr(node, start_stage_idx=0, forbidden_stage=wp_stage)
+                    if s_idx is None:
+                        raise PlannerError(f"Reallocation failed for node {node.id} ('{node.instr.name}') due to global write-phase at stage {wp_stage}")
+
+                node.allocated_stage = s_idx
+                node.allocated_flow  = flow_name
+                node.allocated_table = table_name
+                node.flow_id         = new_flow
+
+                # mark occupancy for safety
+                # self._mark_occupied(pid, s_idx)
+
+        if __debug__:
+            logger.debug(f"[Planner][WP] Global pass done. write_phase at stage {wp_stage}. Conflicts resolved.")
 
 
 
+    def _try_place_instr(
+        self,
+        node: "MicroNode",
+        start_stage_idx: int,
+        forbidden_stage: int | None = None
+    ) -> tuple[int | None, str | None, str | None]:
+        """
+        Try to place `node` across the pipeline from `start_stage_idx`, optionally
+        skipping a `forbidden_stage` (e.g., the global write-phase stage).
+        Tries primary op first, then the alternative if present.
+        """
+        primary = node.instr.name
+        alt = getattr(node.instr, "alternative", None)
+
+        for s_idx, (stage_name, flows) in enumerate(self.isa["pipeline"].items()):
+            if s_idx < start_stage_idx:
+                continue
+            if forbidden_stage is not None and s_idx == forbidden_stage:
+                continue
+
+            for flow_name, tables in flows.items():
+                for table_name, instr_list in tables.items():
+                    if not isinstance(instr_list, list):
+                        continue
+                    # primary
+                    if primary in instr_list:
+                        node.selected_op = primary
+                        return s_idx, flow_name, table_name
+                    # alternative
+                    if alt and (alt in instr_list):
+                        node.selected_op = alt
+                        return s_idx, flow_name, table_name
+        return None, None, None
 
 
     # ==========================================================
@@ -748,7 +861,7 @@ class Planner:
             id=wp_id,
             instr=wp_instr,
             graph_id=g.graph_id,
-            allocated_stage=wp_stage,
+            allocated_stage=None,
             allocated_table="write_phase_t",
             flow_id=node.flow_id,
             effect=MicroEffect(),
@@ -765,23 +878,22 @@ class Planner:
         g.edges.extend(new_edges)
 
         if __debug__:
-            logger.debug(f"[Planner][Graph] write-phase {wp_id} inserted after {node.id}")
+            logger.debug(f"[Planner][Graph] write-phase nid:{wp_id} inserted after nid:{node.id}")
 
 
     # ==========================================================
     #  WRITE-PHASE RESERVATION LOGIC
     # ==========================================================
 
-    def _wp_reserve(self, pid: int, stage_idx: int, graph_id: str | None = None) -> None:
+    def _wp_reserve(self, stage_idx: int) -> None:
         """Mark this stage as having a write-phase for the given program and graph."""
-        key = (pid, graph_id)
-        self._wp_reserved.setdefault(key, set()).add(stage_idx)
+        self._wp_reserved.add(stage_idx)
 
         if __debug__:
-            logger.debug(f"[Planner][WP] reserved stage {stage_idx} for pid={pid}, graph={graph_id}")
+            logger.debug(f"[Planner][WP] reserved stage {stage_idx}")
 
 
-    def _wp_next_free(self, pid: int, start_stage: int, graph_id: str | None = None, blocked: set[int] | None = None) -> int:
+    def _wp_next_free(self, start_stage: int) -> int:
         """
         Procura o próximo stage livre para write-phase, tendo em conta:
         - reservas anteriores de write-phase (globais por pid e opcionalmente por grafo)
@@ -789,35 +901,41 @@ class Planner:
         """
 
         # 1. Stage 1 is forbidden for write phase
-        stage = max(start_stage, 2)
+        stage = max(start_stage, 3)
 
-        key = (pid, graph_id)
-        reserved = self._wp_reserved.get(key, set())
-        occupied = self._occupied_for_pid(pid)
-        blocked_all = set(blocked or set()) | reserved | occupied
+        occupied_by_instr = self._get_stages_occupied_by_instr()
 
         if __debug__:
-            logger.debug(f"_wp_next_free start_stage:{start_stage} gid:{graph_id}")
-            logger.debug(reserved)
-            logger.debug(occupied)
+            logger.debug(f"_wp_next_free start_stage:{start_stage}")
+            # logger.debug(reserved)
+            logger.debug(occupied_by_instr)
 
         s = stage
-        while s in blocked_all:
+        while s in occupied_by_instr:
+            s += 1
+        if __debug__:
+            logger.debug(f"_wp_next_free result: {s}")
+        return s
+    
+    def _retrieve_next_free_stage(self, current_stage):
+        """Devolve o próximo stage livre para uma instrução"""
+        s = current_stage
+        while s in self._wp_reserved:
             s += 1
         return s
     
-    def _is_stage_free(self, pid, current_stage, graph_id = None):
-        key = (pid, graph_id)
-        reserved = [i for s in self._wp_reserved.values() for i in s]
-        occupied = [i for s in self._occupied_stages.values() for i in s]
-        return (current_stage not in reserved) and (current_stage not in occupied)
+    def _is_stage_reserved_for_wp(self, current_stage):
+        """"""
+        return current_stage in self._wp_reserved
 
-    def _mark_occupied(self, pid: int, stage_idx: int) -> None:
+    def _mark_stage_occupied_by_instr(self, stage_idx: int) -> None:
         """Marca um stage como ocupado por alguma instrução deste programa (global por pid)."""
         if stage_idx is None:
             return
-        self._occupied_stages.setdefault(pid, set()).add(stage_idx)
+        if __debug__:
+            logger.debug(f"mark_stage_occupied_by_instr {stage_idx}")
+        self._occupied_stages.add(stage_idx)
 
-    def _occupied_for_pid(self, pid: int) -> set[int]:
+    def _get_stages_occupied_by_instr(self) -> set[int]:
         """Conjunto dos stages já ocupados globalmente (qualquer grafo) para este programa."""
-        return self._occupied_stages.get(pid, set())
+        return self._occupied_stages
