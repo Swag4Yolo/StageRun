@@ -46,9 +46,6 @@ class MicroInstruction:
         args = ", ".join(f"{k}={v}" for k, v in self.kwargs.items())
         return f"MicroInstruction({self.name} {args})"
 
-    # # Optional helper: identify writes
-    # def is_write(self) -> bool:
-    #     return self.name.startswith("hdr_write") or self.name.startswith("var_write")
 
 @dataclass
 class MicroNode:
@@ -59,7 +56,7 @@ class MicroNode:
     instr: MicroInstruction
     
     # read or write constrains
-    effect: MicroEffect | None = None
+    effect: MicroEffect
 
     graph_id: str             
     parent_node_id: Optional[int] = None  
@@ -117,7 +114,7 @@ class MicroGraph:
                 pprint("   (none)")
             else:
                 for nid, node in sorted(self.nodes.items()):
-                    instr = getattr(node.instr, "instr", None) or getattr(node, "instr", None)
+                    instr = getattr(node.instr, "name", None) #or getattr(node, "instr", None)
                     table = getattr(node, "allocated_table", None)
                     flow = getattr(node, "allocated_flow", None)
                     stage = getattr(node, "allocated_stage", None)
@@ -207,70 +204,4 @@ class MicroGraph:
                 f.write(dot)
             print(f"[MicroGraph] DOT file written: {filename}")
         return dot
-
-# @dataclass
-# class PreFilterKeys:
-#     instr_name: str   # e.g. "set_pkt_id"
-#     kwargs: dict      # {'ig_port': [140, 140], 'original_ig_port': [0, 0], 'total_pkt_len': [0, 0], 'tcp_dst_port': [0, 0], 'ipv4_src_addr': [0, 0], 'ipv4_dst_addr': ['10.10.1.0', 24], 'tcp_flags': [0, 0], 'ipv4_proto': [0, 0], 'udp_sport': [0, 0], 'udp_dport': [0, 0], 'pkt_id': 0, 'ni_f1': 0, 'ni_f2': 0, 'program_id': 1}}
-
-# @dataclass
-# class DefaultAction:
-#     instr_name: str   # e.g. "set_pkt_id"
-#     kwargs: dict      # {'ig_port': [140, 140], 'original_ig_port': [0, 0], 'total_pkt_len': [0, 0], 'tcp_dst_port': [0, 0], 'ipv4_src_addr': [0, 0], 'ipv4_dst_addr': ['10.10.1.0', 24], 'tcp_flags': [0, 0], 'ipv4_proto': [0, 0], 'udp_sport': [0, 0], 'udp_dport': [0, 0], 'pkt_id': 0, 'ni_f1': 0, 'ni_f2': 0, 'program_id': 1}}
-
-# @dataclass
-# class MicroInstruction:
-#     instr_name: str   # sum_ni
-#     kwargs: dict      # {"program_id": pid, "header_update":1, "header_id": HEADER_IPV4_TTL, "const_val":instr['args']['value']}
-
-# @dataclass
-# class PreFilter:
-#     name: str
-#     keys: PreFilterKeys
-#     default_action: DefaultAction
-#     body: List[MicroInstruction]
-
-#     def show(self):
-#         print("Name:")
-#         print(self.name)
-
-#         print("Keys:")
-#         for key in self.keys:
-#             print(key)
-
-#         print("Default Action:")
-#         print(self.default_action)
-
-#         print("Body:")
-#         for instr in self.body:
-#             print(instr)
-
-# @dataclass
-# class InPort:
-#     name: str
-
-# @dataclass
-# class OutPort:
-#     name: str
-#     qset: str
-
-# @dataclass
-# class Qset:
-#     name: str
-#     type: str
-#     size:  int
-
-
-# @dataclass
-# class StageRunMicroProgram:
-#     name: str
-#     prefilters: List[PreFilter] = field(default_factory=list)
-#     ports_in:   List[InPort] = field(default_factory=list)
-#     ports_out:  List[OutPort] = field(default_factory=list)
-#     qsets:      List[Qset] = field(default_factory=list)
-#     # posfilters: List[PosFilter] = field(default_factory=list)
-
-#     def show(self):
-#         for prefilter in self.prefilters:
-#             prefilter.show()
-
+    

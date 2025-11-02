@@ -79,73 +79,61 @@ class MicroInstructionParser:
 
     def to_micro(self, stage_run_graphs: List[Dict[str, Any]]) -> List[MicroGraph]:
         """
-        Converts StageRunGraphs into MicroGraphs.
-
-        Each StageRun instruction -> one MicroNode (even if it has an alternative).
-        Alternatives are stored inside the MicroInstruction and handled later by the Planner.
-
-        Steps:
-        1. Translate keys and default actions.
-        2. Translate each StageRun node -> list of MicroInstructions.
-        3. Flatten into MicroNodes and rebuild edges.
+        Converts StageRunGraph → MicroGraph.
+        Each StageRun instruction expands into one or more MicroNodes, each with a MicroEffect.
         """
         out_graphs: List[MicroGraph] = []
 
         for graph in stage_run_graphs:
             mg = MicroGraph(graph_id=graph["graph_id"])
-            node_id_counter = 0
-            expand_map: Dict[int, List[int]] = {}
-
-            # 1. Translate Keys
             mg.keys = self._translate_keys_to_micro(graph.get("keys", []))
-            # 2. Translate Default Action
             mg.default_action = self._translate_default_action_to_micro(graph.get("default_action"))
-
-            # 2. Expand StageRun nodes → MicroNodes
+            expand_map: Dict[int, List[int]] = {}
+            node_id = 0
             for srun_node in graph.get("nodes", []):
                 srun_id = srun_node["id"]
                 op = srun_node["op"]
-                args = srun_node["args"]
+                args = srun_node.get("args", {})
                 compiler_effect = srun_node.get("effect", None)
 
-                micro_instr_lst, micro_effecs_lst = self._translate_instr_to_micro(op, args)
-                micro_ids = []
+                instrs, effects = self._translate_instr_to_micro(op, args, compiler_effect)
+                
+                if len(instrs) != len(effects):
+                    raise MicroInstructionError(f"Mismatch: {op} returned {len(instrs)} instrs and {len(effects)} effects")
 
-                for (instr, effect) in (micro_instr_lst, micro_effecs_lst):
-                    node_id_counter += 1
-                    m_node = MicroNode(
-                        id=node_id_counter,
-                        instr=instr,
+                for mi, eff in zip(instrs, effects):
+                    node_id += 1
+                    # merge compiler effect (if present)
+                    # if compiler_effect:
+                    #     comp_eff = MicroEffect(
+                    #         reads=set(compiler_effect.get("reads", [])),
+                    #         writes=set(compiler_effect.get("writes", [])),
+                    #         uses=set(compiler_effect.get("uses", [])),
+                    #     )
+                    #     eff = eff.merge(comp_eff)
+
+                    node = MicroNode(
+                        id=node_id,
+                        instr=mi,
                         graph_id=graph["graph_id"],
                         parent_node_id=srun_id,
-                        effect=effect
+                        effect=eff,
                     )
-                    mg.nodes[node_id_counter] = m_node
-                    micro_ids.append(node_id_counter)
+                    mg.nodes[node.id] = node
+                    expand_map.setdefault(srun_id, []).append(node.id)
 
-                expand_map[srun_id] = micro_ids
-
-            # 3. Reconstruct edges from StageRunGraph
+            # ligações (mesma lógica)
             for e in graph.get("edges", []):
-                src = e["src"]
-                dst = e["dst"]
-                dep = e.get("dep", "DATA")
-                # label = e.get("label", None)
-
-                src_expanded = expand_map.get(src, [])
-                dst_expanded = expand_map.get(dst, [])
-
-                if not src_expanded or not dst_expanded:
-                    continue
-
-                # connect last micro of src -> first micro of dst
-                mg.edges.append(
-                    MicroEdge(src=src_expanded[-1], dst=dst_expanded[0], dep=dep)
-                )
+                srcs = expand_map.get(e["src"], [])
+                dsts = expand_map.get(e["dst"], [])
+                for src_id in srcs:
+                    for dst_id in dsts:
+                        mg.edges.append(MicroEdge(src=src_id, dst=dst_id, dep=e.get("dep", "DATA")))
 
             out_graphs.append(mg)
 
         return out_graphs
+
 
     # ------------------------------------------------------------
     # Node lowering
@@ -317,9 +305,10 @@ class MicroInstructionParser:
         
         return None
 
-    def _translate_instr_to_micro(self, op: str, args: Dict[str, Any]) -> Tuple[List[MicroInstruction], List[MicroEffect]]:
+    def _translate_instr_to_micro(self, op: str, args: Dict[str, Any], compiler_effects) -> Tuple[List[MicroInstruction], List[MicroEffect]]:
         """
-        Translate one StageRun instruction into micro-instructions.
+        Translates one StageRun instruction into micro instructions and effects.
+        Returns a tuple (micro_instrs, micro_effects).
         """
         instrs: List[MicroInstruction] = []
         effects: List[MicroEffect] = []
@@ -327,131 +316,121 @@ class MicroInstructionParser:
         # --- FWD ---
         if op == ISA.FWD.value:
             front_port = get_pnum_from_endpoints(self.manifest, args["dest"])
-            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
-            micro_lst = [MicroInstruction(name='fwd_ni', kwargs={"port": dev_port})]
+            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
+            instrs = [MicroInstruction(name="fwd_ni", kwargs={"port": dev_port})]
+            effects = [MicroEffect()]  # no read/write impact
 
         # --- FWD_AND_ENQUEUE ---
         elif op == ISA.FWD_AND_ENQUEUE.value:
             front_port = get_pnum_from_endpoints(self.manifest, args["dest"])
-            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
-            micro_lst = [MicroInstruction(name='fwd_ni', kwargs={"mark_to_drop": dev_port, "qid": args["qid"]})]
+            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
+            instrs = [MicroInstruction(name="fwd_ni", kwargs={"port": dev_port, "qid": args["qid"]})]
+            effects = [MicroEffect()]
 
         # --- DROP ---
         elif op == ISA.DROP.value:
-            micro_lst = [MicroInstruction(name='fwd_ni', kwargs={"mark_to_drop": 1})]
+            instrs = [MicroInstruction(name="fwd_ni", kwargs={"mark_to_drop": 1})]
+            effects = [MicroEffect()]
 
         # --- HINC ---
         elif op == ISA.HINC.value:
             header = args['target']
             normal_header = self._hdr_fetch_micro(header, False)
             spec_header = self._hdr_fetch_micro(header, True)
-            micro_lst = [
-            MicroInstruction(
-                name=normal_header, 
-                kwargs={}, 
-                alternative=spec_header)
-            ,
-            MicroInstruction(
-                name='sum_ni', 
-                kwargs={"header_update":1, 
-                        "header_id": tofino_headers[header], 
-                        "const_val": args['value']
-                        })
+
+            instrs = [
+                MicroInstruction(name=normal_header, kwargs={}, alternative=spec_header),
+                MicroInstruction(name="sum_ni", kwargs={"header_update": 1, "header_id": tofino_headers[header], "const_val": args["value"]}),
             ]
-            micro_effect_lst = [
-                MicroEffect(reads={header}),
-                MicroEffect(writes={header}),
-            ]
-        
-        # --- HASSIGN ---
-        elif op == ISA.HASSIGN.value:
-            tofino_header = tofino_headers[args['target']]
-            micro_lst = [
-                MicroInstruction(name='sum_ni', kwargs={"header_update":1, "header_id": tofino_header, "const_val": args['value']}),
-            ]
-            micro_effect_lst = [MicroEffect(writes=args['target'])]
-    
+            effects = [MicroEffect(reads={header}), MicroEffect(writes={header})]
+
         # --- HTOVAR ---
         elif op == ISA.HTOVAR.value:
             header = args['target']
-            var_name = args['var_name']
-            
-            # TODO: problem HTOVAR has a var_name in the args. The planner needs to know which var_id it will allocate
-            # Currently we have {program_id for everyone, and var_name for this one}
+            var_name = args.get("var_name", "")
             normal_header = self._hdr_fetch_micro(header, False)
             spec_header = self._hdr_fetch_micro(header, True)
-            micro_lst = [
+            instrs = [
                 MicroInstruction(
-                    name=normal_header, 
-                    kwargs={
-                        "var_update":1, 
-                        "var_to_header":1
-                    },
-                    alternative=spec_header),
+                    name=normal_header,
+                    kwargs={"var_update": 1, "var_name": var_name},
+                    alternative=spec_header,
+                )
             ]
-
-            micro_effect_lst = [MicroEffect(reads={header}, writes={var_name})]
-
+            effects = [MicroEffect(reads={header}, writes={var_name})]
 
         # --- PATTERN ---
         elif op == ISA.PADTTERN.value:
-            pass
-            # TODO:
-            # 1. Change Engine to have the program_id in the pattern
-            # 2. Change The pattern_mechanism.py to incorporate that
-            # 3. Change the remove_app to also eliminate programs from the pattern_mechanism.py
-            # 4. Change this function to insert the pattern
-            micro_lst = [
-                # TODO: Implement The MicroMechanisms
-                # MicroMechanism(instr="add_size_pattern", kwargs={"pattern": args['pattern']}),
-                MicroInstruction(name="initialize_pad_ni", kwargs={"mode": MODE_PADTTERN})
-            ]
+            instrs = [MicroInstruction(name="initialize_pad_ni", kwargs={"mode": MODE_PADTTERN})]
+            effects = [MicroEffect()]
 
         # --- CLONE ---
         elif op == ISA.CLONE.value:
-            # TODO:
-            # 1. Need to manage state for cloning, for planner to put the sid. Each sid could be associated to a different program
-            # 2. Each time a program is removed so as this entry, making the sid (session id) available
             front_port = get_pnum_from_endpoints(self.manifest, args["port"])
-            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0) 
-            micro_lst = [
-                # MicroMechanism(instr="normal_cloning", kwargs={"ucast_egress_port":dev_port}),
-                MicroInstruction(name="initialize_activate_ni", kwargs={})
-            ]
+            dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
+            instrs = [MicroInstruction(name="initialize_activate_ni", kwargs={})]
+            effects = [MicroEffect()]
 
-        # # --- IF ---
+        # --- IF ---
         elif op == ISA.IF.value:
             branches = args.get("branches", [])
-            cond_ir = self._cond_to_ir(branches)
-            reads = self._cond_collect_reads_from_dnf([cl for br in cond_ir["branches"] for cl in br["dnf"]])
+            cond_ir = {}
+            # cond_ir = self._cond_to_ir(branches)
+            # reads = self._cond_collect_reads_from_dnf([cl for br in cond_ir["branches"] for cl in br["dnf"]])
+            """
+            {
+                "condition": {
+                  "left": "size",
+                  "op": "EQ",
+                  "right": 1500
+                },
+                "body": [
+                  {
+                    "op": "FWD",
+                    "args": {
+                      "port": "PC2_OUT"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "left": "size",
+                  "op": "EQ",
+                  "right": 1600
+                },
+                "body": [
+                  {
+                    "op": "FWD",
+                    "args": {
+                      "port": "PC1_OUT"
+                    }
+                  }
+                ]
+              }
+            """
+            print(compiler_effects)
+            _reads = compiler_effects.get("reads", [])
+            _writes = compiler_effects.get("writes", [])
 
-            requires_multi_stage = any(len(clause) > 2 for br in cond_ir["branches"] for clause in br["dnf"])
-            hw_key_template = {
-                "fields": [
-                    {"mode_field": "cond_mode",   "val_field": "cond_val"},
-                    {"mode_field": "cond_mode_2", "val_field": "cond_val_2"},
-                ],
-                "max_terms_per_clause": 2,
-                "expected_zero_for_eq": True,
-            }
-            slot_candidates = {v: ["v1","v2","v3","v4"] for v in reads}
+            reads = [item.removeprefix("var.").removeprefix("hdr.") for item in _reads]
+            writes = [item.removeprefix("var.").removeprefix("hdr.") for item in _writes]
 
-            micro_lst = [MicroInstruction(
-                name="decide",
-                kwargs={
-                    "cond_ir": cond_ir,
-                    "reads": reads,
-                    "slot_candidates": slot_candidates,
-                    "hw_key_template": hw_key_template,
-                    "requires_multi_stage": requires_multi_stage,
-                }
-            )]
+            # for br in branches:
+            #     br["condition"] 
+                
+            #     for i in br["body"]:
+            #         lst_micros, lst_effects = self._translate_instr_to_micro(i["op"], i["args"])
 
-        # --- default ---
+
+            instrs = [MicroInstruction(name="decide", kwargs={"cond_ir": cond_ir, "reads": reads})]
+            effects = [MicroEffect(reads=set(reads), writes=set(writes))]
+
         else:
-            raise MicroInstructionError(f"Unknown instruction '{op}' cannot be translated to micro-instruction(s)")
+            raise MicroInstructionError(f"Unknown instruction '{op}' cannot be translated.")
 
-        return (micro_lst, micro_effect_lst)
+        return instrs, effects
+
     # ------------------------------------------------------------
     # Header micro helpers
     # ------------------------------------------------------------

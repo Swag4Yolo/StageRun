@@ -140,13 +140,13 @@ def plan_result_to_dict(plan_result: PlanningResult) -> Dict[str, Any]:
             "edges": [edge_to_dict(e) for e in g.edges],
             # ChoiceGroups normalmente são resolvidos no Planner; se ainda houver, serializa:
         })
-
     stats = getattr(plan_result, "stats", None)
     stats_out = {
         "stages_used": getattr(stats, "stages_used", None),
         "total_nodes": getattr(stats, "total_nodes", None),
         "total_flows": getattr(stats, "total_flows", None),
-        "write_phases_inserted": getattr(stats, "write_phases_inserted", None),
+        "write_phases_inserted": list(getattr(stats, "write_phases_inserted", None)),
+        "write_phases": list(getattr(stats, "wp_reserved", None)),
     } if stats else None
 
     return {"graphs": graphs_out, "stats": stats_out}

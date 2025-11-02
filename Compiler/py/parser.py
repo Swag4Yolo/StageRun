@@ -159,7 +159,7 @@ class StageRunTransformer(Transformer):
     # We render a safe, fully-parenthesized textual form so semantics/IR
     # never see Tokens/Trees and the controller can parse/evaluate later.
     def comparison(self, left, op, right):
-        return BooleanExpression(left=str(left), op=str(op), right=str(right))
+        return BooleanExpression(left=str(left), op=str(op), right=right)
 
     def and_expr(self, left, right):
         return BooleanExpression(left=left, op="&&", right=right)
@@ -177,7 +177,7 @@ class StageRunTransformer(Transformer):
         return args[-1]
 
     def comp_op(self, t):          return str(t.type)
-    def arith_val(self, x):        return str(x)
+    def arith_val(self, x):        return x
     def var_ref(self, name):       return str(name)
 
     # --- Default
