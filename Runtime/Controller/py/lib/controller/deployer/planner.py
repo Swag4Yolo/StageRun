@@ -12,7 +12,7 @@ from .types import (
     MicroGraph,
     MicroNode,
     MicroEdge,
-    ChoiceGroup,
+    MicroInstruction
 )
 
 # ----------------------------
@@ -23,7 +23,6 @@ from .types import (
 class PlannerStats:
     stages_used: int = 0
     total_nodes: int = 0
-    total_choices: int = 0
     total_flows: int = 0
     write_phases_inserted: int = 0
 
@@ -31,7 +30,7 @@ class PlannerStats:
 @dataclass
 class PlanningResult:
     graphs: List[MicroGraph]
-    stats: PlannerStats
+    stats: PlannerStats | None = None
 
 class PlannerError(Exception):
     pass
@@ -39,666 +38,449 @@ class PlannerError(Exception):
 # ============================
 #        PLANNER
 # ============================
+class PlannerError(Exception):
+    pass
+
 
 class Planner:
-    """
-    Planeia MicroGraphs:
-      1) resolve ChoiceGroups
-      2) ordena nós (topo sort)
-      3) aloca stages (simplificado; depois afinamos com ISA)
-      4) injeta program_id em todas as micro-instruções
-      5) atribui flow_id por grafo e por ramos (IF), e propaga next_flow_id
-      6) distribui writes em flows + (gancho) para write phases
-
-    Interface:
-      plan(micro_graphs, isa, pid) -> PlanningResult
-    """
-
     def __init__(self, isa: Dict[str, Any]):
         self.isa = isa
         self.stats = PlannerStats()
-        self._flow_counter = 0  # <--- global por plan() / programa
+        self._flow_counter = 0  # global flow_id counter
+        self._internal_node_counter = {}
+        self._pkt_id = 0
 
     def _new_flow_id(self) -> int:
+        """Generates a globally unique flow_id."""
         self._flow_counter += 1
         return self._flow_counter
     
-    # ----------------------------
-    # Público
-    # ----------------------------
-    def plan(self, micro_graphs: List[MicroGraph], pid: int) -> PlanningResult:
-        planned: List[MicroGraph] = []
-        
-        # self._flow_counter = 0
+    def _new_internal_id(self, graph_id) -> int:
+        """Generates a unique internal node ID for synthetic nodes (write-phase, recirc, etc.)."""
+        self._internal_node_counter[graph_id] += 1
+        return self._internal_node_counter[graph_id]
+    
+    def _new_pkt_id(self) -> int:
+        """Generates a globally unique pkt_id to be used by default_action."""
+        self._pkt_id += 1
+        return self._pkt_id
 
+    # ============================================================
+    # PUBLIC
+    # ============================================================
+
+    def plan(self, micro_graphs: List[MicroGraph], pid: int) -> PlanningResult:
+        """
+        Plan all graphs:
+          - assigns unique flow_id per graph
+          - allocates stages/tables respecting ISA
+          - handles recirculation & IFs
+          - inserts and re-allocates write-phases
+        """
+        planned_graphs = []
 
         for g in micro_graphs:
+            # 0. Init values
+            self._internal_node_counter[g.graph_id] = len(g.nodes)
+            base_flow_id = self._new_flow_id()
+
             # 1. Add PreFilter Keys
-            g.keys['kwargs']['program_id'] = pid
+            if g.keys:
+                pkt_id = self._new_pkt_id()
+                g.keys['kwargs']['program_id'] = pid
+                g.keys['kwargs']['pkt_id'] = pkt_id
+                # TODO: implement {ni_f1, ni_f2} in kwargs
+                g.keys['kwargs']['ni_f1'] = base_flow_id
+                g.keys['kwargs']['ni_f2'] = base_flow_id
 
-            self._resolve_choices(g)
-            order = self._topo_sort(g)
-            self._allocate_stages(g, order)
-            self._inject_program_id(g, pid)
-            base_flow = self._new_flow_id()
-            self._assign_flow_ids_and_propagate_next(g, order, pid, base_flow)
-            self._compile_decide(g, order)
-            self._assign_flows_and_write_phases(g, order)
-            planned.append(g)
+            
+            # 2. Default Action
+            if g.default_action:
+                g.default_action['kwargs']['pkt_id'] = pkt_id
 
-        # stats
-        self.stats.total_nodes = sum(len(g.nodes) for g in planned)
-        self.stats.total_choices = sum(len(g.choices) for g in planned)
-        self.stats.stages_used = (
-            max((n.allocated_stage or 0) for g in planned for n in g.nodes.values()) + 1
-            if planned and planned[0].nodes else 0
-        )
-        self.stats.total_flows = 2
+            # 3. Nodes
+            for n in g.nodes.values():
+                n.flow_id = base_flow_id
+                n.instr.kwargs["program_id"] = pid
 
-        return PlanningResult(graphs=planned, stats=self.stats)
-    
-    def _compile_decide(self, g, order):
-        """
-        Converte cada nó 'decide' num speculative_conditional_* físico.
-        Mapeamento de variáveis é local ao prefilter (grafo).
-        """
-        control_out = {e.src: [] for e in g.edges if e.dep == "CONTROL"}
-        for e in g.edges:
-            if e.dep == "CONTROL":
-                control_out[e.src].append((e.label or "", e.dst))
+            # Extra: Assegurar seq linear - necesario?
+            # for edge in g.edges:
+            #     if edge.dep == "DATA":
+            #         src = g.nodes[edge.src]
+            #         dst = g.nodes[edge.dst]
+            #         src.instr.kwargs.setdefault("instr_id", dst.flow_id)
 
-        # mapeamento *local* de variáveis -> slots (reset por grafo)
-        var_to_slot: dict[str, str] = {}
-        available = ["v1", "v2", "v3", "v4"]
 
-        def assign_slot(var: str) -> str:
-            if var in var_to_slot:
-                return var_to_slot[var]
-            if not available:
-                raise RuntimeError(f"Prefilter '{g.graph_id}': esgotados os slots físicos (v1..v4)")
-            slot = available.pop(0)
-            var_to_slot[var] = slot
-            return slot
+            self._allocate_stages(g, pid, base_flow_id)
+            planned_graphs.append(g)
+
+        return PlanningResult(planned_graphs)
+    # ============================================================
+    # CORE
+    # ============================================================
+
+    def _allocate_stages(self, g: MicroGraph, pid: int, base_flow_id: int) -> None:
+        order = self._topo_sort(g)
+        current_stage = 1  # ISA começa em s1  :contentReference[oaicite:5]{index=5}
 
         for node in order:
-            if getattr(node.instr, "instr", "") != "decide":
+            # a) IF: atribuir slot_map e gerar flows por ramo (propagação)
+            if self._is_decide(node):
+                self._assign_conditional_slots(node)   # preenche kwargs["slot_map"] (greedy v1..v4)
+                self._assign_branch_flow_ids(g, node)  # cria novos flow_ids e propaga
+
+            # b) escolher nome(s) candidatos (instr/alternative, ou speculative_*)
+            cand_names = self._candidate_ops_for_node(node)
+
+            # c) procurar à frente
+            fwd = self._find_forward(cand_names, current_stage)
+            if fwd is None:
+                # d) tentar atrás e inserir recirculação
+                back = self._find_backward(cand_names, start_before=current_stage)
+                if back is None:
+                    raise PlannerError(f"Instr '{node.instr.name}' (alt='{getattr(node.instr,'alternative', None)}') not supported by ISA.")
+                # recircula antes deste node e propaga novo flow_id
+                new_flow = self._insert_recirc_before(g, node, pid)
+                self._propagate_flow_id(g, start_node_id=node.id, new_flow_id=new_flow)
+                s_idx, flow, table, used_name = back
+            else:
+                s_idx, flow, table, used_name = fwd
+
+            # e) selar alocação
+            node.allocated_stage = s_idx
+            node.allocated_table = f"{flow}.{table}"  # ex.: "f1.instructions_p2"
+            node.allocated_flow  = flow               # f1/f2 (útil p/ installer)
+            if used_name.lower() != node.instr.name.lower():
+                node.instr.kwargs["_used_alternative"] = used_name
+                node.instr.used_alternative = True
+
+            # f) avançar ponteiro de stage
+            current_stage = max(current_stage, s_idx + 1)
+
+            # g) write-phase se necessário — e **realocar** após inserção
+            dependents = [g.nodes[e.dst] for e in g.edges if e.dep == "DATA" and e.src == node.id]
+            for nxt in dependents:
+                logger.debug("[!] Dependents detected")
+                if self._needs_write_phase(node, nxt):
+                    wp_node = self._insert_write_phase_between(g, node.id, nxt.id)
+                    # replanear a partir do write-phase (respeitando ISA)
+                    self._reallocate_from(g, start_node=wp_node, start_stage=s_idx + 1)
+                    current_stage = max(current_stage, (wp_node.allocated_stage or s_idx) + 1)
+
+    # ============================================================
+    # HELPERS: ISA pick / topo / recirc / write-phase / decide
+    # ============================================================
+
+    # === ISA helpers (v1.9) ======================================
+
+    def _iter_stage_defs(self) -> List[Tuple[int, str, str, List[str]]]:
+        """
+        Yield (stage_index, flow_name, table_name, instr_list)
+        for all (s1..s10) x (f1,f2) x (tables).
+        Tables present per stage/flow depend on the JSON keys.  :contentReference[oaicite:2]{index=2}
+        """
+        pipe = self.isa.get("pipeline", {})
+        out = []
+        for s_idx in range(1, 11):
+            s_key = f"s{s_idx}"
+            s = pipe.get(s_key, {})
+            for flow in ("f1", "f2"):
+                f = s.get(flow, {})
+                # s10: 'multi_instr_speculative'; s1: 'instructions_p1'; s2..s9: 'instructions_p2' + 'instructions_speculative'
+                # for table in ("instructions_p1", "instructions_p2", "instructions_speculative", "multi_instr_speculative"):
+                for table in f:
+                    instrs = f[table]
+                    out.append((s_idx, flow, table, [x.lower() for x in instrs]))
+        return out
+
+    def _find_forward(self, names: List[str], start_stage: int) -> Optional[Tuple[int,str,str,str]]:
+        """
+        Search forward from start_stage for any of 'names'.
+        Returns (stage_index, flow, table_name, used_name) or None.
+        """
+        names = [n.lower() for n in names if n]
+        for (s_idx, flow, table, instrs) in self._iter_stage_defs():
+            if s_idx < max(1, start_stage):  # stages start at 1
                 continue
+            for nm in names:
+                if nm in instrs:
+                    return (s_idx, flow, table, nm)
+        return None
 
-            cond_ir = node.instr.kwargs.get("cond_ir", {})
-            branches = cond_ir.get("branches", [])
-            if not branches:
+    def _find_backward(self, names: List[str], start_before: int) -> Optional[Tuple[int,str,str,str]]:
+        """
+        Search backward from start_before-1 down to s1.
+        Returns (stage_index, flow, table_name, used_name) or None.
+        """
+        names = [n.lower() for n in names if n]
+        for (s_idx, flow, table, instrs) in sorted(self._iter_stage_defs(), key=lambda x: -x[0]):
+            if s_idx >= start_before:
                 continue
+            for nm in names:
+                if nm in instrs:
+                    return (s_idx, flow, table, nm)
+        return None
 
-            # usa o primeiro branch para deduzir os termos (DNF simplificada)
-            first = branches[0]
-            terms = (first.get("dnf", [[]])[0])[:2]  # até 2 comparações
+    def _reallocate_from(self, g: MicroGraph, start_node: MicroNode, start_stage: int) -> None:
+        """
+        Re-allocate stages from 'start_node' forward (DATA order) using ISA rules again.
+        """
+        order = self._topo_sort(g)
+        started = False
+        current_stage = start_stage
 
-            # analisar termos
-            term_slots = []
-            constants = []
-            for t in terms:
-                left = t.get("var")
-                const = t.get("const")
-                if isinstance(const, (int, float)):
-                    # var == CONST
-                    slot = assign_slot(left)
-                    term_slots.append(slot)
-                    constants.append(const)
-                elif isinstance(const, str):
-                    # var == outra_var
-                    slot1 = assign_slot(left)
-                    slot2 = assign_slot(const)
-                    term_slots.extend([slot1, slot2])
-                    constants = []  # comparação direta, sem constantes
+        for node in order:
+            if not started:
+                if node.id == start_node.id:
+                    started = True
                 else:
                     continue
 
-            # determinar micro-instrucao
-            if len(constants) == 2:
-                node.instr.instr = f"speculative_conditional_{term_slots[0]}_{term_slots[1]}"
-                node.instr.kwargs["cond_mode"] = t.get("op", "EQ")
-                node.instr.kwargs["cond_val"] = constants[0]
-                node.instr.kwargs["cond_mode_2"] = t.get("op", "EQ")
-                node.instr.kwargs["cond_val_2"] = constants[1]
-            elif not constants and len(term_slots) >= 2:
-                node.instr.instr = "speculative_conditional_between_vars"
-                node.instr.kwargs["cond_mode"] = "EQ"
-                node.instr.kwargs["cond_val"] = 0
-                node.instr.kwargs["cond_mode_2"] = "EQ"
-                node.instr.kwargs["cond_val_2"] = 0
-            else:
-                node.instr.instr = "speculative_conditional_v1_v2"  # fallback
-
-            node.instr.kwargs["slot_map"] = dict(var_to_slot)
-            node.selected_op = node.instr.instr
-
-            # ligar ramos (branch_targets)
-            if not node.instr.kwargs.get("branch_targets"):
-                node.instr.kwargs["branch_targets"] = [
-                    {"label": lbl, "dst": dst, "flow_id": getattr(g.nodes.get(dst), "flow_id", None)}
-                    for (lbl, dst) in control_out.get(node.id, [])
-                ]
-
-        # atualizar contexto global
-        g.var_slot_map = var_to_slot
-        g.available_slots = available
-
-    # ----------------------------
-    # 1) Resolver ChoiceGroups
-    # ----------------------------
-    def _resolve_choices(self, g: MicroGraph) -> None:
-        """
-        Por agora escolhe a primeira variante de cada ChoiceGroup.
-        (Depois podemos usar ISA ou heurísticas.)
-        """
-        for choice in g.choices:
-            if not choice.variants:
+            # write-phase node: força “tabela” simbólica
+            if str(getattr(node.instr, "name", "")).lower() == "write_phase":
+                node.allocated_stage = current_stage
+                node.allocated_table = "write_phase"
+                node.allocated_flow  = getattr(node, "allocated_flow", "f1")
+                current_stage += 1
                 continue
-            chosen = choice.variants[0]
-            keep: Set[int] = set()
-            for path in [chosen]:
-                keep.update(path)
 
-            all_ids: Set[int] = set()
-            for v in choice.variants:
-                all_ids.update(v)
+            cand_names = self._candidate_ops_for_node(node)
+            fwd = self._find_forward(cand_names, current_stage)
+            if fwd is None:
+                # tentar uma recirculação local (pouco comum neste ponto)
+                back = self._find_backward(cand_names, start_before=current_stage)
+                if back is None:
+                    raise PlannerError(f"Reallocation failed for node {node.id} ({node.instr.name}).")
+                s_idx, flow, table, used_name = back
+            else:
+                s_idx, flow, table, used_name = fwd
 
-            drop = all_ids - keep
-            # remover nós descartados
-            for nid in drop:
-                g.nodes.pop(nid, None)
-            # filtrar edges
-            g.edges = [e for e in g.edges if e.src not in drop and e.dst not in drop]
-        # opcional: limpar lista de choices
-        g.choices.clear()
+            node.allocated_stage = s_idx
+            node.allocated_table = f"{flow}.{table}"
+            node.allocated_flow  = flow
+            current_stage = max(current_stage, s_idx + 1)
 
-    # ----------------------------
-    # 2) Topological sort
-    # ----------------------------
-    # def _topo_sort(self, g: MicroGraph) -> List[MicroNode]:
-    #     indeg = {nid: 0 for nid in g.nodes}
-    #     adj: Dict[int, List[int]] = {nid: [] for nid in g.nodes}
 
-    #     for e in g.edges:
-    #         if e.src in g.nodes and e.dst in g.nodes:
-    #             adj[e.src].append(e.dst)
-    #             indeg[e.dst] += 1
 
-    #     Q: List[int] = [nid for nid, d in indeg.items() if d == 0]
-    #     order: List[MicroNode] = []
+    def _is_decide(self, node) -> bool:
+        return str(getattr(node.instr, "name", "")).lower() == "decide"
 
-    #     while Q:
-    #         nid = Q.pop(0)
-    #         order.append(g.nodes[nid])
-    #         for nxt in adj[nid]:
-    #             indeg[nxt] -= 1
-    #             if indeg[nxt] == 0:
-    #                 Q.append(nxt)
-
-    #     # # fallback (ciclos): adiciona os que faltam
-    #     # if len(order) < len(g.nodes):
-    #     #     in_order = {n.id for n in order}
-    #     #     for nid in g.nodes:
-    #     #         if nid not in in_order:
-    #     #             order.append(g.nodes[nid])
-
-    #     return order
-
-    def _topo_sort(self, g: MicroGraph) -> list:
+    def _isa_pick_table(self, node, start_from_stage: int):
         """
-        Compute a topological order of nodes in a MicroGraph.
-
-        Each node appears *after* all the nodes it depends on.
-        If the graph has cycles, remaining nodes are appended at the end.
+        Procura em stages >= start_from_stage uma tabela que suporte
+        node.instr.name; se não houver, tenta .alternative.
+        Retorna (stage, table_name, used_instr_name) ou None.
         """
+        name = node.instr.name.lower()
+        alt  = (getattr(node.instr, "alternative", None) or "").lower()
 
-        # Step 1: Initialize helper structures
-        indegree = {}   # how many incoming edges each node has
-        successors = {} # adjacency list (who depends on this node)
-
-        for node_id in g.nodes:
-            indegree[node_id] = 0
-            successors[node_id] = []
-
-        # Step 2: Build the adjacency list and indegree counts
-        for edge in g.edges:
-            src, dst = edge.src, edge.dst
-            if src not in g.nodes or dst not in g.nodes:
-                continue  # ignore broken edges
-
-            successors[src].append(dst)  # src → dst
-            indegree[dst] += 1           # dst has one more dependency
-
-        if __debug__:
-            print("\n[TopoSort] Initial indegree per node:")
-            for nid, deg in indegree.items():
-                print(f"  Node {nid}: indegree = {deg}")
-
-        # Step 3: Start with nodes that have no dependencies (indegree == 0)
-        ready_nodes = [nid for nid, deg in indegree.items() if deg == 0]
-        topo_order = []
-
-        if __debug__:
-            print(f"[TopoSort] Starting with ready nodes: {ready_nodes}")
-
-        # Step 4: Process nodes one by one
-        while ready_nodes:
-            # Take one node with no remaining dependencies
-            current_id = ready_nodes.pop(0)
-            current_node = g.nodes[current_id]
-            topo_order.append(current_node)
-
-            if __debug__:
-                print(f"[TopoSort] Visiting node {current_id}")
-
-            # For every node that depends on this one
-            for neighbor_id in successors[current_id]:
-                indegree[neighbor_id] -= 1  # one dependency satisfied
-                if indegree[neighbor_id] == 0:
-                    # Now ready to process
-                    ready_nodes.append(neighbor_id)
-
-        # Step 5: Handle cycles (if any)
-        if len(topo_order) < len(g.nodes):
-            logger.warning("[TopoSort] WARNING: graph has cycles, adding remaining nodes.")
-            already_seen = {n.id for n in topo_order}
-            for node_id, node in g.nodes.items():
-                if node_id not in already_seen:
-                    topo_order.append(node)
-
-        # Step 6: Done
-        if __debug__:
-            logger.debug("\n[TopoSort] Final order of node IDs:", [n.id for n in topo_order])
-
-        return topo_order
-
-    # ---------------- Planner helpers (NEW) ----------------
-
-    def _recirc_spec(self):
-        """Lê do ISA a configuração de recirculação, com fallbacks razoáveis."""
-        rec = self.isa.get("recirculation", {})
-        return {
-            "op": rec.get("op", "pos_filter_recirc_same_pipe"),
-            "stage": int(rec.get("stage", self.isa.get("max_stages", 10))),
-            "flow": int(rec.get("flow", 1)),
-            "table": rec.get("table", self._isa_pick_table(rec.get("op", "pos_filter_recirc_same_pipe"),
-                                                        int(rec.get("stage", self.isa.get("max_stages", 10))),
-                                                        int(rec.get("flow", 1))))
-        }
-
-    def _find_anywhere_supported(self, op: str) -> tuple[int,int,str] | None:
-        """Procura um (stage, flow, table) em TODO o pipeline onde 'op' exista."""
-        max_stage = int(self.isa.get("max_stages", 10))
-        for s in range(1, max_stage + 1):
-            for f in (1, 2):
-                table = self._isa_pick_table(op, s, f)
-                if table:
-                    return (s, f, table)
+        stages = self.isa.get("pipeline", {}).get("stages", [])
+        for s in range(max(0, start_from_stage), len(stages)):
+            for t in stages[s].get("tables", []):
+                instrs = [i.lower() for i in t.get("instrs", [])]
+                if name in instrs:
+                    return s, t["name"], node.instr.name
+                if alt and alt in instrs:
+                    return s, t["name"], getattr(node.instr, "alternative")
         return None
 
-    def _insert_recirc_before(self, g, anchor_node, pid: int, target_s: int, target_f: int) -> int:
+    def _isa_pick_table_backward(self, node, start_from: int):
         """
-        Insere um nó de recirculação (`pos_filter_recirc_same_pipe`) imediatamente antes de `anchor_node`.
-
-        - Cria um novo flow_id (para o novo passe do programa)
-        - Substitui as edges que iam diretamente para `anchor_node` por novas edges:
-            preds -> recirc_node (dep="RECIRC")
-            recirc_node -> anchor_node (dep="DATA")
-        - Configura os kwargs da instrução de recirculação (f1_next_instr, f2_next_instr, program_id)
-        - Propaga o novo flow_id a todos os nós seguintes (excepto IFs ou outras recircs)
+        Procura “para trás” (stage decrescentes) — usado antes de recirculação.
+        Retorna (stage, table_name, used_instr_name) ou None.
         """
+        name = node.instr.name.lower()
+        alt  = (getattr(node.instr, "alternative", None) or "").lower()
 
-        # 1. Especificação base de recirculação (ISA-aware)
-        rec = self._recirc_spec()
-        new_flow = self._new_flow_id()
+        stages = self.isa.get("pipeline", {}).get("stages", [])
+        for s in range(start_from, -1, -1):
+            for t in stages[s].get("tables", []):
+                instrs = [i.lower() for i in t.get("instrs", [])]
+                if name in instrs:
+                    return s, t["name"], node.instr.name
+                if alt and alt in instrs:
+                    return s, t["name"], getattr(node.instr, "alternative")
+        return None
+    def _assign_conditional_slots(self, decide_node: MicroNode) -> None:
+        reads = []
+        if isinstance(decide_node.instr.kwargs, dict):
+            reads = list(decide_node.instr.kwargs.get("reads", []))
+        slots = ["v1", "v2", "v3", "v4"]
+        slot_map = {}
+        si = 0
+        for var in reads:
+            if var not in slot_map and si < len(slots):
+                slot_map[var] = slots[si]
+                si += 1
+        if isinstance(decide_node.instr.kwargs, dict):
+            decide_node.instr.kwargs["slot_map"] = slot_map
 
-        # 2. Criação robusta de edges (permite grafos vazios)
-        EdgeCls = None
-        if hasattr(g, "edges") and len(g.edges) > 0:
-            EdgeCls = type(g.edges[0])
-        else:
-            # fallback para SimpleNamespace
-            from types import SimpleNamespace
-            EdgeCls = SimpleNamespace
+    def _assign_branch_flow_ids(self, g, decide_node):
+        cond_ir = decide_node.instr.kwargs.get("cond_ir", {})
+        n = len(cond_ir.get("branches", []))
+        labels = [f"branch_{i}" for i in range(n)]
+        if cond_ir.get("has_else", False):
+            labels.append("else")
 
-        def make_edge(src, dst, dep="DATA", label=None):
-            return EdgeCls(src=src, dst=dst, dep=dep)
+        branch_ids = {}
 
-        # 3. Criar o novo nó de recirculação
-        rec_id = max(g.nodes.keys(), default=0) + 1
-        from types import SimpleNamespace
+        for lbl in labels:
+            heads = [e.dst for e in g.edges if e.dep == "CONTROL" and e.src == decide_node.id and e.label == lbl]
+            if not heads:
+                continue
+            new_flow = self._new_flow_id()
+            branch_ids[lbl] = new_flow
+            for h in heads:
+                head_node = g.nodes[h]
+                head_node.flow_id = new_flow
+                # 🟢 primeira instrução do branch aponta para o novo flow_id
+                head_node.instr.kwargs["instr_id"] = new_flow
+                self._propagate_flow_id(g, start_node_id=h, new_flow_id=new_flow)
 
-        rec_instr = SimpleNamespace(instr=rec["op"], kwargs={
-            "f1_next_instr": ["DISABLED", "DISABLED"],
-            "f2_next_instr": ["DISABLED", "DISABLED"],
-            "program_id": [pid, MASK_PROGRAM_ID],
-        })
+        # guarda referência nos kwargs do decide
+        decide_node.instr.kwargs["branch_instr_ids"] = branch_ids
 
-        rec_node = SimpleNamespace(
-            id=rec_id,
-            instr=rec_instr,
-            allocated_stage=rec["stage"],
-            allocated_flow=rec["flow"],
-            allocated_table=rec["table"],
-            selected_op=rec["op"],
-            flow_id=getattr(anchor_node, "flow_id", None),  # ainda é o flow atual
-            graph_id=g.graph_id,
+
+    def _topo_sort(self, g) -> List[MicroNode]:
+        """
+        Topological order only by DATA dependencies.
+        CONTROL edges are ignored (they represent branches).
+        Returns a list of MicroNode in causal order.
+        """
+        indeg = {nid: 0 for nid in g.nodes}
+        adj = {nid: [] for nid in g.nodes}
+
+        for e in g.edges:
+            if e.dep == "DATA" and e.src in g.nodes and e.dst in g.nodes:
+                adj[e.src].append(e.dst)
+                indeg[e.dst] += 1
+
+        Q = [nid for nid, d in indeg.items() if d == 0]
+        ordered_ids = []
+        while Q:
+            nid = Q.pop(0)
+            ordered_ids.append(nid)
+            for nxt in adj[nid]:
+                indeg[nxt] -= 1
+                if indeg[nxt] == 0:
+                    Q.append(nxt)
+
+        # fallback: nós que ficaram fora por ciclos/isolamento
+        for nid in g.nodes:
+            if nid not in ordered_ids:
+                ordered_ids.append(nid)
+
+        return [g.nodes[nid] for nid in ordered_ids]
+
+    def _insert_recirc_before(self, g: MicroGraph, node, pid: int) -> int:
+        """
+        Insere um micro-nó de recirculação imediatamente antes de 'node'.
+        - cria MicroNode(instr='pos_filter_recirc_same_pipe', kwargs=...)
+        - reencaminha arestas que apontavam para 'node' para o novo nó
+        - liga novo nó -> node (DATA)
+        - gera novo flow_id e devolve-o
+        """
+        rec_id = self._new_internal_id(g.graph_id)
+        new_flow_id = self._new_flow_id()
+
+        rec_instr = MicroInstruction(
+            name="pos_filter_recirc_same_pipe",
+            kwargs={"program_id": pid, "next_flow_id": new_flow_id}
         )
-
+        rec_node = MicroNode(id=rec_id, instr=rec_instr, graph_id=g.graph_id)
+        rec_node.flow_id = node.flow_id
         g.nodes[rec_id] = rec_node
 
-        # 4. Reestruturar as edges: preds -> recirc -> anchor
-        preds = [e.src for e in g.edges if e.dst == anchor_node.id]
 
-        # remover edges antigas (pred -> anchor)
-        g.edges = [e for e in g.edges if not (e.dst == anchor_node.id and e.src in preds)]
+        # redirect edges arriving to node
+        for e in g.edges:
+            if e.dst == node.id:
+                e.dst = rec_id
+                # update instr_id of the predecessor to point to new flow
+                pred_node = g.nodes[e.src]
+                # pred_node.instr.kwargs["instr_id"] = new_flow_id
+                # pred_node.instr.kwargs["instr_id"] = self._new_flow_id()
 
-        # criar edges preds -> recirc (tipo "RECIRC" para o Installer identificar)
-        for p in preds:
-            g.edges.append(make_edge(p, rec_id, dep="RECIRC"))
 
-        # criar edge recirc -> anchor (continuação normal)
-        g.edges.append(make_edge(rec_id, anchor_node.id, dep="DATA"))
+        # link recirc → node
+        g.edges.append(MicroEdge(src=rec_id, dst=node.id, dep="DATA"))
 
-        # 5. Configurar o nó de recirculação com o próximo flow_id
-        if target_f == 1:
-            rec_node.instr.kwargs["f1_next_instr"] = ["DISABLED", new_flow]
-        else:
-            rec_node.instr.kwargs["f2_next_instr"] = ["DISABLED", new_flow]
+        # new_flow = rec_node.instr.kwargs["instr_id"]
+        return new_flow_id
 
-        # o anchor_node passa a pertencer ao novo flow
-        anchor_node.flow_id = new_flow
+    def _is_decide(self, node: MicroNode) -> bool:
+        return str(getattr(node.instr, "name", "")).lower() == "decide"
 
-        # 6. Propagar o novo flow_id aos nós subsequentes (DATA edges apenas)
-        visited = set()
-        stack = [anchor_node.id]
+    def _candidate_ops_for_node(self, node: MicroNode) -> List[str]:
+        """
+        Primary + alternative candidates for allocation.
+        For IF/decide, expand to the ISA speculative conditionals.  :contentReference[oaicite:4]{index=4}
+        """
+        name  = str(node.instr.name)
+        alt   = getattr(node.instr, "alternative", None)
+        if self._is_decide(node):
+            # keep all three candidates; Planner/Installer decidirá com base no slot_map/cond_ir
+            # TODO: it cannot return all three nodes
+            return [
+                "speculative_conditional_v1_v2",
+                "speculative_conditional_v3_v4",
+                "speculative_conditional_between_vars",
+            ]
+        out = [name]
+        if alt:
+            out.append(alt)
+        return out
+
+
+    def _propagate_flow_id(self, g, start_node_id: int, new_flow_id: int) -> None:
+        """
+        Propaga flow_id a partir de 'start_node_id' para todos os nós alcançáveis
+        (por DATA e CONTROL), até que outro decide/recirc altere novamente.
+        """
+        seen = set()
+        stack = [start_node_id]
         while stack:
             nid = stack.pop()
-            if nid in visited:
+            if nid in seen:
                 continue
-            visited.add(nid)
-
+            seen.add(nid)
             node = g.nodes.get(nid)
-            if node is None:
+            if not node:
                 continue
+            node.flow_id = new_flow_id
+            for e in g.edges:
+                if e.src == nid:
+                    stack.append(e.dst)
 
-            instr_name = getattr(node.instr, "instr", "")
-            # não propagar para IFs nem recircs
-            if instr_name.startswith("speculative_conditional") or instr_name.startswith("conditional"):
-                continue
-            if instr_name.startswith("pos_filter_recirc"):
-                continue
-
-            # atualizar o flow_id
-            node.flow_id = new_flow
-
-            # seguir apenas DATA edges (as RECIRC indicam saltos físicos)
-            succs = [e.dst for e in g.edges if e.src == nid and e.dep == "DATA"]
-            stack.extend(succs)
-
-        # 7. Log opcional para debug
-        if getattr(self, "_verbose", False):
-            print(f"[Planner] Inserted recirculation node {rec_id} before node {anchor_node.id}, new_flow={new_flow}")
-
-        return new_flow
-
-
-    # ----------------------------
-    # 3) Stage allocation (simple)
-    # ----------------------------
-
-    def _isa_pick_table(self, micro_instr_name: str, stage: int, flow: int) -> str | None:
+    def _needs_write_phase(self, src_node, dst_node) -> bool:
         """
-        Se o op existir no s{stage}/f{flow}, devolve o nome da tabela.
-        - Se a entrada for string, aceita: devolve None (ou um default do ISA, se tiveres).
-        - Se a entrada for dict, usa o campo 'table'.
+        RAW entre src e dst? Se sim, requer write-phase:
+          - src.effect.writes & dst.effect.reads != ∅
         """
-        pipeline = self.isa.get("pipeline", {})
-        s_key, f_key = f"s{stage}", f"f{flow}"
-        tables = pipeline[s_key][f_key]
-        logger.debug(tables)
-        logger.debug(micro_instr_name)
-        logger.debug(stage)
-        logger.debug(flow)
+        src_w = getattr(getattr(src_node, "effect", None), "writes", set()) or set()
+        dst_r = getattr(getattr(dst_node, "effect", None), "reads", set()) or set()
+        logger.debug(f"src_w={src_w} dst_r={dst_r}")
+        logger.debug(f"result op bool(src_w & dst_r): {bool(src_w & dst_r)}")
+        return bool(src_w & dst_r)
 
-        for table_name in tables:
-            if micro_instr_name in tables[table_name]:
-                return table_name
-        return None
+    def _insert_write_phase_between(self, g: MicroGraph, src_id: int, dst_id: int) -> MicroNode:
+        """
+        Insert a write-phase node between src and dst.
+        """
+        wp_id = self._new_internal_id()
+        wp_instr = MicroInstruction(name="write_phase", kwargs={})
+        wp_node = MicroNode(id=wp_id, instr=wp_instr, graph_id=g.graph_id)
+        wp_node.flow_id = g.nodes[src_id].flow_id
 
-    def _allocate_stages(self, g, order):
-        """
-        ISA-aware + ChoiceGroups + Decide + Recirculação:
-        1) respeita deps (min_stage = max(pred)+1)
-        2) tenta colocar no [min_stage..max] em flows {1,2}
-        3) se falhar, tenta versões alternativas via ChoiceGroup
-        4) se ainda falhar mas existir suporte em estágios anteriores,
-            insere recirculação (novo flow_id) e coloca no novo passe
-        """
-        preds: dict[int, list[int]] = {}
+        g.nodes[wp_id] = wp_node
+
+        new_edges = []
         for e in g.edges:
-            preds.setdefault(e.dst, []).append(e.src)
-
-        max_stage = int(self.isa.get("max_stages", 10))
-        cap = int(self.isa.get("stage_capacity_per_flow", 8))
-        used: dict[tuple[int,int], int] = {}
-
-        # node_id -> alternativas (do ChoiceGroup), incluindo o próprio op
-        node_choices: dict[int, list[str]] = {}
-        for choice in getattr(g, "choices", []):
-            for variant in choice.variants:
-                names = []
-                for nid in variant:
-                    if nid in g.nodes:
-                        op = getattr(g.nodes[nid].instr, "instr", None)
-                        if op:
-                            names.append(op)
-                for nid in variant:
-                    node_choices[nid] = names
-
-        def fits(s,f): return used.get((s,f),0) < cap
-
-        for node in order:
-            op = getattr(node.instr, "instr", "")
-            # min stage por deps
-            min_stage = 1
-            for p in preds.get(node.id, []):
-                st = getattr(g.nodes[p], "allocated_stage", None)
-                if st is not None:
-                    min_stage = max(min_stage, st + 1)
-
-            # ---- tratamento especial para IF (decide): tenta normal e speculative
-            if op == "decide":
-                candidate_ops = [
-                    "conditional_v1_v2", "conditional_v3_v4", "conditional_between_vars",
-                    "speculative_conditional_v1_v2", "speculative_conditional_v3_v4",
-                    "speculative_conditional_between_vars",
-                ]
-                placed = False
-                # 1) tentar dentro do passe atual (s >= min_stage)
-                for s in range(min_stage, max_stage + 1):
-                    for f in (1, 2):
-                        for cand in candidate_ops:
-                            table = self._isa_pick_table(cand, s, f)
-                            if table and fits(s, f):
-                                node.allocated_stage = s
-                                node.allocated_flow  = f
-                                node.allocated_table = table
-                                node.selected_op     = cand
-                                used[(s,f)] = used.get((s,f),0)+1
-                                placed = True
-                                break
-                        if placed: break
-                    if placed: break
-
-                # 2) se não coube no pass atual, tenta “atrás” (estágios anteriores)
-                if not placed:
-                    back = None
-                    for s in range(1, min_stage):
-                        for f in (1, 2):
-                            for cand in candidate_ops:
-                                table = self._isa_pick_table(cand, s, f)
-                                if table:
-                                    back = (s, f, table, cand)
-                                    break
-                            if back: break
-                        if back: break
-
-                    if back:
-                        s_back, f_back, tbl_back, cand = back
-                        # inserir recirculação, criar novo flow_id e atribuir nó ao novo passe
-                        new_flow = self._insert_recirc_before(g, node, getattr(self, "_current_pid", 0), s_back, f_back)
-                        node.allocated_stage = s_back
-                        node.allocated_flow  = f_back
-                        node.allocated_table = tbl_back
-                        node.selected_op     = cand
-                        node.flow_id         = new_flow
-                        used[(s_back,f_back)] = used.get((s_back,f_back),0)+1
-                        placed = True
-
-                if not placed:
-                    raise PlannerError(f"Prefilter '{g.graph_id}': IF node (decide) could not be placed (no conditional instr. in ISA)")
-
-                continue  # próximo nó
-
-            # ---- nós “normais” (usa ChoiceGroups se existirem) ----
-            alt_ops = node_choices.get(node.id, [op])
-
-            # 1) tentar no passe atual
-            placed = False
-            for s in range(min_stage, max_stage + 1):
-                for f in (1, 2):
-                    for cand in alt_ops:
-                        table = self._isa_pick_table(cand, s, f)
-                        if table and fits(s, f):
-                            node.allocated_stage = s
-                            node.allocated_flow  = f
-                            node.allocated_table = table
-                            node.selected_op     = cand
-                            used[(s,f)] = used.get((s,f),0)+1
-                            placed = True
-                            break
-                    if placed: break
-                if placed: break
-
-            # 2) se não coube no passe atual, tenta “atrás” e recircula
-            if not placed:
-                back = None
-                for s in range(1, min_stage):
-                    for f in (1, 2):
-                        for cand in alt_ops:
-                            table = self._isa_pick_table(cand, s, f)
-                            if table:
-                                back = (s, f, table, cand)
-                                break
-                        if back: break
-                    if back: break
-
-                if back:
-                    s_back, f_back, tbl_back, cand = back
-                    new_flow = self._insert_recirc_before(g, node, getattr(self, "_current_pid", 0), s_back, f_back)
-                    node.allocated_stage = s_back
-                    node.allocated_flow  = f_back
-                    node.allocated_table = tbl_back
-                    node.selected_op     = cand
-                    node.flow_id         = new_flow
-                    used[(s_back,f_back)] = used.get((s_back,f_back),0)+1
-                    placed = True
-
-            if not placed:
-                raise PlannerError(f"Instruction '{op}' has not been placed in any stage/flow (and no recirculation option found)")
-
-
-    # ----------------------------
-    # 4) Injetar program_id
-    # ----------------------------
-    def _inject_program_id(self, g: MicroGraph, pid: int) -> None:
-        for n in g.nodes.values():
-            # garante kwargs
-            if not hasattr(n.instr, "kwargs") or n.instr.kwargs is None:
-                n.instr.kwargs = {}
-            n.instr.kwargs.setdefault("program_id", pid)
-
-    # ----------------------------
-    # 5) Flow IDs + next_flow_id
-    # ----------------------------
-    def _assign_flow_ids_and_propagate_next(self, g: MicroGraph, order: List[MicroNode], pid: int, base_flow: int) -> None:
-        """
-        Regra:
-          - Cada grafo começa com flow_id = 1 
-          - Em cada 'decide' (IF), atribuímos novos flow_ids para a entrada de cada ramo.
-          - O nó imediatamente anterior ao início de um ramo deve ter kwargs['next_flow_id'] = flow_id_do_ramo.
-            No teu caso, é o próprio 'decide' que conhece os ramos, por isso colocamos:
-               decide.kwargs['branch_flow_ids'] = { label: flow_id_branch }
-          - Nós sem bifurcação herdam o flow_id do predecessor.
-        """
-        # Índices rápidos
-        preds: Dict[int, List[int]] = {}
-        succs: Dict[int, List[int]] = {}
-        control_out: Dict[int, List[Tuple[str, int]]] = {}  # decide_id -> [(label, dst_id), ...]
-
-        for e in g.edges:
-            succs.setdefault(e.src, []).append(e.dst)
-            preds.setdefault(e.dst, []).append(e.src)
-            if e.dep == "CONTROL":
-                control_out.setdefault(e.src, []).append((e.label or "", e.dst))
-
-        node_flow: Dict[int,int] = {}
-
-        # roots do grafo começam com base_flow (único por prefilter)
-        roots = [n.id for n in order if len(preds.get(n.id, [])) == 0]
-        for rid in roots:
-            node_flow[rid] = base_flow
-
-        for node in order:
-            nid = node.id
-            if nid not in node_flow:
-                for p in preds.get(nid, []):
-                    if p in node_flow:
-                        node_flow[nid] = node_flow[p]
-                        break
-
-            if node.instr.instr == "decide":
-                branch_map = {}
-                for label, dst in control_out.get(nid, []):
-                    branch_flow = self._new_flow_id()
-                    branch_map[label or f"br-{dst}"] = branch_flow
-                    node_flow[dst] = branch_flow
-                node.instr.kwargs.setdefault("branch_flow_ids", branch_map)
-                node.instr.kwargs.setdefault("branch_targets", [
-                    {"label": lbl, "dst": dst, "flow_id": branch_map.get(lbl)}
-                    for (lbl, dst) in control_out.get(nid, [])
-                ])
-
-        # guardar flow_id e next_flow_id default (linear = o próprio flow)
-        for n in g.nodes.values():
-            fid = node_flow.get(n.id)
-            if fid is not None:
-                n.flow_id = fid
-            n.instr.kwargs.setdefault("next_flow_id", n.flow_id)
-
-
-    # ----------------------------
-    # 6) Flows + write phase (simplificado)
-    # ----------------------------
-    def _assign_flows_and_write_phases(self, g: MicroGraph, order: List[MicroNode]) -> None:
-        """
-        Mínimo viável: se a instrução é write, alterna flow 1/2 para permitir paralelismo.
-        (A inserção de write_phase real pode ser feita aqui quando definires o mecanismo.)
-        """
-        current_flow_lane = 1
-        for n in order:
-            if self._is_write(n):
-                n.allocated_flow = current_flow_lane
-                current_flow_lane = 2 if current_flow_lane == 1 else 1
+            if e.dep == "DATA" and e.src == src_id and e.dst == dst_id:
+                new_edges.append(MicroEdge(src=src_id, dst=wp_id, dep="DATA"))
+                new_edges.append(MicroEdge(src=wp_id, dst=dst_id, dep="DATA"))
             else:
-                # por omissão, corre no flow 1 (ou poderias herdar do predecessor)
-                n.allocated_flow = n.allocated_flow or 1
+                new_edges.append(e)
+        g.edges = new_edges
 
-
-    # ----------------------------
-    # Helpers
-    # ----------------------------
-    def _is_write(self, node: MicroNode) -> bool:
-        op = node.instr.instr
-        return op.startswith("hdr_write") or op.startswith("var_write")
+        return wp_node

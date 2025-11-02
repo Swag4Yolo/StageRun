@@ -12,7 +12,7 @@ from lib.utils.utils import Timer
 
 from Core.stagerun_graph.importer import load_stage_run_graphs  # lê JSON do compilador (com checksum)
 from .micro_instruction import MicroInstructionParser
-from .planner import Planner   # implementas o MVP acima
+from .planner import Planner, PlanningResult   # implementas o MVP acima
 # from .installer import install_plan # já tens base para instalar tables
 # from .resources import apply_resources, cleanup_resources
 
@@ -104,7 +104,7 @@ def load_compiled_program(compiled_path: str | Path) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Serialização leve do plan_result (só para logging / debug)
 # ---------------------------------------------------------------------------
-def plan_result_to_dict(plan_result) -> Dict[str, Any]:
+def plan_result_to_dict(plan_result: PlanningResult) -> Dict[str, Any]:
     """
     Converte o retorno do Planner para um dicionário serializável em JSON
     (sem perder infos úteis para debugging).
@@ -139,14 +139,12 @@ def plan_result_to_dict(plan_result) -> Dict[str, Any]:
             "nodes": [node_to_dict(n) for n in g.nodes.values()],
             "edges": [edge_to_dict(e) for e in g.edges],
             # ChoiceGroups normalmente são resolvidos no Planner; se ainda houver, serializa:
-            "choices": getattr(g, "choices", []),
         })
 
     stats = getattr(plan_result, "stats", None)
     stats_out = {
         "stages_used": getattr(stats, "stages_used", None),
         "total_nodes": getattr(stats, "total_nodes", None),
-        "total_choices": getattr(stats, "total_choices", None),
         "total_flows": getattr(stats, "total_flows", None),
         "write_phases_inserted": getattr(stats, "write_phases_inserted", None),
     } if stats else None
