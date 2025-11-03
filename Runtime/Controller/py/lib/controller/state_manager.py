@@ -340,7 +340,7 @@ def set_pid(pid, app_key):
     running_engine[RUNNING_ENGINE]["program_ids"][str(pid)] = app_key
     save_running_engine()
 
-def remove_program_id(app_key):
+def remove_program_id(app_key, *, force=False, program_id=None):
     """
         For removing a program:
         1. Update the internal state, freeing 
@@ -374,8 +374,14 @@ def remove_program_id(app_key):
         connect_tofino()
         engine_controller.remove_program(int(pid))
 
+    elif force and program_id:
+        logger.debug(f"[!] Forcefully removing app {app_key}")
+        connect_tofino()
+        engine_controller.remove_program(int(program_id))
+
     else:
-        logger.info(f"Remove Program Id app {app_key} not installed in the Engine or not detected in the state")
+        logger.info(f"Deleting App {app_key} unsuccessful since it is not installed in the Engine or not detected in the state")
+
 
 def clear_program_ids():
     global running_engine

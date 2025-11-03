@@ -283,7 +283,7 @@ async def install_app(tag: str, version: str):
     if not isInstalled:
         sm.set_app_status(app_key, STATUS_UNSUPPORTED)
         # sm.apps[app_key]['status'] = STATUS_UNSUPPORTED
-        sm.remove_program_id(app_key)
+        sm.remove_program_id(app_key, force=True, program_id=program_id)
         # sm.save_apps()
         return {"status": "error", "message": f"App {app_key} is not supported. {message}"}
 

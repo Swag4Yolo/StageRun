@@ -167,22 +167,22 @@ class PosFilterMechanism(BaseTable):
         self.add_entry(keys, action)
     
     # Action implementations
-    def pos_filter_recirc_same_pipe(self, f1_next_instr=[DISABLED, DISABLED],f2_next_instr=[DISABLED, DISABLED], program_id=[1, MASK_PROGRAM_ID]):
+    def pos_filter_recirc_same_pipe(self, f1_next_instr=[DISABLED, DISABLED],f2_next_instr=[DISABLED, DISABLED], program_id=[1, MASK_PROGRAM_ID], next_flow_id=DISABLED):
 
         keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x000, 0x180], program_id=program_id)
-        action = BaseAction("recirculate_p0")
+        action = BaseAction("recirculate_p0", next_flow_id)
         self.add_entry(keys, action)
 
         keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x080, 0x180], program_id=program_id)
-        action = BaseAction("recirculate_p1")
+        action = BaseAction("recirculate_p1", next_flow_id)
         self.add_entry(keys, action)
 
         keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0100, 0x180], program_id=program_id)
-        action = BaseAction("recirculate_p2")
+        action = BaseAction("recirculate_p2", next_flow_id)
         self.add_entry(keys, action)
 
         keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0180, 0x180], program_id=program_id)
-        action = BaseAction("recirculate_p3")
+        action = BaseAction("recirculate_p3", next_flow_id)
         self.add_entry(keys, action)
 
     

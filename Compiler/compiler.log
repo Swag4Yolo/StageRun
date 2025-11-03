@@ -4,7 +4,7 @@ Requirement already satisfied: dill in ./compiler_env/lib/python3.10/site-packag
 Removing old Compiled Files
 Compiling Programs
 	 Compiling Program => 1
-real 0,14
+real 0,13
 user 0,12
 sys 0,01
 	 Compiling Program => 2
@@ -16,18 +16,18 @@ real 0,13
 user 0,12
 sys 0,01
 	 Compiling Program => mew_crossfire
-real 0,12
+real 0,13
 user 0,11
 sys 0,01
 	 Compiling Program => mew
-real 0,13
-user 0,12
-sys 0,01
+real 0,16
+user 0,15
+sys 0,00
 	 Compiling Program => nethide
 real 0,13
 user 0,12
 sys 0,01
 	 Compiling Program => ipid
-real 0,12
+real 0,13
 user 0,12
-sys 0,00
+sys 0,01

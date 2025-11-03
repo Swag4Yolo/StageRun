@@ -26,8 +26,8 @@ class PlannerStats:
     stages_used: int = 0
     total_nodes: int = 0
     total_flows: int = 0
-    write_phases_inserted: int = 0
-    wp_reserved: Dict[int, Set[int]] = field(default_factory=dict)
+    # write_phases_inserted: int = 0
+    wp_reserved: Dict[int, int] = field(default_factory=dict)
 
 
 
@@ -53,7 +53,7 @@ class Planner:
         self._flow_counter = 0  # global flow_id counter
         self._internal_node_counter = {}
         self._pkt_id = 0
-        self._wp_reserved: Set[int] = set()
+        self._wp_reserved: Dict[int, int] = {}
         self._occupied_stages: Set[int] = set()
 
     def _new_flow_id(self) -> int:
@@ -87,27 +87,28 @@ class Planner:
 
         for g in micro_graphs:
             # 0. Init values
-            self._internal_node_counter[g.graph_id] = len(g.nodes)
-            base_flow_id = self._new_flow_id()
+            # self._internal_node_counter[g.graph_id] = len(g.nodes)
+            # base_flow_id = self._new_flow_id()
 
             # 1. Add PreFilter Keys
-            if g.keys:
-                pkt_id = self._new_pkt_id()
-                g.keys['kwargs']['program_id'] = pid
-                g.keys['kwargs']['pkt_id'] = pkt_id
+            # if g.keys:
+            #     pkt_id = self._new_pkt_id()
+            #     g.keys['kwargs']['program_id'] = pid
+            #     g.keys['kwargs']['pkt_id'] = pkt_id
                 # TODO: implement {ni_f1, ni_f2} in kwargs
-                g.keys['kwargs']['ni_f1'] = base_flow_id
-                g.keys['kwargs']['ni_f2'] = base_flow_id
+                # g.keys['kwargs']['ni_f1'] = base_flow_id
+                # g.keys['kwargs']['ni_f2'] = base_flow_id
 
             
-            # 2. Default Action
-            if g.default_action:
-                g.default_action['kwargs']['pkt_id'] = pkt_id
+            # # 2. Default Action
+            # if g.default_action:
+            #     g.default_action['kwargs']['program_id'] = pid
+            #     g.default_action['kwargs']['pkt_id'] = pkt_id
 
             # 3. Nodes
-            for n in g.nodes.values():
-                n.flow_id = base_flow_id
-                n.instr.kwargs["program_id"] = pid
+            # for n in g.nodes.values():
+            #     n.flow_id = base_flow_id
+            #     n.instr.kwargs["program_id"] = pid
 
             # Extra: Assegurar seq linear - necesario?
             # for edge in g.edges:
@@ -126,7 +127,9 @@ class Planner:
 
         self._insert_global_write_phases_all(planned_graphs, pid)
 
-        return PlanningResult(planned_graphs, PlannerStats(write_phases_inserted=self._wp_reserved))
+        stats = PlannerStats()
+        stats.wp_reserved = self._wp_reserved
+        return PlanningResult(planned_graphs, stats)
     # ============================================================
     # CORE
     # ============================================================
@@ -142,10 +145,29 @@ class Planner:
         pending_writes: Dict[str, int] = {}   # var -> stage
         current_stage = 0
         flow_id = self._new_flow_id()         # flow_id inicial deste grafo
-
         order = self._topo_sort(g)
 
+        #1. Keys
+        if g.keys:
+            pkt_id = self._new_pkt_id()
+            g.keys['kwargs']['program_id'] = pid
+            g.keys['kwargs']['pkt_id'] = pkt_id
+            g.keys['kwargs']['ni_f1'] = flow_id
+            g.keys['kwargs']['ni_f2'] = flow_id
+        
+        # 2. Default Action
+        if g.default_action:
+            g.default_action['kwargs']['program_id'] = pid
+            g.default_action['kwargs']['pkt_id'] = pkt_id
+
+        # 3. Init Node Counter
+        self._internal_node_counter[g.graph_id] = len(g.nodes)
+
+
         for idx, node in enumerate(order):
+            # 3. Put program_id
+            node.instr.kwargs["program_id"] = pid
+
             op = node.instr.name
             placed = False
 
@@ -661,6 +683,11 @@ class Planner:
             * insert a recirculation before that node (new flow_id)
             * re-place the node from pipeline head, skipping wp_stage
         """
+        
+        # RESERVE S10 For WP
+        self._wp_reserve(10)
+
+
         # 0) flatten and order all nodes (by stage then id for determinism)
         all_nodes: list["MicroNode"] = []
         for g in graphs:
@@ -714,7 +741,7 @@ class Planner:
             return
 
         wp_node_id = self._new_internal_id(host_graph.graph_id)
-        wp_instr = MicroInstruction(name="configure_write_phase", kwargs={"program_id": pid, "stage": wp_stage})
+        wp_instr = MicroInstruction(name="configure_write_phase", kwargs={"program_id": pid, f"s{wp_stage}": 1})
         wp_node = MicroNode(
             id=wp_node_id,
             instr=wp_instr,
@@ -773,7 +800,6 @@ class Planner:
 
         if __debug__:
             logger.debug(f"[Planner][WP] Global pass done. write_phase at stage {wp_stage}. Conflicts resolved.")
-
 
 
     def _try_place_instr(
@@ -887,10 +913,11 @@ class Planner:
 
     def _wp_reserve(self, stage_idx: int) -> None:
         """Mark this stage as having a write-phase for the given program and graph."""
-        self._wp_reserved.add(stage_idx)
+        self._wp_reserved[stage_idx] = 1
 
         if __debug__:
             logger.debug(f"[Planner][WP] reserved stage {stage_idx}")
+            logger.debug(f"[Planner][STATUS] _wp_reserved: {self._wp_reserved}")
 
 
     def _wp_next_free(self, start_stage: int) -> int:
@@ -920,13 +947,13 @@ class Planner:
     def _retrieve_next_free_stage(self, current_stage):
         """Devolve o próximo stage livre para uma instrução"""
         s = current_stage
-        while s in self._wp_reserved:
+        while s in self._wp_reserved.keys():
             s += 1
         return s
     
     def _is_stage_reserved_for_wp(self, current_stage):
         """"""
-        return current_stage in self._wp_reserved
+        return current_stage in self._wp_reserved.keys()
 
     def _mark_stage_occupied_by_instr(self, stage_idx: int) -> None:
         """Marca um stage como ocupado por alguma instrução deste programa (global por pid)."""

@@ -7,6 +7,10 @@ from lib.engine.instructions.instruction_package_init import *
 from lib.engine.instructions.instruction_package_3 import *
 from lib.engine.instructions.instruction_package_5 import *
 from lib.engine.instructions.instruction_package_6 import *
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class P1Table(BaseTable):
     """
@@ -65,60 +69,59 @@ class P1Table(BaseTable):
         action = BaseAction("set_index_hash_2_w_global_var_pkt_size", mode)
         self.add_entry(keys, action)
 
-
-    def fetch_v1(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_v1(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_v1")
+        action = BaseAction("fetch_v1", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def fetch_v2(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_v2(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_v2")
+        action = BaseAction("fetch_v2", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def fetch_hash_1(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_hash_1(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_hash_1")
+        action = BaseAction("fetch_hash_1", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def fetch_tcp_ack(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_tcp_ack(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_tcp_ack")
+        action = BaseAction("fetch_tcp_ack", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
         
-    def fetch_tcp_seq(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_tcp_seq(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_tcp_seq")
+        action = BaseAction("fetch_tcp_seq", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def fetch_ipv4_ttl(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_ipv4_ttl(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_ipv4_ttl")
+        action = BaseAction("fetch_ipv4_ttl", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def fetch_const_val(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], const_val=DISABLED):
+    def fetch_const_val(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], const_val=DISABLED, var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_const_val", const_val)
+        action = BaseAction("fetch_const_val", const_val, var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def fetch_ipv4_total_len(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_ipv4_total_len(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_ipv4_total_len")
+        action = BaseAction("fetch_ipv4_total_len", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
     
-    def fetch_ipv4_ihl(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_ipv4_ihl(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_ipv4_ihl")
+        action = BaseAction("fetch_ipv4_ihl", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
     
-    def fetch_tcp_data_offset(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_tcp_data_offset(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_tcp_data_offset")
+        action = BaseAction("fetch_tcp_data_offset", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
     
-    def fetch_out(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED]):
+    def fetch_out(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], var_to_header=0, header_to_var=0, external_var_update=0):
         keys = P1TableKeys(program_id, ni, pkt_id)
-        action = BaseAction("fetch_out")
+        action = BaseAction("fetch_out", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
     def remove_entries_for_pid(self, pid):
@@ -133,6 +136,59 @@ class P1Table(BaseTable):
             if key_pid == pid:
                 keys = P1TableKeys.from_key_dict(key_dict)
                 self.delete_entry(keys)
+
+    def print_entries_for_pid(self, pid, from_hw=False):
+        entries = self.get_all_entries(from_hw)
+        found = False
+
+        logger.debug("Table P1")
+
+        for data, key in entries:
+            key_dict = key.to_dict()
+            pid_field = key_dict.get('hdr.bridge_meta.program_id')
+            if not isinstance(pid_field, dict) or pid_field.get('value') != pid:
+                continue
+
+            found = True
+            lines = [f"{self.table_name} entry (program_id={pid}):", "  keys:"]
+
+            for field_name, field_meta in key_dict.items():
+                if isinstance(field_meta, dict):
+                    parts = []
+                    if 'value' in field_meta:
+                        parts.append(f"value={field_meta['value']}")
+                    if 'mask' in field_meta and field_meta['mask'] is not None:
+                        parts.append(f"mask={field_meta['mask']}")
+                    if 'prefix_len' in field_meta and field_meta['prefix_len'] is not None:
+                        parts.append(f"prefix_len={field_meta['prefix_len']}")
+                    lines.append(f"    {field_name}: {', '.join(parts) if parts else field_meta}")
+                else:
+                    lines.append(f"    {field_name}: {field_meta}")
+
+            data_dict = {}
+            try:
+                data_dict = data.to_dict()
+            except AttributeError:
+                pass
+
+            action_name = None
+            if isinstance(data_dict, dict):
+                action_name = data_dict.get('$ACTION_NAME') or data_dict.get('action_name')
+
+            lines.append(f"  action: {action_name if action_name is not None else '<unknown>'}")
+
+            if isinstance(data_dict, dict):
+                for field_name, value in data_dict.items():
+                    if field_name in ('$ACTION_NAME', 'action_name'):
+                        continue
+                    if isinstance(value, list) and len(value) == 1:
+                        value = value[0]
+                    lines.append(f"    {field_name}: {value}")
+
+            logger.debug("\n".join(lines))
+
+        if not found:
+            logger.debug(f"No entries found for program_id {pid} in {self.table_name}")
 
 class P2Table(BaseTable):
     """
@@ -224,6 +280,62 @@ class P2Table(BaseTable):
             if key_pid == pid:
                 keys = P2TableKeys.from_key_dict(key_dict)
                 self.delete_entry(keys)
+
+    def print_entries_for_pid(self, pid, from_hw=False):
+        entries = self.get_all_entries(from_hw)
+        found = False
+
+        logger.debug("Table P2")
+
+
+        for data, key in entries:
+            key_dict = key.to_dict()
+            pid_field = key_dict.get('hdr.bridge_meta.program_id')
+            if not isinstance(pid_field, dict) or pid_field.get('value') != pid:
+                continue
+
+            found = True
+            lines = [f"{self.table_name} entry (program_id={pid}):", "  keys:"]
+
+            for field_name, field_meta in key_dict.items():
+                if isinstance(field_meta, dict):
+                    parts = []
+                    if 'value' in field_meta:
+                        parts.append(f"value={field_meta['value']}")
+                    if 'mask' in field_meta and field_meta['mask'] is not None:
+                        parts.append(f"mask={field_meta['mask']}")
+                    if 'prefix_len' in field_meta and field_meta['prefix_len'] is not None:
+                        parts.append(f"prefix_len={field_meta['prefix_len']}")
+                    lines.append(f"    {field_name}: {', '.join(parts) if parts else field_meta}")
+                else:
+                    lines.append(f"    {field_name}: {field_meta}")
+
+            data_dict = {}
+            try:
+                data_dict = data.to_dict()
+            except AttributeError:
+                pass
+
+            action_name = None
+            if isinstance(data_dict, dict):
+                action_name = data_dict.get('$ACTION_NAME') or data_dict.get('action_name')
+
+            lines.append(f"  action: {action_name if action_name is not None else '<unknown>'}")
+
+            if isinstance(data_dict, dict):
+                for field_name, value in data_dict.items():
+                    if field_name in ('$ACTION_NAME', 'action_name'):
+                        continue
+                    if isinstance(value, list) and len(value) == 1:
+                        value = value[0]
+                    lines.append(f"    {field_name}: {value}")
+
+            logger.debug("\n".join(lines))
+
+        if not found:
+            logger.debug(f"No entries found for program_id {pid} in {self.table_name}")
+
+
 
 class Speculative(BaseTable):
     """
@@ -362,6 +474,59 @@ class Speculative(BaseTable):
             if key_pid == pid:
                 keys = SpeculativeKeys.from_key_dict(key_dict)
                 self.delete_entry(keys)
+
+    def print_entries_for_pid(self, pid, from_hw=False):
+        entries = self.get_all_entries(from_hw)
+        found = False
+
+        logger.debug("Table Spec")
+
+        for data, key in entries:
+            key_dict = key.to_dict()
+            pid_field = key_dict.get('hdr.bridge_meta.program_id')
+            if not isinstance(pid_field, dict) or pid_field.get('value') != pid:
+                continue
+
+            found = True
+            lines = [f"{self.table_name} entry (program_id={pid}):", "  keys:"]
+
+            for field_name, field_meta in key_dict.items():
+                if isinstance(field_meta, dict):
+                    parts = []
+                    if 'value' in field_meta:
+                        parts.append(f"value={field_meta['value']}")
+                    if 'mask' in field_meta and field_meta['mask'] is not None:
+                        parts.append(f"mask={field_meta['mask']}")
+                    if 'prefix_len' in field_meta and field_meta['prefix_len'] is not None:
+                        parts.append(f"prefix_len={field_meta['prefix_len']}")
+                    lines.append(f"    {field_name}: {', '.join(parts) if parts else field_meta}")
+                else:
+                    lines.append(f"    {field_name}: {field_meta}")
+
+            data_dict = {}
+            try:
+                data_dict = data.to_dict()
+            except AttributeError:
+                pass
+
+            action_name = None
+            if isinstance(data_dict, dict):
+                action_name = data_dict.get('$ACTION_NAME') or data_dict.get('action_name')
+
+            lines.append(f"  action: {action_name if action_name is not None else '<unknown>'}")
+
+            if isinstance(data_dict, dict):
+                for field_name, value in data_dict.items():
+                    if field_name in ('$ACTION_NAME', 'action_name'):
+                        continue
+                    if isinstance(value, list) and len(value) == 1:
+                        value = value[0]
+                    lines.append(f"    {field_name}: {value}")
+
+            logger.debug("\n".join(lines))
+
+        if not found:
+            logger.debug(f"No entries found for program_id {pid} in {self.table_name}")
 
 class MultiInstructionLastStage(BaseTable):
     """

@@ -353,11 +353,19 @@ class MicroInstructionParser:
             instrs = [
                 MicroInstruction(
                     name=normal_header,
-                    kwargs={"var_update": 1, "var_name": var_name},
+                    kwargs={"header_to_var": 1, "var_name": var_name},
                     alternative=spec_header,
+                ),
+                MicroInstruction(
+                    name="sum_ni",
+                    kwargs={"var_update": 1},
+                    # TODO: fix var_id in the planner automatically
                 )
             ]
-            effects = [MicroEffect(reads={header}, writes={var_name})]
+            effects = [
+                MicroEffect(reads={header}),
+                MicroEffect(writes={var_name}),
+            ]
 
         # --- PATTERN ---
         elif op == ISA.PADTTERN.value:

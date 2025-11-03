@@ -15,11 +15,15 @@ switch:
 # Declare the other switches that we have and their respective configurations
 
 program:
-    Program: "1"
+    Program: "NetHide"
     HW: True
     Endpoints:
-        InternalPort:
+        InternalPortIn:
             port: 49/-
-        ExternalPort:
+        InternalPortOut:
+            port: 49/-
+        ExternalPortIn:
+            port: 50/-
+        ExternalPortOut:
             port: 50/-
 
