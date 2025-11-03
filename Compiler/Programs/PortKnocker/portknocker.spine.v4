@@ -1,0 +1,59 @@
+import "constants.spine"
+
+Procedure knock_system(CONST SSH_SERVER_PORT, CONST K1_DPORT, CONST K2_DPORT, CONST K3_DPORT, Reg knockStatus, Reg acceptedConnections, Var isAccepted, Var status, HASH index):
+    input:  [pInternet]
+    output: [pToServer]
+
+    with p from pInternet:
+        when (p.tcp.dport == SSH_SERVER_PORT) -> fwd(pToServer):
+            body:
+                isAccepted = acceptedConnections[index]
+                IF isAccepted == FALSE:
+                    DROP
+
+        when (p.tcp.dport == K1_DPORT) -> fwd(pToServer):
+            body:
+                knockStatus[index] = 1
+
+        when (p.tcp.dport == K2_DPORT) -> fwd(pToServer):
+            body:
+                status = knockStatus[index]
+                IF status == 1: 
+                    knockStatus[index] = 2 
+                ELSE: 
+                    knockStatus[index] = 0
+
+        when (p.tcp.dport == K3_DPORT) -> fwd(pToServer):
+            body:
+                status = knockStatus[index]
+                IF status == 2:
+                    acceptedConnections[index] = TRUE 
+                ELSE:
+                    knockStatus[index] = 0
+
+            
+Program PortKnocker:
+        PORT pFromExternal      (io: IN,  speed: 100)
+        PORT pToExternal        (io: OUT, speed: 100)
+        PORT pFromInternal      (io: IN,  speed: 100)
+        PORT pToInternal        (io: OUT, speed: 100)
+
+
+    # Resource Declaration
+        Reg knockStatus
+        Reg acceptedConnections
+        Var isAccepted
+        Var status
+        HASH ipv4_hash {ipv4.src}
+
+        CONST SSH_SERVER_PORT 22
+        CONST K1_DPORT 1234
+        CONST K2_DPORT 5678
+        CONST K3_DPORT 9012
+
+    # Procedure Instantiation
+        PROC knocker   = knock_system(SSH_SERVER_PORT, K1_DPORT, K2_DPORT, K3_DPORT, knockStatus, acceptedConnections, isAccepted, status, ipv4_hash)
+
+    # Programmatic Model
+        [pFromExternal]    -> [pInternet]knocker[pToServer]   -> [pToInternal]
+        [pFromInternal]    -> _ -> [pToExternal]

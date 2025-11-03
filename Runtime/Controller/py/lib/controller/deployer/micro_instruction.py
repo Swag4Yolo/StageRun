@@ -344,6 +344,14 @@ class MicroInstructionParser:
             ]
             effects = [MicroEffect(reads={header}), MicroEffect(writes={header})]
 
+        # --- HASSIGN ---
+        elif op == ISA.HASSIGN.value:
+            header = args['target']
+            instrs = [
+                MicroInstruction(name="sum_ni", kwargs={"header_update": 1, "header_id": tofino_headers[header], "const_val": args["value"]}),
+            ]
+            effects = [MicroEffect(writes={header})]
+
         # --- HTOVAR ---
         elif op == ISA.HTOVAR.value:
             header = args['target']

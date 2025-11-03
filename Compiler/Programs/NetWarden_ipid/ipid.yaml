@@ -15,9 +15,15 @@ switch:
 # Declare the other switches that we have and their respective configurations
 
 program:
-    Program: "1"
+    Program: "NetWarden IPID"
     HW: True
     Endpoints:
-        ExternalPort:
+        InternalPortIN:
+            port: 49/-
+        InternalPortOUT:
+            port: 49/-
+        ExternalPortIN:
+            port: 50/-
+        ExternalPortOUT:
             port: 50/-
 
