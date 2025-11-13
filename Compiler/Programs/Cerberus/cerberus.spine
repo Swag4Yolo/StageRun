@@ -1,0 +1,47 @@
+import "constants.spine"
+
+Procedure DNS_amplification_from_server(Reg dns_checker):
+    input:  [pInternal]
+    output: [pout]
+
+    with p from pInternal:
+        when (p.protocol == IPV4_PROTO_UDP && p.sport == 53) -> ():
+            body:
+                HASH four_tuple {p.ipv4.src, p.ipv4.dst, p.sport, p.dport}
+                dns_checker[four_tuple] = TRUE
+                timer[four_tuple] = CURRENT_TIME
+
+
+Procedure DNS_amplification_from_internet(Reg dns_checker, Var checker, Var time):
+    input:  [pInternal]
+    output: [<o>pOut]
+
+    with p from pInternal:
+        when (p.protocol == IPV4_PROTO_UDP && p.dport == 53) -> ():
+            body:
+                HASH inverse_four_tuple {p.ipv4.dst, p.ipv4.src, p.dport, p.sport}
+                checker = counter[inverse_four_tuple]
+                time = CURRENT_TIME
+                old_time = timer[inverse_four_tuple]
+                result_time = time - old_time
+                IF checker == TRUE && result_time < TIME_4S:
+                    FWD pOut
+
+
+Program DNS_amplification:
+        PORT pFromExternal      (io: IN,  speed: 100)
+        PORT pToExternal        (io: OUT, speed: 100)
+        PORT pFromInternal      (io: IN,  speed: 100)
+        PORT pToInternal        (io: OUT, speed: 100)
+
+
+    # Resource Declaration
+        # EMPTY
+
+    # Procedure Instantiation
+        PROC from_server   = DNS_amplification_from_server()
+        PROC from_internet   = DNS_amplification_from_internet()
+
+    # Programmatic Model
+        [pFromExternal]    -> [pin]from_server[pout]   -> [pToInternal]
+        [pFromInternal]    -> [pin]from_internet[pout] -> [pToExternal]

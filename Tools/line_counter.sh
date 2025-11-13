@@ -12,7 +12,7 @@ pushd "$SCRIPT_DIR" > /dev/null || exit
 
 # 3. Executa o comando de contagem a partir do diretório do script
 # find . -iname '*.py' -not -path '*_env*' | xargs wc -l  # (versão xargs)
-find .. -iname '*.py' -not -path '*_env*' -exec wc -l {} +
+find .. -iname '*.py' -not -path '*_env*' -not -path '*backup*' -exec wc -l {} +
 
 # --- Fim do Bloco de Comandos ---
 

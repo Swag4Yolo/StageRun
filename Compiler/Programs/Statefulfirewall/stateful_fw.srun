@@ -1,0 +1,36 @@
+# Ports
+PIN  internalIn;
+PIN  externalIn;
+POUT internalOut;
+POUT externalOut;
+
+# Resources Allocation
+HASH flow {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT};
+HASH inverseFlow {IPV4.DST, IPV4.SRC, L4.DPORT, L4.SPORT};
+
+# State
+REG bf;
+VAR res;
+
+# Stage 1: AllowFlow — record outbound connections
+PREFILTER allow_flow
+  KEY PKT.PORT == internalIn;
+  DEFAULT FWD externalOut;
+  BODY
+    # Compute flow hash and insert into Bloom filter
+    MSET bf[flow] 1;
+  END
+END
+
+# Stage 2: CheckFlow — verify return packets belong to known flow
+PREFILTER check_flow
+  KEY PKT.PORT == externalIn;
+  DEFAULT FWD internalOut;
+  BODY
+    # Check if corresponding reverse flow is known
+    MGET bf[inverseFlow] -> res;
+    IF res == 0:
+      DROP;
+    ENDIF
+  END
+END

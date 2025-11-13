@@ -1,0 +1,45 @@
+# Ports
+PIN  fromExternal;
+PIN  fromInternal;
+POUT toExternal;
+POUT toInternal;
+
+# Resources Allocation
+HASH host_pair {IPV4.SRC, IPV4.DST};
+HASH flow_key  {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO};
+
+REG numBytesFlow;
+REG numBytesFlow2;
+REG slowFlowCounter;
+VAR oldNBytes;
+VAR nBytes;
+VAR nSlowFlows;
+
+PREFILTER from_external
+  KEY PKT.PORT == fromExternal;
+  DEFAULT FWD toInternal;
+  BODY
+    MINC numBytesFlow[flow_key] PKT.SIZE -> oldNBytes (OLD);
+    MINC numBytesFlow2[flow_key] PKT.SIZE -> nBytes (NEW);
+
+    IF oldNBytes == 0 && nBytes < 1000:
+      MINC slowFlowCounter[host_pair] 1 -> nSlowFlows;
+
+    ELIF oldNBytes < 1000 && nBytes > 1000:
+      MINC slowFlowCounter[host_pair] -1 -> nSlowFlows;
+
+    ELSE:
+      MGET slowFlowCounter[host_pair] -> nSlowFlows;
+      
+    ENDIF
+
+    IF nSlowFlows > 1:
+        DROP;
+    ENDIF
+  END
+END
+
+PREFILTER from_internal
+  KEY PKT.PORT == fromInternal;
+  DEFAULT FWD toExternal;
+END

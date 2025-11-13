@@ -1,0 +1,53 @@
+import "constants.spine"
+
+Procedure AllowFromTo(CONST fromIP, CONST toIP, CONST LABEL):
+    input:  [pInternal]
+    output: [pExternal]
+
+    with p from pInternal:
+        when (p.ipv4.src == fromIP && p.ipv4.dst == toIP) -> ():
+            body:
+                IN label
+                OUT label
+                
+                if label == LABEL:
+                    fwd pExternal
+
+Program P4Control:
+        PORT pFromSales      (io: IN,  speed: 100)
+        PORT pToSales        (io: OUT, speed: 100)
+        PORT pFromDev        (io: IN,  speed: 100)
+        PORT pToDev          (io: OUT, speed: 100)
+        PORT pFromInternet   (io: IN,  speed: 100)
+        PORT pToInternet     (io: OUT, speed: 100)
+        PORT pFromServer     (io: IN,  speed: 100)
+        PORT pToServer       (io: OUT, speed: 100)
+
+
+    # Resource Declaration
+        # EMPTY
+
+        CONST SALES_IP 1.0.0.0/24
+        CONST ALICE_IP 1.0.0.1
+        CONST DEV_IP 2.0.0.0/24
+        CONST DEV_ADMIN_IP 2.0.0.1
+        CONST Server_IP 3.0.0.0/24
+        CONST Server1_IP 3.0.0.1
+
+        CONST SALES_TAG  0x0000 0001
+        CONST DEV_TAG    0x0000 0002
+        CONST SERVER_TAG 0x0000 0004
+        CONST SECRET     0x1230 1230
+
+    # Procedure Instantiation
+        PROC sales_to_sales         = AllowFromTo(SALES_IP, SALES_IP, SALES_TAG)
+        PROC dev_to_dev             = AllowFromTo(DEV_IP, DEV_IP, DEV_TAG)
+        PROC alice_to_dev           = AllowFromTo(ALICE_IP, DEV_IP, SALES_TAG)
+        PROC dev_admin_to_server1   = AllowFromTo(DEV_ADMIN_IP, Server1_IP, (DEV_TAG | SECRET))
+        ### DROP THE REST
+
+    # Programmatic Model
+        [pFromSales]    -> [pInternal]sales_to_sales[pExternal]       -> [pToSales]
+        [pFromDev]      -> [pInternal]dev_to_dev[pExternal]           -> [pToDev]
+        [pFromSales]    -> [pInternal]alice_to_dev[pExternal]         -> [pToDev]
+        [pFromDev]      -> [pInternal]dev_admin_to_server1[pExternal] -> [pToServer]

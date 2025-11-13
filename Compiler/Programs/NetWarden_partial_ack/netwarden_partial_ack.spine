@@ -1,0 +1,50 @@
+import "constants.spine"
+
+Procedure pack_from_external(Reg tracker, Var highwater, Var ackNo, Var random, Var tmp, Hash five_tuple):
+    input:  [pin]
+    output: [pout]
+
+    with p from pin:
+        when (p.ipv4.proto == TCP && p.tcp.flags[ACK_FLAG] == 1) -> ():
+            body:
+                
+                random = RANDOM 4b
+
+                highwater = tracker[five_tuple]
+
+                # highwater should be different from zero
+
+                ackNo = p.tcp.ackNo
+                IF (highwater != ackNo):
+                    p.tcp.ackNo = p.tcp.ackNo - random
+
+
+Procedure pack_from_internal(Reg tracker, Var payload_len, Var tmp, HASH five_tuple_inverse):
+        when (p.ipv4.proto == TCP) -> ():
+            body:
+                // if no ack this means we need to update the flow with the last byte of info, and put it in a register
+
+                payload_len = p.ipv4.totalLen + p.tcp.seqNo
+                tmp = (ipv4.ihl * 4) + (tcp.dataOffset * 4);
+                payload_len = payload_len - tmp
+                if payload_len > 0: # payload_len === payload len, this allows us to see if it contains payload data or not
+                    tracker[five_tuple_inverse] = payload_len
+
+Program PartialAck:
+        PORT pFromExternal      (io: IN,  speed: 100)
+        PORT pToExternal        (io: OUT, speed: 100)
+        PORT pFromInternal      (io: IN,  speed: 100)
+        PORT pToInternal        (io: OUT, speed: 100)
+
+
+    # Resource Declaration
+        HASH five_tuple  {ip.src, ip.dst, l4.sport, l4.dport, ip.proto} 
+        HASH five_tuple_inverse  {ip.dst, ip.src, l4.dport, l4.sport, ip.proto} 
+        # EMPTY
+
+    # Procedure Instantiation
+        PROC p   = pack()
+
+    # Programmatic Model
+        [pFromExternal]    -> [pin]p[pout]   -> [pToInternal]
+        [pFromInternal]    -> [pin]p[pout]   -> [pToExternal]

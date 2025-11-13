@@ -1,7 +1,7 @@
 from pathlib import Path
 from lark import Lark, Transformer, v_args, Token
 from Core.ast_nodes import *
-
+import ipaddress
 # Resolve path relative to this file (parser.py)
 GRAMMAR_PATH = Path(__file__).parent / "grammar" / "stagerun_grammar.lark"
 
@@ -99,7 +99,6 @@ class StageRunTransformer(Transformer):
 
         for c in clauses:
             if isinstance(c, PreFilterKey):
-                print(c)
                 keys.append(c)
             elif isinstance(c, PreFilterDefault):
                 default = c.instr
@@ -119,7 +118,10 @@ class StageRunTransformer(Transformer):
         return DropInstr()
 
     def header_assign_instr(self, hdr_ref, value):
-        return HeaderAssignInstr(target=str(hdr_ref), value=int(value))
+        res_value = value
+        if isinstance(value, str):
+            res_value = ipaddress.ip_address(value)
+        return HeaderAssignInstr(target=str(hdr_ref), value=int(res_value))
 
     def hinc_instr(self, hdr_ref, value):
         return HeaderIncrementInstr(target=str(hdr_ref), value=int(value))

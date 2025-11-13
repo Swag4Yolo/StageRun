@@ -100,16 +100,20 @@ def _serialize_instr(instr: Any) -> Dict[str, Any]:
         }
 
     # Generic path for dataclasses or objects with attributes
-    op = _instructions_dict[type(instr).__name__].value
     try:
+        op = _instructions_dict[type(instr).__name__].value
         args = dataclasses.asdict(instr)
-    except TypeError:
-        # Fallback: generic attribute extraction
-        args = {
-            k: v
-            for k, v in vars(instr).items()
-            if not k.startswith("_") and not callable(v)
-        }
+    except:
+        op = None
+        args = None
+    # try:
+    # except TypeError:
+    #     # Fallback: generic attribute extraction
+    #     args = {
+    #         k: v
+    #         for k, v in vars(instr).items()
+    #         if not k.startswith("_") and not callable(v)
+    #     }
 
     return {"op": op, "args": args or {}}
 

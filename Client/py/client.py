@@ -592,6 +592,74 @@ class StageRunClient(cmd.Cmd):
         except Exception:
             traceback.print_exc()
 
+    def do_benchmark_apps(self, arg):
+        """
+        Install a previously uploaded app.
+        Usage: benchmark_app -t <tag> -v <version>
+        """
+        # parser = argparse.ArgumentParser()
+        # parser.add_argument("-t", "--tag", dest="tag", type=str, required=True, help="App tag")
+        # parser.add_argument("-v", "--version", dest="version", type=str, required=True, help="App version")
+
+        # def handle_request(req):
+        #     if req.status_code == 200:
+        #         data = req.json()
+        #         if "status" in data and "error" in data["status"]:
+        #             logger.debug(f"Uninstall failed:")
+        #             logger.debug(data.get("message"))
+
+        #         else:
+        #             logger.debug(data.get("message"))
+        #     else:
+        #         logger.debug(f"Server returned status {req.status_code}: {req.text}")
+
+        try:
+            # args = parser.parse_args(arg.split())
+
+            logger.info(
+                        "_______________________________________\n \
+                        #             Benchmarking            # \n \
+                        _______________________________________"
+                        )
+            max_iters = 10
+
+            # for Connecting to Tofino
+            # self.do_uninstall_engine("")
+            # self.do_install_engine("-t StageRunEngine -v 1.10")
+
+
+            # logger.debug("NetHide:")
+            # for i in range(max_iters):
+            #     logger.info(f"[+] Iteration number: {i+1}")
+            #     self.do_install_app("-t NetHide -v 1.0")
+            #     self.do_uninstall_app("-t NetHide -v 1.0")
+
+            # logger.debug("NetWardenIpid:")
+            # for i in range(max_iters):
+            #     logger.info(f"[+] Iteration number: {i+1}")
+            #     self.do_install_app("-t NetWardenIpid -v 1.0")
+            #     self.do_uninstall_app("-t NetWardenIpid -v 1.0")
+
+            
+            self.do_install_app("-t NetHide -v 1.0")
+            self.do_install_app("-t NetWardenIpid -v 1.0")
+            logger.debug("RunApp To Get Metrics:")
+            for i in range(max_iters):
+                logger.info(f"[+] Iteration number: {i+1}")
+                self.do_run_app("-t NetHide -v 1.0")
+                self.do_run_app("-t NetWardenIpid -v 1.0")
+
+
+
+        except Exception as e:
+            print("Error:", e)
+
+        except SystemExit:
+            pass
+            
+        except Exception:
+            traceback.print_exc()
+
 
 if __name__ == "__main__":
     StageRunClient().cmdloop()

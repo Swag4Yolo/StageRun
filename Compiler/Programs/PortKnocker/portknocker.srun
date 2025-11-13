@@ -1,3 +1,4 @@
+# Ports
 PIN  fromExternal;
 PIN  fromInternal;
 POUT toExternal;
@@ -12,55 +13,64 @@ REG acceptedConnections;
 VAR status;
 VAR isAccepted;
 
-# Constants
-CONST SSH_SERVER_PORT 22;
-CONST K1_DPORT 1234;
-CONST K2_DPORT 5678;
-CONST K3_DPORT 9012;
-
-# Port-knocking logic on ingress from the Internet
-PREFILTER from_external
-KEY PKT.PORT == fromExternal;
-DEFAULT FWD toInternal;
-BODY
-  # 1) Protect SSH: only allow if this source completed the knock
-  IF L4.DPORT == SSH_SERVER_PORT:
+# Stage 1: SSH access (only afater full knock)
+PREFILTER ssh_access
+  KEY PKT.PORT == fromExternal;
+  KEY L4.DPORT == 22;
+  DEFAULT FWD toInternal;
+  BODY
     MGET acceptedConnections[IPV4.SRC] -> isAccepted;
     IF isAccepted == 0:
       DROP;
-    ELSE:
-      FWD toInternal;
     ENDIF
+  END
+END
 
-  # 2) Knock step 1
-  ELIF L4.DPORT == K1_DPORT:
+# Stage 2: Knock step 1
+PREFILTER knock_step1
+  KEY PKT.PORT == fromExternal;
+  KEY L4.DPORT == 1234;
+  BODY
     MSET knockStatus[IPV4.SRC] 1;
+  END
+END
 
-  # 3) Knock step 2 (requires step 1)
-  ELIF L4.DPORT == K2_DPORT:
-    MGET knockStatus[IPV4.SRC] -> status;
-    IF status == 1:
-      MSET knockStatus[IPV4.SRC] 2;
-    ELSE:
-      MSET knockStatus[IPV4.SRC] 0;
-    ENDIF
-
-  # 4) Knock step 3 (requires step 2) -> grant access
-  ELIF L4.DPORT == K3_DPORT:
-    MGET knockStatus[IPV4.SRC] -> status;
-    IF status == 2:
-      MSET acceptedConnections[IPV4.SRC] 1;
-    ELSE:
-      MSET knockStatus[IPV4.SRC] 0;
-    ENDIF
-
-  # 5) Other traffic passes through
+# Stage 3: Knock step 2 (requires step 1)
+PREFILTER knock_step2
+  KEY PKT.PORT == fromExternal;
+  KEY L4.DPORT == 5678;
+BODY
+  MGET knockStatus[IPV4.SRC] -> status;
+  IF status == 1:
+    MSET knockStatus[IPV4.SRC] 2;
   ELSE:
-    FWD toInternal;
+    MSET knockStatus[IPV4.SRC] 0;
   ENDIF
+  END
+END
+
+# Stage 4: Knock step 3 (requires step 2) -> grant access
+PREFILTER knock_step3
+  KEY PKT.PORT == fromExternal;
+  KEY L4.DPORT == 9012;
+BODY
+  MGET knockStatus[IPV4.SRC] -> status;
+  IF status == 2:
+    MSET acceptedConnections[IPV4.SRC] 1;
+  ELSE:
+    MSET knockStatus[IPV4.SRC] 0;
+  ENDIF
+  END
+END
+
+# Stage 5: Other inbound traffic (default path)
+PREFILTER from_external_default
+  KEY PKT.PORT == fromExternal;
+  DEFAULT FWD toInternal;
 END
 
 # Outbound: plain forwarding
 PREFILTER from_internal
-KEY PKT.PORT == fromInternal;
-DEFAULT FWD toExternal;
+  KEY PKT.PORT == fromInternal;
+  DEFAULT FWD toExternal;
+END

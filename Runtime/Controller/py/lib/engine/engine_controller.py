@@ -187,7 +187,7 @@ class EngineController():
         # self.pos_filter_mechansim.remove_final_configs()
         # self.pos_filter_mechansim._last_rules()
 
-    def remove_program(self, pid):
+    def remove_program(self, pid:int):
         
         tables_to_remove_pid = [
             # Init Block
@@ -214,6 +214,8 @@ class EngineController():
             #   Flow 1
             self.f1.i1_p1,
             self.f1.i1_p2,
+            self.f1.i2_p2,
+            self.f1.i2_speculative,
             self.f1.i3_p2,
             self.f1.i3_speculative,
             self.f1.i3_p2,
@@ -231,6 +233,8 @@ class EngineController():
             #   Flow 2
             self.f2.i1_p1,
             self.f2.i1_p2,
+            self.f2.i2_p2,
+            self.f2.i2_speculative,
             self.f2.i3_p2,
             self.f2.i3_speculative,
             self.f2.i3_p2,

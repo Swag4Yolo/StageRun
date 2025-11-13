@@ -7,6 +7,7 @@ start: statement+
           | qset_decl
           | var_decl
           | reg_decl
+          | hash_decl
           | prefilter
 
 // PORTS
@@ -20,10 +21,11 @@ qset_decl: "QSET" NAME NAME INT ";"
 // Resources
 var_decl: "VAR" NAME ";"
 reg_decl: "REG" NAME ";"
+hash_decl: "HASH" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}" ";"
 
 // Prefilter
 prefilter: "PREFILTER" NAME (key_clause | default_clause | body_clause)* "END"
-key_clause: "KEY" key_ref comp_op value ";"
+key_clause: "KEY" key_ref (comp_op | mask_op) value ";"
 default_clause: "DEFAULT" default_instr ";"
 body_clause: "BODY" instr* "END" 
 
@@ -32,14 +34,31 @@ body_clause: "BODY" instr* "END"
               | fwd_queue_instr
 
 
+      // Fwd Ops      
 ?instr: fwd_instr ";"
       | fwd_queue_instr ";"
-      | hinc_instr ";"
       | drop_instr ";"
+      | rts_instr ";"
+
+      | hinc_instr ";"
       | header_assign_instr ";"
       | clone_instr ";"
       | paddtern_instr ";"
+      // Mem Ops
+      | minc_instr ";"
+      | mget_instr ";"
+      | mset_instr ";"
+      // Convert ops
       | htovar_instr ";"
+      | hash_to_var_instr ";"
+      | var_to_hdr_instr ";"
+      | activate_instr ";"
+      | ingress_ts_instr ";"
+      | airth_instr ";"
+      | hairth_instr ";"
+      | random_instr ";"
+      | in_instr ";"
+      | out_instr ";"
       | if_block
 
 
@@ -47,18 +66,39 @@ body_clause: "BODY" instr* "END"
 fwd_instr: "FWD" NAME
 fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
 drop_instr: "DROP"
+rts_instr: "RTS"
+
 hinc_instr: "HINC" header_ref SIGNED_INT
-// TODO: change header_assign_instr
-header_assign_instr: "HASSIGN" header_ref SIGNED_INT
+header_assign_instr: "HASSIGN" header_ref (SIGNED_INT | STRING)
 clone_instr: "CLONE" NAME
 paddtern_instr: "PADTTERN" INT+
+activate_instr: "ACTIVATE" NAME
+ingress_ts_instr: "IGTS" "->" var_ref
+random_instr: "RAND" SIGNED_INT "->" var_ref
+
+airth_instr: "ARIT" var_ref arith_op (var_ref | SIGNED_INT) "->" var_ref
+hairth_instr: "HARIT" header_ref arith_op (header_ref | SIGNED_INT) "->" header_ref
+
+// Memory Instructions
+minc_instr: "MINC" reg_ref "[" (header_ref | hash_ref) "]" (header_ref | SIGNED_INT) "->" var_ref ("(" NAME ")")?
+mget_instr: "MGET" reg_ref "[" (header_ref | hash_ref) "]" "->" var_ref ("(" NAME ")")?
+mset_instr: "MSET" reg_ref "[" (header_ref | hash_ref) "]" (header_ref | var_ref | SIGNED_INT)
+
+// Convert Instrs
 htovar_instr: "HTOVAR" header_ref "->" NAME
+hash_to_var_instr: "HASHTOVAR" hash_ref "->" var_ref
+var_to_hdr_instr: "VTOHEADER" var_ref "->" header_ref
 
+// State Instrs
+in_instr: "IN" var_ref
+out_instr: "OUT" var_ref
 
+// Conditional Instrs
 if_block: if_clause elif_clause* else_clause? "ENDIF"
 if_clause: "IF" bool_expr ":" instr+
 elif_clause: "ELIF" bool_expr ":" instr+
 else_clause: "ELSE" ":" instr+
+
 
 // =====================
 // Expressões booleanas SEM headers
@@ -90,9 +130,23 @@ GE: ">="
 
 comp_op: EQ | NE | LT | LE | GT | GE
 
+MASK: "&"
+mask_op: MASK
+
+
 ?arith_val: var_ref
           | SIGNED_INT
           | "(" arith_val ")"
+
+
+// Arithmetic Ops
+ARIT_OR: "|"
+ARIT_AND: "&"
+ARIT_SUM: "+"
+ARIT_SUB: "-"
+ARIT_MUL: "*"
+
+arith_op: ARIT_OR | ARIT_AND | ARIT_SUM | ARIT_SUB | ARIT_MUL
 
 // Atenção: var_ref é APENAS NAME (sem ponto); nada de headers aqui.
 
@@ -101,8 +155,11 @@ comp_op: EQ | NE | LT | LE | GT | GE
 key_ref:  NAME "." NAME
 header_ref: NAME "." NAME
 var_ref: NAME
+reg_ref: NAME
+hash_ref: NAME
 value: NAME | STRING | SIGNED_INT
 
+// IPV4_ADDR: /(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3})/
 NAME: /[A-Za-z_][A-Za-z0-9_]*/
 STRING: /"[^"]*"/
 %import common.INT

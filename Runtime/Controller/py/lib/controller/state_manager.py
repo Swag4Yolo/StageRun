@@ -325,6 +325,7 @@ def allocate_pid():
     free_pids = running_engine[RUNNING_ENGINE].setdefault("free_pids", [])
 
     if free_pids:
+        # sometimes the value can come as string from the dict json
         pid = free_pids.pop(0)  # reuse a freed ID
     else:
         # allocate next available ID (1, 2, 3, …)
@@ -333,7 +334,7 @@ def allocate_pid():
         while pid in used_ids:
             pid += 1
 
-    return pid
+    return int(pid)
 
 def set_pid(pid, app_key):
     global running_engine
@@ -482,7 +483,7 @@ def install_port_cat(category):
                 #TODO: error
                 print("ERROR")
                 
-            print("front_port", front_port)
+            # print("front_port", front_port)
             port = port_sets[category]['ports'][front_port]
 
             speed = PORT_SPEED_BF[port['speed']]
@@ -557,11 +558,11 @@ def run_program(app_key):
         
 
     # Clearing the Registers
-    # connect_tofino()
-    # timer.start()
-    # engine_controller.clear_state()
-    # timer.finish()
-    # timer.calc(f"Cleaned Registers for App {app_key}")
+    connect_tofino()
+    timer.start()
+    engine_controller.clear_state()
+    timer.finish()
+    timer.calc(f"Cleaned Registers for App {app_key}")
 
 def get_app_key(tag, version):
     return f"{tag}_v{version}"

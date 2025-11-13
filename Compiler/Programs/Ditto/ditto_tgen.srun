@@ -1,0 +1,63 @@
+# PROGRAM FOR PATTERN [1500, 1600]
+INCLUDE "SRUN_CORE.srun" # includes language symbol => PKT.PORT (ingress port of the packet)
+# PIN   P_INPUT_TRAFFIC; # port where the real traffic comes from
+# POUT  P_OUTPUT_TRAFFIC; # port where the final traffic will go
+
+PIN  PAT1_IN; # port where traffic from PAT1 1500 comes from; THIS PORT IS RECIRCULATED
+PIN  PAT2_IN; # port where traffic from PAT2 1600 comes from; THIS PORT IS RECIRCULATED
+POUT PAT1_OUT PRIO 2; # POUT [NAME_PORT] [TYPE_QUEUE = {PRIO, RR}] [NUMBER QUEUES]
+POUT PAT2_OUT PRIO 2;
+
+PIN  CLONE_PORT_PAT1_IN
+PIN  CLONE_PORT_PAT2_IN
+POUT CLONE_PORT_PAT1_OUT # THIS PORT IS RECIRCULATED
+POUT CLONE_PORT_PAT2_OUT # THIS PORT IS RECIRCULATED
+
+POUT FINAL_PORT RR 2; # Configure the port with two RR queues
+
+
+################ Phase 1 ###############
+PREFILTER input_traffic
+  KEY PKT.PORT == P_INPUT_TRAFFIC;
+  BODY
+    PADTTERN 1500 1600; # Pads packets until one of the patterns
+    HTOVAR IPV4.LEN -> size; # size = IPV4.LEN
+    IF size == 1500: # size - 1500 == 0
+        FWD_AND_ENQUEUE PAT1_OUT 1;
+    ELIF size == 1600:
+        FWD_AND_ENQUEUE PAT2_OUT 1;
+    ENDIF
+  END
+END
+
+################ Phase 2 ###############
+#Inits process Generation of Cloning Packets
+TGEN ONESHOT 1 1500 CLONE_PORT_PAT1_OUT; # TGEN [TYPE={ONESHOT, CYCLIC}] [NUM_PACKETS TO BE GENERATED] [PACKET SIZE] [NAME OUTPORT] [QUEUE NUMBER IF EXISTS]
+TGEN ONESHOT 1 1600 CLONE_PORT_PAT2_OUT;
+
+PREFILTER clone_pattern_1
+  KEY PKT.PORT == CLONE_PORT_PAT1_IN;
+  DEFAULT FWD_AND_ENQUEUE PAT1_OUT 0; # The packet default mecanism is to forward to the port corresponding of the first pattern to the queue 0
+  BODY
+    CLONE CLONE_PORT_PAT1_OUT; # CLONE [PORT_TO_SEND_CLONED_PKT]
+  END
+END
+PREFILTER clone_pattern_2
+  KEY PKT.PORT == CLONE_PORT_PAT2_IN;
+  DEFAULT FWD_AND_ENQUEUE PAT2_OUT 0;
+  BODY
+    CLONE CLONE_PORT_PAT2_OUT;
+  END
+END
+
+
+# Phase 3 - Send packets to the final RR port
+PREFILTER pattern1
+  KEY PKT.PORT == PAT1_IN;
+  DEFAULT FWD_AND_ENQUEUE FINAL_PORT 0;
+END
+
+PREFILTER pattern2
+  KEY PKT.PORT == PAT2_IN;
+  DEFAULT FWD_AND_ENQUEUE FINAL_PORT 1;
+END

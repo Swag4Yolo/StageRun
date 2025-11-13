@@ -1,0 +1,42 @@
+import "constants.spine"
+
+
+Procedure AllowFlow(Var res, Reg bf):
+    input: pInternal
+    output: pExternal
+
+    with p from pInternal:
+        when () -> ():
+            body:
+                HASH flow {p.ipv4.src, p.ipv4.dst, p.l4.sport, p.l4.dport}
+                PUT bf[flow] TRUE
+
+Procedure CheckFlow(Var res, Reg bf):
+    input: pExternal
+    output: pInternal
+
+    with p from pExternal:
+        when () -> ():
+            body:
+                Hash inverseFlow {p.ipv4.dst, p.ipv4.src, p.l4.dport, p.l4.sport}
+                res = GET bf[inverseFlow]
+                IF res == FALSE DROP
+
+Program StatefulFirewall:
+    # Endpoint Declaration
+        PORT externalIn  (io: IN, speed: 100)
+        PORT internalIn  (io: IN, speed: 100)
+        PORT externalOut (io: OUT, speed: 100)
+        PORT internalOut (io: OUT, speed: 100)
+        
+    # Resource Declaration
+        Var res
+        Reg bf
+
+    # Procedure Instantiation
+        PROC allow_packets = AllowFlow(res, bf)
+        PROC check_permissions = CheckFlow(res, bf)
+
+    # Programmatic Model
+        [internalIn] -> [pInternal]allow_packets[pExternal]     -> [externalOut]
+        [externalIn] -> [pExternal]check_permissions[pInternal] -> [internalOut]

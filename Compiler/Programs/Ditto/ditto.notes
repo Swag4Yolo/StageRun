@@ -1,0 +1,2 @@
+Ditto is divided into three major phases, i) the cloning mechanism to generate chaff traffic endlessly, ii) the padding of real traffic until the specified pattern, and iii) the configuration of the queues.
+

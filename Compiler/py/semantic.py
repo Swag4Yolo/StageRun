@@ -19,7 +19,7 @@ class SemanticError(Exception):
     pass
 
 
-SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN", "IPV4.PROTO"}
+SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN", "IPV4.PROTO", "IPV4.DST", "IPV4.SRC", "TCP.ACKNO", "IPV4.IHL", "TCP.DATAOFFSET", "TCP.FLAGS"}
 
 
 def _validate_ports(program: ProgramNode) -> tuple[List[str], List[str]]:

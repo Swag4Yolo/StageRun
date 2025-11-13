@@ -1,0 +1,43 @@
+import "constants.spine"
+
+Procedure connectionManager(Var tmp, Var cookie, Hash syn_cookie):
+    input:  [pFromInternet]
+    output: [pToServer, pToInternet]
+
+    with p from pFromInternet:
+        when ((p.tcp.flags & TCP_SYN_FLAG) == TCP_SYN_FLAG) -> ():
+            body:
+                p.tcp.ack = p.tcp.seq + 1 # No payload data considered
+                tmp = syn_cookie # Hash->var; limitation val->header
+                p.tcp.seq = tmp # Var can be passed to header
+                p.tcp.flags = flags
+                RTS pToInternet
+
+        when((p.tcp.flags & TCP_ACK_FLAG) == TCP_ACK_FLAG) -> ():
+            body:
+                tmp = tcp.ack - 1
+                cookie = syn_cookie
+                if tmp == cookie:
+                    Fwd pToServer
+                else:
+                    DROP
+    
+Program SmartCookieSimplified:
+        PORT pFromServer       (io: IN,  speed: 100)
+        PORT pToServer         (io: OUT, speed: 100)
+        PORT pFromInternet     (io: IN,  speed: 100)
+        PORT pToInternet       (io: OUT, speed: 100)
+
+    # Resource Declaration
+        Var tmp, cookie
+        # In the future, we could potencially include the timestamp
+        CONST secret_key 0xA1B2C3D4
+        HASH syn_cookie {ipv4.src, ipv4.dst, tcp.sport, tcp.dport, secret_key}
+
+    # Procedure Instantiation
+        PROC conn_mgr = connectionManager(tmp, cookie, syn_cookie)
+
+    # Programmatic Model
+        [pFromInternet] -> [pFromInternet]conn_mgr[pToServer]    -> [pToServer]
+        [pFromInternet] -> [pFromInternet]conn_mgr[pToInternet]  -> [pToInternet]
+        [pFromServer] -> _ -> [pToInternet] ## allow all traffic to pass from the internal network to the internet

@@ -124,7 +124,7 @@ class P1Table(BaseTable):
         action = BaseAction("fetch_out", var_to_header, header_to_var, external_var_update)
         self.add_entry(keys, action)
 
-    def remove_entries_for_pid(self, pid):
+    def remove_entries_for_pid(self, pid:int):
         # Obter todas as entradas instaladas na pre_filter
         table_keys = self.get_all_entries(False)
 
@@ -268,7 +268,7 @@ class P2Table(BaseTable):
         action = BaseAction("mul_4x_ni", instr_id, header_id, header_update, var_id, var_update)
         self.add_entry(keys, action)
 
-    def remove_entries_for_pid(self, pid):
+    def remove_entries_for_pid(self, pid:int):
         # Obter todas as entradas instaladas na pre_filter
         table_keys = self.get_all_entries(False)
 
@@ -462,7 +462,7 @@ class Speculative(BaseTable):
         action = BaseAction("speculative_conditional_between_vars", instr_id, cond_mode, cond_mode_2)
         self.add_entry(keys, action)
 
-    def remove_entries_for_pid(self, pid):
+    def remove_entries_for_pid(self, pid:int):
         # Obter todas as entradas instaladas na pre_filter
         table_keys = self.get_all_entries(False)
 
@@ -597,7 +597,7 @@ class MultiInstructionLastStage(BaseTable):
     def process_conditional_v3_v4_ni(self):
         raise NotImplementedError
 
-    def remove_entries_for_pid(self, pid):
+    def remove_entries_for_pid(self, pid:int):
         # Obter todas as entradas instaladas na pre_filter
         table_keys = self.get_all_entries(False)
 

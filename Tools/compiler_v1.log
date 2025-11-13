@@ -1,0 +1,143 @@
+program=Programs/Cerberus/cerberus,srun
+0,29 success
+0,25 success
+0,28 success
+0,28 success
+0,25 success
+0,25 success
+0,25 success
+0,25 success
+0,25 success
+0,25 success
+program=Programs/Ditto/ditto2,srun
+0,25 success
+0,26 success
+0,26 success
+0,26 success
+0,26 success
+0,26 success
+0,29 success
+0,28 success
+0,29 success
+0,26 success
+program=Programs/Ditto/ditto,srun
+0,25 success
+0,25 success
+0,25 success
+0,30 success
+0,25 success
+0,26 success
+0,25 success
+0,25 success
+0,26 success
+0,25 success
+program=Programs/Mew/mew_crossfire,srun
+0,25 success
+0,25 success
+0,29 success
+0,29 success
+0,28 success
+0,26 success
+0,26 success
+0,27 success
+0,26 success
+0,24 success
+program=Programs/Mew/mew,srun
+0,25 success
+0,29 success
+0,24 success
+0,25 success
+0,29 success
+0,25 success
+0,24 success
+0,25 success
+0,25 success
+0,29 success
+program=Programs/NetHide/nethide,srun
+0,24 success
+0,28 success
+0,27 success
+0,24 success
+0,27 success
+0,24 success
+0,24 success
+0,27 success
+0,28 success
+0,25 success
+program=Programs/NetShuffle/netshuffle_epoch1,srun
+0,25 success
+0,25 success
+0,26 success
+0,24 success
+0,29 success
+0,28 success
+0,24 success
+0,24 success
+0,25 success
+0,24 success
+program=Programs/NetShuffle/netshuffle_epoch2,srun
+0,29 success
+0,28 success
+0,24 success
+0,29 success
+0,25 success
+0,28 success
+0,28 success
+0,25 success
+0,28 success
+0,28 success
+program=Programs/NetWarden_ipid/ipid,srun
+0,25 success
+0,25 success
+0,24 success
+0,25 success
+0,24 success
+0,27 success
+0,24 success
+0,24 success
+0,28 success
+0,27 success
+program=Programs/NetWarden_partial_ack/netwarden_partial_ack,srun
+0,25 success
+0,25 success
+0,25 success
+0,25 success
+0,30 success
+0,28 success
+0,25 success
+0,28 success
+0,28 success
+0,25 success
+program=Programs/P4control/p4control,srun
+0,25 success
+0,25 success
+0,25 success
+0,25 success
+0,24 success
+0,29 success
+0,28 success
+0,28 success
+0,25 success
+0,25 success
+program=Programs/PortKnocker/portknocker,srun
+0,26 success
+0,25 success
+0,28 success
+0,30 success
+0,25 success
+0,25 success
+0,30 success
+0,26 success
+0,26 success
+0,30 success
+program=Programs/SmartCookie/smartcookie,srun
+0,29 success
+0,25 success
+0,26 success
+0,26 success
+0,26 success
+0,28 success
+0,28 success
+0,25 success
+0,25 success
+0,25 success

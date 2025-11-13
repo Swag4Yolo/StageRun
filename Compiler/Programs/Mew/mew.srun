@@ -22,9 +22,9 @@ DEFAULT FWD toInternal;
     MINC numBytesPort[PKT.PORT] PKT.SIZE -> nBytes (NEW);
 
     IF oldNumBytes == 0:
-      MINC numFlowsPort[PKT.PORT] 1 -> nFlows;
+      MINC numFlowsPort[PKT.PORT] 1 -> nFlows (NEW);
     ELSE:
-      MGET numFlowsPort[PKT.PORT] -> nFlows;
+      MGET numFlowsPort[PKT.PORT] -> nFlows (NEW);
     ENDIF
 
     IF nBytes > 1000 && nFlows > 2:
@@ -34,5 +34,6 @@ DEFAULT FWD toInternal;
 END
 
 PREFILTER from_internal
-KEY PKT.PORT == fromInternal;
-DEFAULT FWD toExternal;
+  KEY PKT.PORT == fromInternal;
+  DEFAULT FWD toExternal;
+END

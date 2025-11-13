@@ -1,0 +1,185 @@
+
+INSPECTED LOG
+
+2025-11-03 17:46:36,599 - INFO - install_app -t NetHide -v 1.0 took 0.140636 seconds
+2025-11-03 17:46:36,756 - INFO - uninstall_app -t NetHide -v 1.0 took 0.156375 seconds
+2025-11-03 17:46:36,886 - INFO - install_app -t NetHide -v 1.0 took 0.127742 seconds
+2025-11-03 17:46:37,048 - INFO - uninstall_app -t NetHide -v 1.0 took 0.159362 seconds
+2025-11-03 17:46:37,178 - INFO - install_app -t NetHide -v 1.0 took 0.128321 seconds
+2025-11-03 17:46:37,337 - INFO - uninstall_app -t NetHide -v 1.0 took 0.156836 seconds
+2025-11-03 17:46:37,466 - INFO - install_app -t NetHide -v 1.0 took 0.126605 seconds
+2025-11-03 17:46:37,630 - INFO - uninstall_app -t NetHide -v 1.0 took 0.162058 seconds
+2025-11-03 17:46:37,745 - INFO - install_app -t NetHide -v 1.0 took 0.112463 seconds
+2025-11-03 17:46:37,879 - INFO - uninstall_app -t NetHide -v 1.0 took 0.131879 seconds
+2025-11-03 17:46:37,981 - INFO - install_app -t NetHide -v 1.0 took 0.099998 seconds
+2025-11-03 17:46:38,120 - INFO - uninstall_app -t NetHide -v 1.0 took 0.136504 seconds
+2025-11-03 17:46:38,253 - INFO - install_app -t NetHide -v 1.0 took 0.130629 seconds
+2025-11-03 17:46:38,421 - INFO - uninstall_app -t NetHide -v 1.0 took 0.166459 seconds
+2025-11-03 17:46:38,556 - INFO - install_app -t NetHide -v 1.0 took 0.132763 seconds
+2025-11-03 17:46:38,725 - INFO - uninstall_app -t NetHide -v 1.0 took 0.167338 seconds
+2025-11-03 17:46:38,828 - INFO - install_app -t NetHide -v 1.0 took 0.100820 seconds
+2025-11-03 17:46:38,971 - INFO - uninstall_app -t NetHide -v 1.0 took 0.140429 seconds
+2025-11-03 17:46:39,074 - INFO - install_app -t NetHide -v 1.0 took 0.101372 seconds
+2025-11-03 17:46:39,219 - INFO - uninstall_app -t NetHide -v 1.0 took 0.142840 seconds
+2025-11-03 17:46:39,303 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.082069 seconds
+2025-11-03 17:46:39,435 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.130193 seconds
+2025-11-03 17:46:39,520 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.082727 seconds
+2025-11-03 17:46:39,677 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.155079 seconds
+2025-11-03 17:46:39,782 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.103157 seconds
+2025-11-03 17:46:39,926 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.143008 seconds
+2025-11-03 17:46:40,067 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.139168 seconds
+2025-11-03 17:46:40,213 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.143634 seconds
+2025-11-03 17:46:40,312 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.098636 seconds
+2025-11-03 17:46:40,465 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.150413 seconds
+2025-11-03 17:46:40,541 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.074975 seconds
+2025-11-03 17:46:40,679 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.136398 seconds
+2025-11-03 17:46:40,779 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.098039 seconds
+2025-11-03 17:46:40,921 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.140858 seconds
+2025-11-03 17:46:41,022 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.098321 seconds
+2025-11-03 17:46:41,169 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.145765 seconds
+2025-11-03 17:46:41,273 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.101833 seconds
+2025-11-03 17:46:41,421 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.145844 seconds
+2025-11-03 17:46:41,521 - INFO - install_app -t NetWardenIpid -v 1.0 took 0.097739 seconds
+2025-11-03 17:46:41,677 - INFO - uninstall_app -t NetWardenIpid -v 1.0 took 0.155525 seconds
+
+2025-11-03 17:52:16,626 - INFO - run_app -t NetHide -v 1.0 took 1.263123 seconds
+2025-11-03 17:52:18,449 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.820378 seconds
+2025-11-03 17:52:20,250 - INFO - run_app -t NetHide -v 1.0 took 1.798848 seconds
+2025-11-03 17:52:22,079 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.826263 seconds
+2025-11-03 17:52:23,878 - INFO - run_app -t NetHide -v 1.0 took 1.796391 seconds
+2025-11-03 17:52:25,723 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.842688 seconds
+2025-11-03 17:52:27,531 - INFO - run_app -t NetHide -v 1.0 took 1.805982 seconds
+2025-11-03 17:52:29,347 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.814350 seconds
+2025-11-03 17:52:31,110 - INFO - run_app -t NetHide -v 1.0 took 1.760197 seconds
+2025-11-03 17:52:32,817 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.705531 seconds
+2025-11-03 17:52:34,622 - INFO - run_app -t NetHide -v 1.0 took 1.802019 seconds
+2025-11-03 17:52:36,444 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.819903 seconds
+2025-11-03 17:52:38,290 - INFO - run_app -t NetHide -v 1.0 took 1.843848 seconds
+2025-11-03 17:52:40,103 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.811356 seconds
+2025-11-03 17:52:41,934 - INFO - run_app -t NetHide -v 1.0 took 1.830158 seconds
+2025-11-03 17:52:43,738 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.803351 seconds
+2025-11-03 17:52:45,567 - INFO - run_app -t NetHide -v 1.0 took 1.826375 seconds
+2025-11-03 17:52:47,377 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.808156 seconds
+2025-11-03 17:52:49,186 - INFO - run_app -t NetHide -v 1.0 took 1.806618 seconds
+2025-11-03 17:52:50,874 - INFO - run_app -t NetWardenIpid -v 1.0 took 1.686836 seconds
+
+SERVER:
+
+2025-11-03 17:52:15 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:16 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.863819 seconds
+2025-11-03 17:52:16 [DEBUG] Function Time for changing the Running Program took 0.018915 seconds
+2025-11-03 17:52:16 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.319995 seconds
+2025-11-03 17:52:16 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:16 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:17 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.779590 seconds
+2025-11-03 17:52:18 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.636577 seconds
+2025-11-03 17:52:18 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.025263 seconds
+2025-11-03 17:52:18 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.319603 seconds
+2025-11-03 17:52:18 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:18 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:19 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.554848 seconds
+2025-11-03 17:52:19 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.857164 seconds
+2025-11-03 17:52:19 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.023891 seconds
+2025-11-03 17:52:20 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.303723 seconds
+2025-11-03 17:52:20 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:20 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:21 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.794194 seconds
+2025-11-03 17:52:21 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.634024 seconds
+2025-11-03 17:52:21 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.024611 seconds
+2025-11-03 17:52:22 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.312278 seconds
+2025-11-03 17:52:22 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:22 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:22 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.554237 seconds
+2025-11-03 17:52:23 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.857008 seconds
+2025-11-03 17:52:23 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.024648 seconds
+2025-11-03 17:52:23 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.301263 seconds
+2025-11-03 17:52:23 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:23 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:24 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.798655 seconds
+2025-11-03 17:52:25 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.636682 seconds
+2025-11-03 17:52:25 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.024511 seconds
+2025-11-03 17:52:25 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.324815 seconds
+2025-11-03 17:52:25 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:25 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:26 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.549009 seconds
+2025-11-03 17:52:27 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.862528 seconds
+2025-11-03 17:52:27 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.024869 seconds
+2025-11-03 17:52:27 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.310114 seconds
+2025-11-03 17:52:27 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:27 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:28 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.781162 seconds
+2025-11-03 17:52:28 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.635322 seconds
+2025-11-03 17:52:29 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.025409 seconds
+2025-11-03 17:52:29 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.313903 seconds
+2025-11-03 17:52:29 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:29 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:29 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.572020 seconds
+2025-11-03 17:52:30 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.860461 seconds
+2025-11-03 17:52:30 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.012478 seconds
+2025-11-03 17:52:31 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.256746 seconds
+2025-11-03 17:52:31 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:31 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:31 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.793765 seconds
+2025-11-03 17:52:32 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.635734 seconds
+2025-11-03 17:52:32 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.014814 seconds
+2025-11-03 17:52:32 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.201951 seconds
+2025-11-03 17:52:32 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:32 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:33 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.547432 seconds
+2025-11-03 17:52:34 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.858834 seconds
+2025-11-03 17:52:34 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.024705 seconds
+2025-11-03 17:52:34 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.312229 seconds
+2025-11-03 17:52:34 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:34 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:35 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.794089 seconds
+2025-11-03 17:52:36 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.630588 seconds
+2025-11-03 17:52:36 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.023742 seconds
+2025-11-03 17:52:36 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.312233 seconds
+2025-11-03 17:52:36 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:36 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:37 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.569763 seconds
+2025-11-03 17:52:37 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.862320 seconds
+2025-11-03 17:52:37 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.025094 seconds
+2025-11-03 17:52:38 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.327697 seconds
+2025-11-03 17:52:38 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:38 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:39 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.778813 seconds
+2025-11-03 17:52:39 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.632228 seconds
+2025-11-03 17:52:39 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.025680 seconds
+2025-11-03 17:52:40 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.316600 seconds
+2025-11-03 17:52:40 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:40 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:40 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.584551 seconds
+2025-11-03 17:52:41 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.852441 seconds
+2025-11-03 17:52:41 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.027741 seconds
+2025-11-03 17:52:41 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.307746 seconds
+2025-11-03 17:52:41 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:41 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:42 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.786289 seconds
+2025-11-03 17:52:43 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.637326 seconds
+2025-11-03 17:52:43 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.022912 seconds
+2025-11-03 17:52:43 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.297919 seconds
+2025-11-03 17:52:43 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:43 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:44 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.552646 seconds
+2025-11-03 17:52:45 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.861707 seconds
+2025-11-03 17:52:45 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.025336 seconds
+2025-11-03 17:52:45 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.326669 seconds
+2025-11-03 17:52:45 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:45 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:46 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.778547 seconds
+2025-11-03 17:52:47 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.633868 seconds
+2025-11-03 17:52:47 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.025076 seconds
+2025-11-03 17:52:47 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.310682 seconds
+2025-11-03 17:52:47 [DEBUG] run_app NetHide v1.0
+2025-11-03 17:52:47 [DEBUG] Chaning Tofino Ports NetHide_v1.0
+2025-11-03 17:52:47 [DEBUG] Function Time for Clearing Ports NetHide_v1.0 took 0.553850 seconds
+2025-11-03 17:52:48 [DEBUG] Function Time for Installing Ports NetHide_v1.0 took 0.859137 seconds
+2025-11-03 17:52:48 [DEBUG] Function Time for Changing the Running Program NetHide_v1.0 took 0.025274 seconds
+2025-11-03 17:52:49 [DEBUG] Function Cleaned Registers for App NetHide_v1.0 took 0.309790 seconds
+2025-11-03 17:52:49 [DEBUG] run_app NetWardenIpid v1.0
+2025-11-03 17:52:49 [DEBUG] Chaning Tofino Ports NetWardenIpid_v1.0
+2025-11-03 17:52:50 [DEBUG] Function Time for Clearing Ports NetWardenIpid_v1.0 took 0.796183 seconds
+2025-11-03 17:52:50 [DEBUG] Function Time for Installing Ports NetWardenIpid_v1.0 took 0.632577 seconds
+2025-11-03 17:52:50 [DEBUG] Function Time for Changing the Running Program NetWardenIpid_v1.0 took 0.025962 seconds
+2025-11-03 17:52:50 [DEBUG] Function Cleaned Registers for App NetWardenIpid_v1.0 took 0.173714 seconds
