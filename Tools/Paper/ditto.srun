@@ -1,0 +1,46 @@
+# ===============================================
+# Global constants
+# ===============================================
+
+const CLONE_PORT_PAT1_IN  = 1
+const CLONE_PORT_PAT1_OUT = 2
+const PAT1_OUT            = 3
+const PAT2_OUT            = 4
+const PATTERN_PORT_IN     = 5
+const P_RECIRC_OUT        = 6
+
+
+# ===============================================
+# Handler 1: Clone packets arriving from PAT1_IN
+# ===============================================
+
+handler clone_pattern_1
+  key      PKT.PORT == CLONE_PORT_PAT1_IN
+  default  FWD_AND_ENQUEUE PAT1_OUT 0
+begin:
+  .clone    CLONE_PORT_PAT1_OUT
+end:
+
+
+# ===============================================
+# Handler 2: Pattern-based forwarding logic
+# ===============================================
+
+handler pattern_selector
+  key      PKT.PORT == PATTERN_PORT_IN
+  default  FWD_AND_ENQUEUE P_RECIRC_OUT 0
+  var      $size
+begin:
+  .pattern     #1500, #1600
+  .load        IPV4.LEN, $size
+
+  .br.cond     EQ, $size, #1500, L_FWD_PAT1
+  .br.cond     EQ, $size, #1600, L_FWD_PAT2
+  .jmp         end
+
+  L_FWD_PAT1:
+  .fwd.enqjmp  PAT1_OUT, #1, end
+
+  L_FWD_PAT2:
+  .fwd.enqjmp  PAT2_OUT, #1, end
+end:

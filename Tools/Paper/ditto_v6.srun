@@ -1,0 +1,67 @@
+/////// Imports ///////
+import core.srun
+
+/////// Ports and Queues ///////
+
+port P_INPUT_TRAFFIC IN
+port P_PAT1_IN       IN
+port P_PAT2_IN       IN
+port P_CLONE_PAT1_IN IN
+port P_CLONE_PAT2_IN IN
+
+port P_PAT1_OUT       OUT
+port P_PAT2_OUT       OUT
+port P_CLONE_PAT1_OUT OUT
+port P_CLONE_PAT2_OUT OUT
+port P_DISPATCH       OUT
+
+queue Q_PAT1       P_PAT1_OUT       PRIO 2
+queue Q_PAT2       P_PAT2_OUT       PRIO 2
+queue Q_DISPATCH   P_DISPATCH       RR   2
+
+/////// Control Plane ///////
+setup   loop P_PAT1_OUT P_PAT1_IN
+setup   loop P_PAT2_OUT P_PAT2_IN
+setup   loop P_CLONE_PAT1_OUT P_CLONE_PAT1_IN
+setup   loop P_CLONE_PAT2_OUT P_CLONE_PAT2_IN
+setup   pgen ONESHOT 1 1500 P_CLONE_PAT1_OUT
+setup   pgen ONESHOT 1 1600 P_CLONE_PAT2_OUT
+
+
+/////// Handlers ///////
+handler padding_handler
+  key      PKT.PORT == P_INPUT_TRAFFIC
+  vars     $size
+  begin:
+    .pad.pattern #1500, #1600
+    .copy        IPV4.LEN, $size
+    .br.cond     EQ, $size, #1500, L_FWD_PAT1
+    .br.cond     EQ, $size, #1600, L_FWD_PAT2
+    .jmp         end  
+  L_FWD_PAT1:
+    .fwd.enq     Q_PAT1, #1
+    .jmp         end
+  L_FWD_PAT2:
+    .fwd.enq     Q_PAT2, #1
+  end:
+
+handler chaff_handler
+  key      PKT.PORT == P_CLONE_PAT1_IN
+  default  FWD_AND_ENQUEUE Q_PAT1 #0
+  begin:
+    .clone    P_CLONE_PAT1_OUT
+  end:
+
+  key      PKT.PORT == P_CLONE_PAT2_IN
+  default  FWD_AND_ENQUEUE Q_PAT2 #0
+  begin:
+    .clone    P_CLONE_PAT2_OUT
+  end:
+
+handler dispatch_handler
+  key      PKT.PORT == P_PAT1_IN            
+  default  FWD_AND_ENQUEUE Q_DISPATCH #0
+
+  key      PKT.PORT == P_PAT2_IN
+  default  FWD_AND_ENQUEUE Q_DISPATCH #1
+

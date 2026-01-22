@@ -1,0 +1,27 @@
+PIN  InternalPortIn;
+PIN  ExternalPortIn;
+POUT InternalPortOut;
+POUT ExternalPortOut;
+
+PREFILTER toRouterA
+  KEY PKT.PORT == ExternalPortIn;
+  KEY IPV4.DST == "10.10.1.0/24";
+  DEFAULT FWD InternalPortOut;
+  BODY
+    HINC IPV4.TTL 1;
+  END
+END
+
+PREFILTER toRouterB
+  KEY PKT.PORT == ExternalPortIn;
+  KEY IPV4.DST == "10.10.2.0/24";
+  DEFAULT FWD InternalPortOut;
+  BODY
+    HINC IPV4.TTL -1;
+  END
+END
+
+PREFILTER FromInternal
+  KEY PKT.PORT == InternalPortIn;
+  DEFAULT FWD ExternalPortOut;
+END

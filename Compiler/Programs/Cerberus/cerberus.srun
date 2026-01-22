@@ -1,47 +1,48 @@
 # Ports
-PIN  pFromExternal;
-PIN  pFromInternal;
-POUT pToExternal;
-POUT pToInternal;
+PIN  pFromExternal
+PIN  pFromInternal
+POUT pToExternal
+POUT pToInternal
 
 # Resources Allocation
-HASH four_tuple {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT};
-HASH inverse_four_tuple {IPV4.DST, IPV4.SRC, L4.DPORT, L4.SPORT};
+HASH four_tuple {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT}
+HASH inverse_four_tuple {IPV4.DST, IPV4.SRC, L4.DPORT, L4.SPORT}
 
 # State
-REG dns_checker;
-REG timer;
-VAR checker;
-VAR time;
-VAR old_time;
-VAR result_time;
+REG dns_checker
+REG timer
+VAR checker
+VAR time
+VAR old_time
+VAR result_time
 
 # Stage 1: DNS amplification detection - from server (responses)
-PREFILTER dns_from_server
-  KEY PKT.PORT == pFromExternal;
-  KEY L4.PROTO == 17; #UDP
-  KEY L4.SPORT == 53;
-  DEFAULT FWD pToInternal;
-  BODY
-    IGTS -> time; # IG_TS = Ingress Timestamp
-    MSET dns_checker[four_tuple] 1;
-    MSET timer[four_tuple] time;
-  END
+HANDLER dns_from_server
+  KEY PKT.PORT == pFromExternal
+  KEY L4.PROTO == 17 #UDP
+  KEY L4.SPORT == 53
+  DEFAULT FWD pToInternal
+  begin:
+    .time,  $time # IG_TS = Ingress Timestamp
+    .mset dns_checker[four_tuple], 1
+    .mset timer[four_tuple], $time
+  end:
 END
 
 # Stage 2: DNS amplification detection - from internet (requests)
-PREFILTER dns_from_internet
-  KEY PKT.PORT == pFromInternal;
-  KEY L4.PROTO == 17; #UDP
-  KEY L4.DPORT == 53;
-  DEFAULT FWD pToExternal;
-  BODY
-    IGTS -> time; # IG_TS = Ingress Timestamp
-    MGET dns_checker[inverse_four_tuple] -> checker;
-    MGET timer[inverse_four_tuple] -> old_time;
-    ARIT time - old_time -> result_time;
-    IF checker == 1 && result_time < 4000: #Convert to seconds
-      FWD pToExternal;
-    ENDIF
-  END
+HANDLER dns_from_internet
+  KEY PKT.PORT == pFromInternal
+  KEY L4.PROTO == 17 #UDP
+  KEY L4.DPORT == 53
+  DEFAULT FWD pToExternal
+  begin:
+    .time, $time # IG_TS = Ingress Timestamp
+    .mget dns_checker[inverse_four_tuple], $checker
+    .mget timer[inverse_four_tuple], $old_time
+    .sub $time, $old_time, $result_time
+    .br.cond $checker == 1 && $result_time < 4000, L_FWD: #Convert to seconds
+    .exit
+  L_FWD:
+      .fwd pToExternal
+  end:
 END

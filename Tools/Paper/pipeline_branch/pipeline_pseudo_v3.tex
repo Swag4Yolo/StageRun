@@ -1,0 +1,108 @@
+PROCEDURE CONSUME_INSTR(M, state, stage):
+
+    for each micrograph g in M:
+        if g.empty():
+            continue
+
+        instr = g.head()
+
+        # ----------------------------------------------------
+        # 1. IF-block lookahead (this modifies the micrograph)
+        # ----------------------------------------------------
+        if instr.kind == IF:
+            next_instr = g.peek_next()   # next micro-instruction in the queue
+            resolved = RESOLVE_IF(instr, next_instr)
+            instr = resolved
+            g.replace_head(instr)
+
+        # ----------------------------------------------------
+        # 2. Register co-location constraint
+        # ----------------------------------------------------
+        if instr.accesses_register:
+
+            R = instr.register
+            stage_R = state_new.register_stage.get(R)
+
+            # A. register was placed in earlier stage
+            if stage_R is not None and stage_R < stage:
+                # this micrograph must recirculate → cannot install now
+                return (M, state, False)
+
+            # B. register is assigned to a future stage
+            if stage_R is not None and stage_R > stage:
+                # cannot install here
+                return (M, state, False)
+
+            # C. register assigned to current stage — OK
+            if stage_R == stage:
+                pass  # allowed
+
+            # D. register not assigned yet — two choices in theory
+            if stage_R is None:
+                # In the pipeline-branch algorithm we pick allocation NOW.
+                state_new.register_stage[R] = stage
+
+
+        # ----------------------------------------------------
+        # 3. Install instruction in the stage
+        # ----------------------------------------------------
+        state_new.install[stage].append(instr)
+        g.pop()       # remove instruction from micrograph
+        progressed = True
+
+    return (M_new, state_new, progressed)
+
+Procedure PIPELINE_BRANCH(M, state, stage, recirc):
+    # 1. Termination conditions
+    if all micrographs m ∈ M are empty:
+        return (recirc, state)
+
+    if recirc > UPPER_BOUND:
+        return (∞, None)
+
+    is_stage_wp ← (stage ∈ state.wp_stages)
+    wp_needed ← (∃ m ∈ M : head(m) is WRITE_PHASE)
+
+    results ← ∅
+
+    # 2. Case A — there is at least one instruction from different handlers that requires a write-phase
+    if wp_needed:
+        if not is_stage_wp:
+            # A1 — treat the write-phase (locks stage)
+            (M₁, state₁) ← CONSUME_WP(M, state, stage)
+            # next stage, cannot remain here
+            r₁ ← PIPELINE_BRANCH(M₁, state₁, stage + 1, recirc)
+            results ← results ∪ {r₁}
+
+            # A2 — skip WP for now, process normal instructions instead
+            (M₂, state₂) ← CONSUME_INSTR(M, state, stage)
+            r₂ ← PIPELINE_BRANCH(M₂, state₂, stage + 1, recirc)
+            results ← results ∪ {r₂}
+
+        else:
+            # A3 — stage already locked as WP-stage: only consume WP
+            (M₃, state₃) ← CONSUME_WP(M, state, stage)
+            r₃ ← PIPELINE_BRANCH(M₃, state₃, stage + 1, recirc)
+            results ← results ∪ {r₃}
+
+    # 3. Case B — no write-phase in head positions
+    else:
+        if is_stage_wp:
+            # B1 — cannot execute normal instructions; just advance stage
+            r ← PIPELINE_BRANCH(M, state, stage + 1, recirc)
+            results ← results ∪ {r}
+        else:
+            # B2 — try placing normal instructions
+            (M₄, state₄) ← CONSUME_INSTR(M, state, stage)
+            r ← PIPELINE_BRANCH(M₄, state₄, stage + 1, recirc)
+            results ← results ∪ {r}
+
+    # 4. End of pipeline → recirculation
+    if stage = LAST_STAGE:
+        if ∃ m ∈ M : not empty(m):
+            if recirc + 1 > UPPER_BOUND:
+                return (∞, None)
+            return PIPELINE_BRANCH(M, state, 0, recirc + 1)
+
+    # 5. Pick best branch
+    return minimal_recirc(results)

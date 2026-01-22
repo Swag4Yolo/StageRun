@@ -1,0 +1,54 @@
+# Ports
+PIN  pFromExternal;
+PIN  pFromInternal;
+POUT pToExternal;
+POUT pToInternal;
+
+# Resources Allocation
+HASH five_tuple {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO};
+HASH five_tuple_inverse {IPV4.DST, IPV4.SRC, L4.DPORT, L4.SPORT, IPV4.PROTO};
+
+# State
+REG tracker;
+VAR highwater;
+VAR ackNo;
+VAR random;
+VAR tmp;
+VAR payload_len;
+
+# Stage 1: Pack from external (modify ACK)
+PREFILTER pack_from_external
+  KEY PKT.PORT == pFromExternal;
+  KEY IPV4.PROTO == 6;  # TCP
+  KEY TCP.FLAGS == 16; # ACK FLAG ON
+  DEFAULT FWD pToInternal;
+  BODY
+    RAND 4 -> random;
+    MGET tracker[five_tuple] -> highwater;
+    HTOVAR TCP.ACKNO -> ackNo;
+    IF highwater != ackNo:
+      ARIT ackNo - random -> ackNo;
+    ENDIF
+  END
+END
+
+# Stage 2: Pack from internal (update highwater)
+PREFILTER pack_from_internal
+  KEY PKT.PORT == pFromInternal;
+  KEY IPV4.PROTO == 6;  # TCP
+  DEFAULT FWD pToExternal;
+  BODY
+    # Compute payload length = totalLen + seqNo - header offsets
+    HTOVAR IPV4.LEN -> payload_len;
+    HTOVAR IPV4.IHL -> ihl;
+    ARIT ihl * 4 -> ihl;
+    HTOVAR TCP.DATAOFFSET -> tmp;
+    ARIT tmp * 4 -> tmp;
+    ARIT ihl + tmp -> tmp;
+    ARIT payload_len - tmp -> payload_len;
+
+    IF payload_len > 0:
+      MSET tracker[five_tuple_inverse] payload_len;
+    ENDIF
+  END
+END

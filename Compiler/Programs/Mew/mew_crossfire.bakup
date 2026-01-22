@@ -19,36 +19,36 @@ HANDLER from_external #handler
   KEY PKT.PORT == fromExternal
   DEFAULT FWD toInternal
   begin:
-    .minc numBytesFlow[flow_key], PKT.SIZE, $oldNBytes, OLD
-    .minc numBytesFlow2[flow_key], PKT.SIZE, $nBytes, NEW
+    1 .minc numBytesFlow[flow_key], PKT.SIZE, $oldNBytes, OLD
+    2 .minc numBytesFlow2[flow_key], PKT.SIZE, $nBytes, NEW
 
-    .br.cond $oldNBytes == 0   && $nBytes < 1000, L_NEW_FLOW
-    .br.cond $oldNBytes < 1000 && $nBytes > 1000, L_SLOW_RMV
+    3 .br.cond $oldNBytes == 0   && $nBytes < 1000, L_NEW_FLOW
+    4 .br.cond $oldNBytes < 1000 && $nBytes > 1000, L_SLOW_RMV
     # .jmp L_ELSE;
 
     # This is ELSE
-    .mget slowFlowCounter[host_pair], $nSlowFlows
-    .jmp L_TEST_DROP
+    5 .mget slowFlowCounter[host_pair], $nSlowFlows
+    6 .jmp L_TEST_DROP
 
   L_NEW_FLOW:
-    .minc slowFlowCounter[host_pair], 1, $nSlowFlows # NEW default
-    .jmp L_TEST_DROP
+    7 .minc slowFlowCounter[host_pair], 1, $nSlowFlows # NEW default
+    8 .jmp L_TEST_DROP
 
   L_SLOW_RMV:
-    .minc slowFlowCounter[host_pair], -1, $nSlowFlows
-    .jmp L_TEST_DROP
+    9 .minc slowFlowCounter[host_pair], -1, $nSlowFlows
+    10 .jmp L_TEST_DROP
 
   # L_ELSE:
   #   .mget slowFlowCounter[host_pair] -> nSlowFlows;
   #   .jmp L_TEST_DROP;
 
   L_TEST_DROP:
-    .br.cond $nSlowFlows > 1, L_DROP
-    .exit
+    11 .br.cond $nSlowFlows > 1, L_DROP
+    12 .exit
 
   L_DROP:
-    .fwd.drop
-    .exit
+    13 .fwd.drop
+    14 .exit
 
   end:
 

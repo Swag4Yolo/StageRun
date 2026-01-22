@@ -1,74 +1,78 @@
 # Ports
-PIN  pFromSales;
-PIN  pFromDev;
-PIN  pFromServer;
-PIN  pFromInternet;
+PIN  pFromSales
+PIN  pFromDev
+PIN  pFromServer
+PIN  pFromInternet
 
-POUT pToSales;
-POUT pToDev;
-POUT pToServer;
-POUT pToInternet;
+POUT pToSales
+POUT pToDev
+POUT pToServer
+POUT pToInternet
 
 # State
-VAR label;
+VAR label
 
 # Stage 1: Sales → Sales (SALES_TAG = 0x00000001)
-PREFILTER sales_to_sales
-  KEY PKT.PORT == pFromSales;
-  KEY IPV4.SRC == "1.0.0.0";    # SALES_IP
-  KEY IPV4.DST == "1.0.0.0";
-  DEFAULT FWD pToSales;
-  BODY
-    IN label;
-    OUT label;
-    IF label == 1:
-      FWD pToSales;
-    ENDIF
-  END
+HANDLER sales_to_sales
+  KEY PKT.PORT == pFromSales
+  KEY IPV4.SRC == "1.0.0.0"    # SALES_IP
+  KEY IPV4.DST == "1.0.0.0"
+  DEFAULT FWD pToSales
+  begin:
+    .in label
+    .out label
+    .br.cond label == 1, L_FWD:
+    .exit
+  L_FWD:
+    .fwd pToSales
+  end:
 END
 
 # Stage 2: Dev → Dev (DEV_TAG = 0x00000002)
-PREFILTER dev_to_dev
-  KEY PKT.PORT == pFromDev;
-  KEY IPV4.SRC == "2.0.0.0";
-  KEY IPV4.DST == "2.0.0.0";
-  DEFAULT FWD pToDev;
-  BODY
-    IN label;
-    OUT label;
-    IF label == 2:
-      FWD pToDev;
-    ENDIF
-  END
+HANDLER dev_to_dev
+  KEY PKT.PORT == pFromDev
+  KEY IPV4.SRC == "2.0.0.0"
+  KEY IPV4.DST == "2.0.0.0"
+  DEFAULT FWD pToDev
+  begin:
+    .in label
+    .out label
+    .br.cond label == 2, L_FWD:
+    .exit
+  L_FWD:
+    .fwd pToDev
+  end:
 END
 
 # Stage 3: Alice (1.0.0.1) → Dev (2.0.0.0)
-PREFILTER alice_to_dev
-  KEY PKT.PORT == pFromSales;
-  KEY IPV4.SRC == "1.0.0.1";
-  KEY IPV4.DST == "2.0.0.0";
-  DEFAULT FWD pToDev;
-  BODY
-    IN label;
-    OUT label;
-    IF label == 1:
-      FWD pToDev;
-    ENDIF
-  END
+HANDLER alice_to_dev
+  KEY PKT.PORT == pFromSales
+  KEY IPV4.SRC == "1.0.0.1"
+  KEY IPV4.DST == "2.0.0.0"
+  DEFAULT FWD pToDev
+  begin:
+    .in label
+    .out label
+    .br.cond label == 1, L_FWD:
+    .exit
+  L_FWD:
+    .fwd pToDev
+  end:
 END
 
 # Stage 4: Dev admin (2.0.0.1) → Server1 (3.0.0.1)
-PREFILTER dev_admin_to_server1
-  KEY PKT.PORT == pFromDev;
-  KEY IPV4.SRC == "2.0.0.1";
-  KEY IPV4.DST == "3.0.0.1";
-  DEFAULT FWD pToServer;
-  BODY
-    IN label;
-    OUT label;
+HANDLER dev_admin_to_server1
+  KEY PKT.PORT == pFromDev
+  KEY IPV4.SRC == "2.0.0.1"
+  KEY IPV4.DST == "3.0.0.1"
+  DEFAULT FWD pToServer
+  begin:
+    .in label
+    .out label
     # Check if (DEV_TAG | SECRET)
-    IF label == 305140274: # (0x00000002 | 0x12301230):
-      FWD pToServer;
-    ENDIF
-  END
+    .br.cond label == 305140274, L_FWD: # (0x00000002 | 0x12301230):
+    .exit
+  L_FWD:
+    .fwd pToServer
+  end:
 END

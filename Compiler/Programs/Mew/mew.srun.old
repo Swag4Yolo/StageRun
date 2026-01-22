@@ -1,0 +1,39 @@
+# Ports
+PIN  fromExternal;
+PIN  fromInternal;
+POUT toExternal;
+POUT toInternal;
+
+# Resources Allocation
+HASH five_t {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO};
+
+REG numBytesPort;
+REG numBytesFlow;
+REG numFlowsPort;
+VAR nBytes;
+VAR nFlows;
+VAR oldNumBytes;
+
+PREFILTER from_external
+KEY PKT.PORT == fromExternal;
+DEFAULT FWD toInternal;
+  BODY
+    MINC numBytesFlow[five_t] PKT.SIZE -> oldNumBytes (OLD);
+    MINC numBytesPort[PKT.PORT] PKT.SIZE -> nBytes (NEW);
+
+    IF oldNumBytes == 0:
+      MINC numFlowsPort[PKT.PORT] 1 -> nFlows (NEW);
+    ELSE:
+      MGET numFlowsPort[PKT.PORT] -> nFlows (NEW);
+    ENDIF
+
+    IF nBytes > 1000 && nFlows > 2:
+        ACTIVATE CrossFire;
+    ENDIF
+  END
+END
+
+PREFILTER from_internal
+  KEY PKT.PORT == fromInternal;
+  DEFAULT FWD toExternal;
+END

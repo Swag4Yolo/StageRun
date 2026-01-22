@@ -1,0 +1,76 @@
+###############################
+#        Ports / Queues       #
+###############################
+
+port PAT1_IN IN
+port PAT2_IN IN
+
+port PAT1_OUT OUT
+queue PAT1_QUEUES PAT1_OUT PRIO 2
+
+port PAT2_OUT OUT
+queue PAT2_QUEUES PAT2_OUT PRIO 2
+
+port CLONE_PORT_PAT1_OUT OUT
+queue CLONE_QUEUES_PAT1 CLONE_PORT_PAT1_OUT PRIO 2
+
+port CLONE_PORT_PAT2_OUT OUT
+queue CLONE_QUEUES_PAT2 CLONE_PORT_PAT2_OUT PRIO 2
+
+port DISPATCH_PORT OUT
+queue DISPATCH_QUEUE DISPATCH_PORT RR 2
+
+###############################
+#       Control Plane         #
+###############################
+
+setup   pgen ONESHOT 1 1500 CLONE_PORT_PAT1_OUT
+setup   pgen ONESHOT 1 1600 CLONE_PORT_PAT2_OUT
+setup   loop PAT1_OUT PAT1_IN
+setup   loop PAT2_OUT PAT2_IN
+setup   loop CLONE_PORT_PAT1_OUT CLONE_PORT_PAT1_IN
+setup   loop CLONE_PORT_PAT2_OUT CLONE_PORT_PAT2_IN
+
+###############################
+#       Handler Section       #
+###############################
+
+handler pattern_selector
+  key      PKT.PORT == PATTERN_PORT_IN
+  vars     $size
+  begin:
+    .pattern     #1500, #1600
+    .load        IPV4.LEN, $size
+  
+    .br.cond     EQ, $size, #1500, L_FWD_PAT1
+    .br.cond     EQ, $size, #1600, L_FWD_PAT2
+    .jmp         end
+  
+    L_FWD_PAT1:
+    .fwd.enq     PAT1_OUT, #1
+    .jmp         end
+  
+    L_FWD_PAT2:
+    .fwd.enq     PAT2_OUT, #1
+  end:
+
+handler chaff_handler
+  key      PKT.PORT == CLONE_PORT_PAT1_IN
+  default  FWD_AND_ENQUEUE CLONE_QUEUES_PAT1 0
+  begin:
+    .clone    CLONE_PORT_PAT1_OUT
+  end:
+
+  key      PKT.PORT == CLONE_PORT_PAT2_IN
+  default  FWD_AND_ENQUEUE CLONE_QUEUES_PAT2 0
+  begin:
+    .clone    CLONE_PORT_PAT2_OUT
+  end:
+
+handler final_dispatch
+  key      PKT.PORT == PAT1_IN            
+  default  FWD_AND_ENQUEUE DISPATCH_QUEUE 0
+
+  key      PKT.PORT == PAT2_IN
+  default  FWD_AND_ENQUEUE DISPATCH_QUEUE 1
+

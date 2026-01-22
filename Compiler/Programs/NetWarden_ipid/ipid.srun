@@ -1,17 +1,17 @@
-PIN  InternalPortIN;
-PIN  ExternalPortIN;
-POUT InternalPortOUT;
-POUT ExternalPortOUT;
+PIN  InternalPortIN
+PIN  ExternalPortIN
+POUT InternalPortOUT
+POUT ExternalPortOUT
 
-PREFILTER FromExternal
-  KEY PKT.PORT == ExternalPortIN;
-  DEFAULT FWD InternalPortOUT;
-  BODY
-    HASSIGN IPV4.ID 1023;
-  END
+HANDLER FromExternal
+  KEY PKT.PORT == ExternalPortIN
+  DEFAULT FWD InternalPortOUT
+  begin:
+    .hassign IPV4.ID, 1023
+  end:
 END
 
-PREFILTER FromInternal
-  KEY PKT.PORT == InternalPortIN;
-  DEFAULT FWD ExternalPortOUT;
+HANDLER FromInternal
+  KEY PKT.PORT == InternalPortIN
+  DEFAULT FWD ExternalPortOUT
 END
