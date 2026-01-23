@@ -91,8 +91,13 @@ class StageRunTransformer(Transformer):
         # instr já é, por exemplo, ForwardInstr ou DropInstruction
         return PreFilterDefault(instr=instr)
 
-    def body_clause(self, *instrs):
-        return BodyNode(instructions=list(instrs))
+    # def body_clause(self, *instrs):
+    #     return BodyNode(instructions=list(instrs))
+
+    def body_clause(self, *items):
+        instrs = [x for x in items
+                if x is not None and not (isinstance(x, Token) and x.type == "NEWLINE")]
+        return BodyNode(instructions=instrs)
 
     def prefilter(self, name, *clauses):
         keys, default, body = [], None, None
@@ -182,12 +187,20 @@ class StageRunTransformer(Transformer):
     def arith_val(self, x):        return x
     def var_ref(self, name):       return str(name)
 
-    # --- Default
+    def NEWLINE(self, t):
+        return None
+
+    # # --- Default
+    # def __default__(self, data, children, meta):
+    #     if len(children) == 1:
+    #         return children[0]
+    #     return children
+
     def __default__(self, data, children, meta):
+        children = [c for c in children if c is not None]
         if len(children) == 1:
             return children[0]
         return children
-
 
 def parse_stagerun_program(text: str) -> ProgramNode:
     tree = parser.parse(text)

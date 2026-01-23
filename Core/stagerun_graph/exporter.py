@@ -126,6 +126,10 @@ def _serialize_instr(instr: Any) -> Dict[str, Any]:
 def _serialize_node(node: StageRunNode) -> Dict[str, Any]:
     """Serialize a StageRunNode into JSON-safe dictionary."""
     # Handle instruction-based nodes
+    print(node)
+    print(node.id)
+    print(node.instr)
+
     if hasattr(node, "instr") and node.instr is not None:
         instr_data = _serialize_instr(node.instr)
         op = instr_data["op"]

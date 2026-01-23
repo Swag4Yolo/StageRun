@@ -49,7 +49,6 @@ HANDLER from_external #handler
   L_DROP:
     .fwd.drop
     .exit
-
   end:
 
 END

@@ -1,6 +1,6 @@
 // stagerun_grammar.lark
 
-start: statement+
+start: statement (NEWLINE+ statement)* NEWLINE*
 
 ?statement: port_in_decl
           | port_out_decl
@@ -12,22 +12,47 @@ start: statement+
 
 // PORTS
 // port_declr: "PORT" NAME
-port_in_decl: "PIN" NAME ";"
-port_out_decl: "POUT" NAME NAME? ";"
+port_in_decl: "PIN" NAME
+port_out_decl: "POUT" NAME NAME?
 
 // QUEUES
-qset_decl: "QSET" NAME NAME INT ";"
+qset_decl: "QSET" NAME NAME INT
 
 // Resources
-var_decl: "VAR" NAME ";"
-reg_decl: "REG" NAME ";"
-hash_decl: "HASH" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}" ";"
+var_decl: "VAR" NAME
+reg_decl: "REG" NAME
+hash_decl: "HASH" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}"
 
 // Prefilter
-prefilter: "PREFILTER" NAME (key_clause | default_clause | body_clause)* "END"
-key_clause: "KEY" key_ref (comp_op | mask_op) value ";"
-default_clause: "DEFAULT" default_instr ";"
-body_clause: "BODY" instr* "END" 
+// prefilter: "HANDLER" NAME NEWLINE* (key_clause | default_clause | body_clause)* "END"
+// key_clause: "KEY" key_ref (comp_op | mask_op) value NEWLINE*
+// default_clause: "DEFAULT" default_instr NEWLINE*
+// body_clause: "begin:" NEWLINE* (instr NEWLINE)* "end:" NEWLINE*
+
+prefilter: "HANDLER" NAME NEWLINE+ clause_line* "END"
+
+?clause_line: key_clause NEWLINE+
+            | default_clause NEWLINE+
+            | body_clause
+
+key_clause: "KEY" key_ref (comp_op | mask_op) value
+default_clause: "DEFAULT" default_instr
+
+body_clause: "begin:" NEWLINE+ instr_line* "end:" NEWLINE+
+instr_line: instr NEWLINE+
+
+
+
+// prefilter: "HANDLER" NAME NEWLINE* (clause NEWLINE*)* "END"
+
+// ?clause: key_clause
+//        | default_clause
+//        | body_clause
+
+// key_clause: "KEY" key_ref (comp_op | mask_op) value
+// default_clause: "DEFAULT" default_instr
+// body_clause: "begin:" NEWLINE* (instr NEWLINE+)* "end:"
+
 
 ?default_instr: fwd_instr
               | drop_instr
@@ -35,30 +60,30 @@ body_clause: "BODY" instr* "END"
 
 
       // Fwd Ops      
-?instr: fwd_instr ";"
-      | fwd_queue_instr ";"
-      | drop_instr ";"
-      | rts_instr ";"
+?instr: fwd_instr
+      | fwd_queue_instr
+      | drop_instr
+      | rts_instr
 
-      | hinc_instr ";"
-      | header_assign_instr ";"
-      | clone_instr ";"
-      | paddtern_instr ";"
+      | hinc_instr
+      | header_assign_instr
+      | clone_instr
+      | paddtern_instr
       // Mem Ops
-      | minc_instr ";"
-      | mget_instr ";"
-      | mset_instr ";"
+      | minc_instr
+      | mget_instr
+      | mset_instr
       // Convert ops
-      | htovar_instr ";"
-      | hash_to_var_instr ";"
-      | var_to_hdr_instr ";"
-      | activate_instr ";"
-      | ingress_ts_instr ";"
-      | airth_instr ";"
-      | hairth_instr ";"
-      | random_instr ";"
-      | in_instr ";"
-      | out_instr ";"
+      | htovar_instr
+      | hash_to_var_instr
+      | var_to_hdr_instr
+      | activate_instr
+      | ingress_ts_instr
+      | airth_instr
+      | hairth_instr
+      | random_instr
+      | in_instr
+      | out_instr
       | if_block
 
 
@@ -68,7 +93,7 @@ fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
 drop_instr: "DROP"
 rts_instr: "RTS"
 
-hinc_instr: "HINC" header_ref SIGNED_INT
+hinc_instr: ".hinc" header_ref "," SIGNED_INT
 header_assign_instr: "HASSIGN" header_ref (SIGNED_INT | STRING)
 clone_instr: "CLONE" NAME
 paddtern_instr: "PADTTERN" INT+
@@ -164,7 +189,11 @@ NAME: /[A-Za-z_][A-Za-z0-9_]*/
 STRING: /"[^"]*"/
 %import common.INT
 %import common.SIGNED_INT
-%import common.WS
-%ignore WS
-%ignore /#[^\n]*/
-%ignore /[\r\n]+/
+// %import common.WS
+// %ignore WS
+// %ignore /#[^\n]*/
+// %ignore /[\r\n]+/
+
+%import common.NEWLINE
+%import common.WS_INLINE
+%ignore WS_INLINE

@@ -23,7 +23,7 @@ HANDLER dns_from_server
   KEY L4.SPORT == 53
   DEFAULT FWD pToInternal
   begin:
-    .time,  $time # IG_TS = Ingress Timestamp
+    .time, $time # IG_TS = Ingress Timestamp
     .mset dns_checker[four_tuple], 1
     .mset timer[four_tuple], $time
   end:
