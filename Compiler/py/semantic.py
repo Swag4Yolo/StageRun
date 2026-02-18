@@ -80,7 +80,7 @@ def _validate_hash(program:ProgramNode, handler:str, hash:str):
         raise UndefinedHashError(handler=handler, hash=hash)
 
 
-def _validate_prefilter(program: ProgramNode, pf: HandlerNode, ports_in: Set[str], ports_out: Set[str]) -> Dict[str, Any]:
+def _validate_handler(program: ProgramNode, pf: HandlerNode, ports_in: Set[str], ports_out: Set[str]) -> Dict[str, Any]:
     # keys
     keys = []
     for k in pf.keys or []:
@@ -108,38 +108,39 @@ def _validate_prefilter(program: ProgramNode, pf: HandlerNode, ports_in: Set[str
 
     # body checks (headers validity, ports existence)
     if pf.body and isinstance(pf.body, HandlerBodyNode):
-        for instr in pf.body.instructions:
-            if isinstance(instr, FwdInstr):
-                _validate_out_port(program, pf.name, instr.port)
-            elif isinstance(instr, FwdAndEnqueueInstr):
-                _validate_out_port(program, pf.name, instr.port)
-                # _validate_queue_port(program, pf.name, instr.target)
-            elif isinstance(instr, DropInstr):
-                pass
-            elif isinstance(instr, HeaderAssignInstr):
-                _validate_header(program, pf.name, instr.header)
-            elif isinstance(instr, HeaderIncrementInstr):
-                _validate_header(program, pf.name, instr.header)
+        for b in pf.body.blocks:
+            for instr in b.instructions:
+                if isinstance(instr, FwdInstr):
+                    _validate_out_port(program, pf.name, instr.port)
+                elif isinstance(instr, FwdAndEnqueueInstr):
+                    _validate_out_port(program, pf.name, instr.port)
+                    # _validate_queue_port(program, pf.name, instr.target)
+                elif isinstance(instr, DropInstr):
+                    pass
+                elif isinstance(instr, HeaderAssignInstr):
+                    _validate_header(program, pf.name, instr.header)
+                elif isinstance(instr, HeaderIncrementInstr):
+                    _validate_header(program, pf.name, instr.header)
 
-            # Copy Instructions
-            elif isinstance(instr, CopyHeaderToVarInstr):
-                _validate_header(program, pf.name, instr.header)
-                _validate_var(program, pf.name, instr.var)
-            elif isinstance(instr, CopyHashToVarInstr):
-                _validate_hash(program, pf.name, instr.hash)
-                _validate_var(program, pf.name, instr.var)
-            elif isinstance(instr, CopyVarToHeaderInstr):
-                _validate_header(program, pf.name, instr.header)
-                _validate_var(program, pf.name, instr.var)
+                # Copy Instructions
+                elif isinstance(instr, CopyHeaderToVarInstr):
+                    _validate_header(program, pf.name, instr.header)
+                    _validate_var(program, pf.name, instr.var)
+                elif isinstance(instr, CopyHashToVarInstr):
+                    _validate_hash(program, pf.name, instr.hash)
+                    _validate_var(program, pf.name, instr.var)
+                elif isinstance(instr, CopyVarToHeaderInstr):
+                    _validate_header(program, pf.name, instr.header)
+                    _validate_var(program, pf.name, instr.var)
 
-            elif isinstance(instr, PadToPatternInstr):
-                for pat in instr.pattern:
-                    if pat < 64:
-                        raise SemanticError(f"PREFILTER '{pf.name}': element present in PADTTERN cannot be under 64 => '{pat}'")
-            else:
-                # block-level structures (IfNode etc.) are allowed — CFG builder tratará depois
-                # Se quiseres ser estrito: testar nomes de classe aqui.
-                pass
+                elif isinstance(instr, PadToPatternInstr):
+                    for pat in instr.pattern:
+                        if pat < 64:
+                            raise SemanticError(f"PREFILTER '{pf.name}': element present in PADTTERN cannot be under 64 => '{pat}'")
+                else:
+                    # block-level structures (IfNode etc.) are allowed — CFG builder tratará depois
+                    # Se quiseres ser estrito: testar nomes de classe aqui.
+                    pass
 
 
 def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
@@ -151,10 +152,10 @@ def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
     #TODO: implement functions for queues, hashes, registers, clones
 
     # validate prefilters independently
-    for pf in program.prefilters or []:
+    for pf in program.handlers or []:
         if not isinstance(pf, HandlerNode):
             raise SemanticError("Invalid prefilter node in AST")
-        _validate_prefilter(program, pf, ports_in_set, ports_out_set)
+        _validate_handler(program, pf, ports_in_set, ports_out_set)
 
 # TODO LIST:
 # 1. Copy Instructions

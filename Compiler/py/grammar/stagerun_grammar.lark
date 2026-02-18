@@ -25,9 +25,13 @@ hash_decl: "HASH" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}"
 
 handler: "HANDLER" NAME NEWLINE+ clause_line* "END"
 
-?clause_line: key_clause NEWLINE+
-            | default_clause NEWLINE+
-            | body_clause
+
+?clause_line: (key_clause | default_clause) NEWLINE+
+            | body_clause NEWLINE*
+
+// ?clause_line: key_clause NEWLINE+
+//             | default_clause NEWLINE+
+//             | body_clause
 
 key_clause: "KEY" key_ref (comp_op | mask_op) value
 default_clause: "DEFAULT" default_instr

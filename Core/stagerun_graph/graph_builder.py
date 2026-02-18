@@ -86,14 +86,14 @@ class StageRunGraphBuilder:
                 self.default_action = {
                     "op": ISA.FWD.value, 
                     "args": {
-                        "dest": instr.port
+                        "port": instr.port
                         }
                     }
             elif isinstance(instr, FwdAndEnqueueInstr):
                 self.default_action = {
                     "op": ISA.FWD_AND_ENQUEUE.value, 
                     "args": {
-                        "dest": instr.port, "qid" : instr.qid
+                        "port": instr.port, "qid" : instr.qid
                         }
                     }
             elif isinstance(instr, DropInstr):

@@ -43,7 +43,7 @@ class StageRunTransformer(Transformer):
 
     # --- Top-level program assembly ----------------------------------------
     def start(self, *statements):
-        ports_in, ports_out, qsets, program_vars, regs, prefilters, hashes = [], [], [], [], [], [], []
+        ports_in, ports_out, qsets, program_vars, regs, handlers, hashes = [], [], [], [], [], [], []
         for s in statements:
             if isinstance(s, PortDecl):
                 (ports_in if s.direction == "IN" else ports_out).append(s)
@@ -56,7 +56,7 @@ class StageRunTransformer(Transformer):
             elif isinstance(s, HashDecl):
                 hashes.append(s)
             elif isinstance(s, HandlerNode):
-                prefilters.append(s)
+                handlers.append(s)
         return ProgramNode(
             ports_in=ports_in,
             ports_out=ports_out,
@@ -64,7 +64,7 @@ class StageRunTransformer(Transformer):
             vars=program_vars,
             regs=regs,
             hashes=hashes,
-            prefilters=prefilters,
+            handlers=handlers,
         )
 
     # --- Declarations -------------------------------------------------------
@@ -109,25 +109,31 @@ class StageRunTransformer(Transformer):
     # def body_clause(self, *instrs):
     #     return BodyNode(instructions=list(instrs))
 
-    def body_clause(self, *items):
-        instrs = [x for x in items
-                if x is not None and not (isinstance(x, Token) and x.type == "NEWLINE")]
-        for x in items:
-            print("x=>",x) 
-        return HandlerBodyNode(instructions=instrs)
+    # def body_clause(self, *items):
+    #     instrs = [x for x in items
+    #             if x is not None and not (isinstance(x, Token) and x.type == "NEWLINE")]
+    #     for x in items:
+    #         print("x=>",x) 
+    #     return HandlerBodyNode(instructions=instrs)
+    
+    def body_clause(self, label_decl, *instrs):
+        # label_decl is LabelDecl, instrs are InstructionNode (thanks to instr_line)
+        return BasicBlockNode(label=label_decl.name, instructions=list(instrs))
 
     def handler(self, name, *clauses):
-        keys, default, body = [], None, None
+        keys, default = [], None
+        blocks = []
 
         for c in clauses:
             if isinstance(c, HandlerKey):
                 keys.append(c)
             elif isinstance(c, HandlerDefault):
                 default = c.instr
-            elif isinstance(c, HandlerBodyNode):
-                body = c
-        return HandlerNode(name=str(name), keys=keys,
-                            default_action=default, body=body)
+            elif isinstance(c, BasicBlockNode):
+                blocks.append(c)
+
+        body = HandlerBodyNode(blocks=blocks) if blocks else None
+        return HandlerNode(name=str(name), keys=keys, default_action=default, body=body)
 
     # --- Instructions -------------------------------------------------------
     def fwd_instr(self, target):

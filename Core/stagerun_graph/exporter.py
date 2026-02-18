@@ -39,6 +39,50 @@ def _compute_checksum_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _flatten_blocks(body) -> tuple[list[Any], list[tuple[str, int]]]:
+    """
+    Returns:
+      - flat instruction list (in label order)
+      - label_sizes: list of (label, count) in the same order
+    """
+    flat = []
+    label_sizes = []
+    for blk in (body.blocks or []):
+        instrs = blk.instructions or []
+        label_sizes.append((blk.label, len(instrs)))
+        flat.extend(instrs)
+    return flat, label_sizes
+
+def _serialize_labels(graph: StageRunGraph, label_sizes: list[tuple[str, int]]) -> Dict[str, Any]:
+    """
+    Return labels as a JSON map: { "<label>": [node, node, ...], ... }
+    """
+    nodes_sorted = sorted(graph.nodes.values(), key=lambda n: n.id)
+
+    # Skip synthetic start node if present (instr=None)
+    offset = 0
+    if nodes_sorted and getattr(nodes_sorted[0], "instr", None) is None:
+        offset = 1
+
+    labels_out: Dict[str, Any] = {}
+    cursor = offset
+
+    for label, count in label_sizes:
+        label_nodes = nodes_sorted[cursor:cursor + count]
+        cursor += count
+        labels_out[label] = [_serialize_node(n) for n in label_nodes]
+
+    return labels_out
+
+def _serialize_handler(graph: StageRunGraph, label_sizes: list[tuple[str, int]]) -> Dict[str, Any]:
+    return {
+        "id": graph.graph_id,
+        "keys": graph.keys,
+        "default_action": graph.default_action,
+        "labels": _serialize_labels(graph, label_sizes),
+        "edges": [_serialize_edge(e) for e in graph.edges],
+    }
+
 # ============================================================
 # Boolean expression serialization
 # ============================================================
@@ -208,21 +252,24 @@ def _serialize_resources(program: ProgramNode):
     return resources
 
 def _build_stagerun_graphs(program: ProgramNode):
-    """Build one StageRunGraph per PREFILTER (only BODY statements are graphed)."""
     graphs = []
-    for pf in program.prefilters:
-        keys = []
-        default_action = None
-        body = []
-        if pf.keys:
-            keys = pf.keys
-        if pf.default_action:
-            default_action = pf.default_action
-        if pf.body:
-            body = pf.body.instructions
-        g = StageRunGraphBuilder(graph_id=pf.name).build(keys, default_action, body)
+    label_sizes_by_handler = {}
+
+    for h in program.handlers:
+        keys = h.keys or []
+        default_action = h.default_action if h.default_action else None
+
+        flat_body = []
+        label_sizes = []
+
+        if h.body and getattr(h.body, "blocks", None) is not None:
+            flat_body, label_sizes = _flatten_blocks(h.body)
+
+        g = StageRunGraphBuilder(graph_id=h.name).build(keys, default_action, flat_body)
         graphs.append(g)
-    return graphs
+        label_sizes_by_handler[h.name] = label_sizes
+
+    return graphs, label_sizes_by_handler
 
 def _build_stagerun_resources(program: ProgramNode):
     # Build a resources summary for the controller/exporter
@@ -248,32 +295,36 @@ def export_stage_run_graphs(
     schema_version: int = 1.0
 ) -> str:
     """
-    Export program graphs and resources into a JSON file with a checksum header.
-
-    :param program_name: Name of the StageRun program (e.g., "ditto2")
-    :param graphs: List of StageRunGraph objects
-    :param resources: Dict with program resources (ports, queues, vars, etc.)
-    :param output_path: Path to output JSON file
-    :return: SHA-256 checksum string
+    Export program graphs and resources into a JSON file with a checksum field.
+    The checksum is computed over the JSON payload with the 'checksum' field removed.
     """
 
-    # 1. Build StageRunGraph(s)
-    graphs = _build_stagerun_graphs(program)
-    # resources = _build_stagerun_resources(program)
+    # 1) Build handler graphs
+    graphs, label_sizes_by_handler = _build_stagerun_graphs(program)
 
+    # 2) Build payload WITHOUT checksum first
     payload = {
         "program": program_name,
         "isa_version": ISA.VERSION.value,
         "schema_version": schema_version,
-        "graphs": [_serialize_graph(g) for g in graphs],
+        "handlers": [
+            _serialize_handler(g, label_sizes_by_handler.get(g.graph_id, []))
+            for g in graphs
+        ],
         "resources": _serialize_resources(program),
     }
 
-    json_bytes = json.dumps(payload, indent=2, sort_keys=False).encode("utf-8")
-    checksum = _compute_checksum_bytes(json_bytes)
+    # 3) Compute checksum over canonical JSON of payload WITHOUT checksum
+    json_bytes_no_checksum = json.dumps(payload, indent=2, sort_keys=False).encode("utf-8")
+    checksum = _compute_checksum_bytes(json_bytes_no_checksum)
 
-    output_path = Path(output_path)
-    with output_path.open("wb") as f:
-        f.write(checksum.encode("utf-8") + b"\n" + json_bytes)
+    # 4) Insert checksum into payload and serialize final JSON
+    payload_with_checksum = {"checksum": checksum, **payload}
+    json_bytes = json.dumps(payload_with_checksum, indent=2, sort_keys=False).encode("utf-8")
+
+    # 5) Write output: force name out.json if output_path is a directory
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(json_bytes)
 
     return checksum

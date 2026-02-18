@@ -1,7 +1,6 @@
-# to use future references (BooleanExpression)
-from __future__ import annotations 
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 # ======================
@@ -39,19 +38,22 @@ class VarDecl(ASTNode):
     """VAR <name>."""
     name: str
 
+
 @dataclass
 class RegDecl(ASTNode):
     """REG <name>."""
     name: str
 
+
 @dataclass
 class LabelDecl(ASTNode):
-    """<name>:"""
+    """<name>: (parse-level label declaration)"""
     name: str
+
 
 @dataclass
 class HashDecl(ASTNode):
-    """Hash <name>"""
+    """HASH <name> { ... }"""
     name: str
     args: List
 
@@ -68,7 +70,8 @@ class InstructionNode(ASTNode):
 
 @dataclass
 class FwdInstr(InstructionNode):
-    port: str  # port name
+    port: str
+
 
 @dataclass
 class DropInstr(InstructionNode):
@@ -83,45 +86,43 @@ class FwdAndEnqueueInstr(InstructionNode):
 
 @dataclass
 class HeaderIncrementInstr(InstructionNode):
-    """HINC IPV4.TTL <value>."""
-    header: str         # e.g., "IPV4.TTL"
+    header: str
     value: int
 
 
 @dataclass
 class HeaderAssignInstr(InstructionNode):
-    """HASSIGN IPV4.ID <value>."""
-    header: str         # e.g., "IPV4.ID"
+    header: str
     value: int
 
 
 @dataclass
 class CopyHeaderToVarInstr(InstructionNode):
-    """.copy IPV4.PROTO, $proto"""
-    header: str         # e.g., "IPV4.PROTO"
+    header: str
     var: str
+
 
 @dataclass
 class CopyHashToVarInstr(InstructionNode):
-    """.hashcopy hash_name, $value"""
-    hash: str         # e.g., "IPV4.PROTO"
+    hash: str
     var: str
+
 
 @dataclass
 class CopyVarToHeaderInstr(InstructionNode):
-    """.hcopy $proto, IPV4.TCP"""
-    var: str         # e.g., "IPV4.PROTO"
+    var: str
     header: str
+
 
 @dataclass
 class PadToPatternInstr(InstructionNode):
-    """HTOVAR IPV4.PROTO -> proto."""
-    pattern: List[int]        
+    pattern: List[int]
+
 
 @dataclass
 class CloneInstr(InstructionNode):
-    """CLONE P1_OUT"""
-    port: str  
+    port: str
+
 
 # ======================
 # Conditionals
@@ -132,7 +133,6 @@ class BooleanExpression(ASTNode):
     left: str | BooleanExpression | None
     op: str
     right: str | BooleanExpression | None
-
 
 
 @dataclass
@@ -148,7 +148,7 @@ class IfNode(InstructionNode):
 
 
 # ======================
-# Handler
+# Handler (with labels / blocks)
 # ======================
 
 @dataclass
@@ -157,13 +157,29 @@ class HandlerKey(ASTNode):
     operand: str
     value: str | int
 
+
 @dataclass
 class HandlerDefault(ASTNode):
     instr: InstructionNode
 
+
+@dataclass
+class BasicBlockNode(ASTNode):
+    """
+    A labeled basic block inside a handler body.
+    The implicit entry block should use label="entry".
+    """
+    label: str
+    instructions: List[InstructionNode] = field(default_factory=list)
+
+
 @dataclass
 class HandlerBodyNode(ASTNode):
-    instructions: List[InstructionNode] = field(default_factory=list)
+    """
+    Handler body is a list of basic blocks.
+    The first block is the entry block.
+    """
+    blocks: List[BasicBlockNode] = field(default_factory=list)
 
 
 @dataclass
@@ -186,4 +202,4 @@ class ProgramNode(ASTNode):
     vars: List[VarDecl] = field(default_factory=list)
     regs: List[RegDecl] = field(default_factory=list)
     hashes: List[HashDecl] = field(default_factory=list)
-    prefilters: List[HandlerNode] = field(default_factory=list)
+    handlers: List[HandlerNode] = field(default_factory=list)
