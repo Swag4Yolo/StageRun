@@ -1,0 +1,238 @@
+=== Início da compilação (Sun 26 Oct 11:23:10 UTC 2025) ===
+Cada programa será compilado 10 vez(es)
+
+---------------------------------------------
+Programa: NetShuffle/tofino-v2/netshuffle.p4
+Usando flags extra: P4FLAGS=""
+
+🔁 Execução 1 de 10 - Sun 26 Oct 11:23:10 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.440s
+user	0m57.208s
+sys	0m1.536s
+✅ Execução 1 concluída com sucesso
+
+🔁 Execução 2 de 10 - Sun 26 Oct 11:23:52 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.594s
+user	0m57.459s
+sys	0m1.520s
+✅ Execução 2 concluída com sucesso
+
+🔁 Execução 3 de 10 - Sun 26 Oct 11:24:35 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.284s
+user	0m56.851s
+sys	0m1.394s
+✅ Execução 3 concluída com sucesso
+
+🔁 Execução 4 de 10 - Sun 26 Oct 11:25:17 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.407s
+user	0m56.935s
+sys	0m1.388s
+✅ Execução 4 concluída com sucesso
+
+🔁 Execução 5 de 10 - Sun 26 Oct 11:26:00 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m43.485s
+user	0m58.329s
+sys	0m1.507s
+✅ Execução 5 concluída com sucesso
+
+🔁 Execução 6 de 10 - Sun 26 Oct 11:26:43 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.584s
+user	0m56.466s
+sys	0m1.398s
+✅ Execução 6 concluída com sucesso
+
+🔁 Execução 7 de 10 - Sun 26 Oct 11:27:26 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.426s
+user	0m56.777s
+sys	0m1.424s
+✅ Execução 7 concluída com sucesso
+
+🔁 Execução 8 de 10 - Sun 26 Oct 11:28:08 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.359s
+user	0m57.011s
+sys	0m1.485s
+✅ Execução 8 concluída com sucesso
+
+🔁 Execução 9 de 10 - Sun 26 Oct 11:28:51 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.622s
+user	0m57.078s
+sys	0m1.513s
+✅ Execução 9 concluída com sucesso
+
+🔁 Execução 10 de 10 - Sun 26 Oct 11:29:33 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetShuffle/tofino-v2/netshuffle.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_16/tna
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build/tofino/netshuffle
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build/tofino/netshuffle
+
+  Building netshuffle        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	0m42.408s
+user	0m56.640s
+sys	0m1.408s
+✅ Execução 10 concluída com sucesso
+
+=== Fim da compilação (Sun 26 Oct 11:30:16 UTC 2025) ===

@@ -35,7 +35,6 @@ DEFAULT FWD toInternal
 
   L_ACTIVATE:
     .activate CrossFire
-  end:
 END
 
 HANDLER from_internal

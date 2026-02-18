@@ -13,7 +13,7 @@
       "patterns": [
         {
           "name": "entity.name.type.stagerun", 
-          "match": "\\b(PREFILTER|POSFILTER)\\b"
+          "match": "\\b(HANDLER)\\b"
         },
         {
           "name": "entity.name.function.stagerun", 
@@ -21,15 +21,17 @@
         },
         {
           "name": "keyword.control.stagerun",
-          "match": "(?<!\\.)\\b(MAIN|BODY)\\b|(?<!\\.)\\b(PORT|PIN|POUT|QSET)\\b" 
+          "match": "(?<!\\.)\\b(MAIN|BODY)\\b|(?<!\\.)\\b(PORT|PIN|POUT|QSET|HASH|REG|VAR)\\b" 
         }
       ]
     },
     "instructions": {
       "patterns": [
         {
-          "name": "keyword.operator.stagerun",
-          "match": "\\b(FWD|HINC|DROP)\\b"
+          "match": "(^|\\s)(\\.(?:rand|mget))\\b",
+          "captures": {
+            "2": { "name": "keyword.operator.stagerun" }
+          }
         }
       ]
     },

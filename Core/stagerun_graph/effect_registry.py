@@ -10,7 +10,7 @@ def effect_of_instr(instr) -> StageRunEffect:
         return StageRunEffect(writes={"hdr.IPV4.LEN"})#, uses={"pattern"})
 
     # --- HTOVAR ---
-    if isinstance(instr, HtoVarInstr):
+    if isinstance(instr, CopyHeaderToVarInstr):
         return StageRunEffect(
             reads={f"hdr.{instr.target}"},
             writes={f"var.{instr.var_name}"}
@@ -35,10 +35,10 @@ def effect_of_instr(instr) -> StageRunEffect:
 
     # --- ASSIGN / HINC ---
     if isinstance(instr, HeaderAssignInstr):
-        return StageRunEffect(writes={f"hdr.{instr.target}"})
+        return StageRunEffect(writes={f"hdr.{instr.header}"})
 
     if isinstance(instr, HeaderIncrementInstr):
-        return StageRunEffect(reads={f"hdr.{instr.target}"}, writes={f"hdr.{instr.target}"})
+        return StageRunEffect(reads={f"hdr.{instr.header}"}, writes={f"hdr.{instr.header}"})
 
     # --- IF ---
     if isinstance(instr, IfNode):

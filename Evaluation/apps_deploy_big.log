@@ -1,0 +1,457 @@
+=== Início das execuções (Sat 25 Oct 16:37:16 UTC 2025) ===
+Iterações: 10 | Timeout: 60s
+Usando SDE: /home/tofino/bf-sde-9.13.2
+
+=============================================
+🏷️  Programa: example3
+Caminho: Cerberus/multi3/example3.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:37:16 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.093961326s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:37:27 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.090687434s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:37:38 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.090740558s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:37:49 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.878531322s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:38:00 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.099886254s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:38:12 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.082735167s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:38:23 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.888989313s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:38:34 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.108176857s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:38:45 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.879880019s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:38:56 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.096880311s
+🛑 Sessão tmux encerrada (switchd_example3)
+
+=============================================
+🏷️  Programa: mew-core-crossfire
+Caminho: Mew-prototype/core/crossfire/mew-core-crossfire.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:39:07 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.086532700s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:39:19 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.092693672s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:39:30 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.089090982s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:39:41 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.095002278s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:39:52 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.093069911s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:40:03 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.094276179s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:40:15 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.094596068s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:40:26 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.095043161s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:40:37 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.896043269s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:40:48 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.104710827s
+🛑 Sessão tmux encerrada (switchd_mew-core-crossfire)
+
+=============================================
+🏷️  Programa: NetHide
+Caminho: BRI/o2/evaluation/programs/NativeP4Apps/NetHide/NetHide.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:40:59 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.096780366s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:41:10 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.098732787s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:41:22 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.884503171s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:41:33 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.094132936s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:41:44 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.885203219s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:41:55 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.885484677s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:42:06 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.903277080s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:42:17 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.883108943s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:42:28 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.102512305s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:42:39 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.889769783s
+🛑 Sessão tmux encerrada (switchd_NetHide)
+
+=============================================
+🏷️  Programa: p4control
+Caminho: p4control/switch/p4control.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:42:50 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.109878615s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:43:01 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.093325884s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:43:12 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.101529680s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:43:24 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.096586103s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:43:35 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.096609318s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:43:46 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.099132892s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:43:57 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.091172033s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:44:08 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.098944714s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:44:20 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.091534475s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:44:31 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.098938866s
+🛑 Sessão tmux encerrada (switchd_p4control)
+
+=============================================
+🏷️  Programa: PortKnocker
+Caminho: BRI/o2/evaluation/programs/NativeP4Apps/PortKnocker/PortKnocker.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:44:42 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.094986078s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:44:53 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.889878429s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:45:04 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.886524485s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:45:15 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.097810698s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:45:27 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.863061964s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:45:38 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.091759304s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:45:49 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.090380425s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:46:00 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.897339055s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:46:11 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.098639498s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:46:22 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.896040619s
+🛑 Sessão tmux encerrada (switchd_PortKnocker)
+
+=============================================
+🏷️  Programa: StatefulFirewall
+Caminho: BRI/o2/evaluation/programs/NativeP4Apps/StatefulFirewall/StatefulFirewall.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:46:33 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.898638808s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:46:44 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.890178448s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:46:55 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.900353255s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:47:06 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.095218644s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:47:17 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.095696370s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:47:29 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.889670260s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:47:40 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.888327763s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:47:51 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.098220252s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:48:02 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.900149502s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:48:13 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.093524090s
+🛑 Sessão tmux encerrada (switchd_StatefulFirewall)
+
+=============================================
+🏷️  Programa: SmartCookie-CRC_sde_9.13.3
+Caminho: p4-projects/SmartCookie/p4src/benchmark/SmartCookie-CRC_sde_9.13.3.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:48:24 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run1.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:49:26 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run2.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:50:28 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run3.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:51:30 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run4.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:52:32 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run5.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:53:34 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run6.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:54:36 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run7.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 16:55:38 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run8.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 16:56:40 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run9.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 16:57:42 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+⏰ TIMEOUT após 60s — bfshell não iniciou
+❌ bfshell não foi detetado nesta execução
+ℹ️  Verifica manualmente o log: tmp_SmartCookie-CRC_sde_9.13.3_run10.log
+🛑 Sessão tmux encerrada (switchd_SmartCookie-CRC_sde_9.13.3)
+
+=============================================
+🏷️  Programa: p4runpro
+Caminho: P4runpro/custom/p4src/p4runpro.p4
+
+🔁 Execução 1 de 10 - Sat 25 Oct 16:58:44 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.082283978s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 2 de 10 - Sat 25 Oct 16:58:55 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.082072119s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 3 de 10 - Sat 25 Oct 16:59:06 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.081891679s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 4 de 10 - Sat 25 Oct 16:59:17 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.297081786s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 5 de 10 - Sat 25 Oct 16:59:29 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.084903797s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 6 de 10 - Sat 25 Oct 16:59:40 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.088443709s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 7 de 10 - Sat 25 Oct 16:59:51 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.285600283s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 8 de 10 - Sat 25 Oct 17:00:02 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.088972382s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 9 de 10 - Sat 25 Oct 17:00:14 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.292980386s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+🔁 Execução 10 de 10 - Sat 25 Oct 17:00:25 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.079884004s
+🛑 Sessão tmux encerrada (switchd_p4runpro)
+
+=== Fim das execuções (Sat 25 Oct 17:00:36 UTC 2025) ===

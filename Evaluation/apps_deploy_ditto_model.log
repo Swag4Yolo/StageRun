@@ -1,0 +1,67 @@
+=== Início das execuções (Sun Oct 26 15:37:19 WET 2025) ===
+Iterações: 10 | Timeout: 60s
+Usando SDE: /home/docker/bf-sde-9.7.0
+
+=============================================
+🏷️  Programa: traffic_pattern_tofino
+Caminho: DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4
+
+🔁 Execução 1 de 10 - Sun Oct 26 15:37:19 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.391770896s
+1761493049.607440760 1761493041.215669864
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 2 de 10 - Sun Oct 26 15:37:29 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.182452141s
+1761493059.846129219 1761493051.663677078
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 3 de 10 - Sun Oct 26 15:37:39 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.179876655s
+1761493070.073438479 1761493061.893561824
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 4 de 10 - Sun Oct 26 15:37:50 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.384786265s
+1761493080.490918497 1761493072.106132232
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 5 de 10 - Sun Oct 26 15:38:00 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.386080241s
+1761493090.929937270 1761493082.543857029
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 6 de 10 - Sun Oct 26 15:38:10 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.181407465s
+1761493101.168267721 1761493092.986860256
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 7 de 10 - Sun Oct 26 15:38:21 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.181925805s
+1761493111.376770372 1761493103.194844567
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 8 de 10 - Sun Oct 26 15:38:31 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.385470087s
+1761493121.815013137 1761493113.429543050
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 9 de 10 - Sun Oct 26 15:38:41 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.180903132s
+1761493132.055300187 1761493123.874397055
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)
+
+🔁 Execução 10 de 10 - Sun Oct 26 15:38:52 WET 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.177560273s
+1761493142.266096417 1761493134.088536144
+🛑 Sessão tmux encerrada (switchd_traffic_pattern_tofino)

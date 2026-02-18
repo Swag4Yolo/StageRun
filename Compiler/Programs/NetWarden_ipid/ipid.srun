@@ -8,7 +8,6 @@ HANDLER FromExternal
   DEFAULT FWD InternalPortOUT
   begin:
     .hassign IPV4.ID, 1023
-  end:
 END
 
 HANDLER FromInternal

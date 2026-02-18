@@ -1,0 +1,85 @@
+Cerberus/multi3/example3.p4
+real	0m20,987s
+real	0m20,882s
+real	0m20,826s
+real	0m20,851s
+real	0m20,879s
+real	0m20,821s
+real	0m20,731s
+real	0m20,730s
+real	0m20,752s
+real	0m20,739s
+
+Crossfire
+real	0m35,992s
+real	0m35,885s
+real	0m35,851s
+real	0m35,917s
+real	0m35,775s
+real	0m37,626s
+real	0m35,795s
+real	0m35,724s
+real	0m35,727s
+real	0m35,957s
+
+NetHide
+real	0m7,648s
+real	0m7,570s
+real	0m7,495s
+real	0m7,646s
+real	0m7,624s
+real	0m7,488s
+real	0m7,615s
+real	0m7,623s
+real	0m7,577s
+real	0m7,613s
+
+p4control
+real	0m11,803s
+real	0m11,920s
+real	0m11,887s
+real	0m11,941s
+real	0m11,789s
+real	0m11,813s
+real	0m11,786s
+real	0m11,847s
+real	0m11,878s
+real	0m11,861s
+
+PortKnocker
+real	0m9,192s
+real	0m9,276s
+real	0m9,241s
+real	0m9,221s
+real	0m9,245s
+real	0m9,322s
+real	0m9,220s
+real	0m9,240s
+real	0m9,274s
+real	0m9,231s
+
+StatefulFw
+real	0m8,635s
+real	0m8,469s
+real	0m8,767s
+real	0m8,562s
+real	0m8,592s
+real	0m8,664s
+real	0m8,641s
+real	0m8,550s
+real	0m8,526s
+real	0m8,667s
+
+SmartCookie
+real	0m18,750s
+real	0m18,852s
+real	0m18,660s
+real	0m18,651s
+real	0m18,616s
+real	0m18,658s
+real	0m18,521s
+real	0m18,865s
+real	0m18,775s
+real	0m18,722s
+
+P4RunPro

@@ -9,7 +9,6 @@ HANDLER toRouterA
   DEFAULT FWD InternalPortOut
   begin:
     .hinc IPV4.TTL, 1
-  end:
 END
 
 HANDLER toRouterB
@@ -18,7 +17,6 @@ HANDLER toRouterB
   DEFAULT FWD InternalPortOut
   begin:
     .hinc IPV4.TTL, -1
-  end:
 END
 
 HANDLER FromInternal

@@ -1,0 +1,58 @@
+=== Início da compilação (Sun Oct 26 15:19:48 WET 2025) ===
+Cada programa será compilado 1 vez(es)
+
+---------------------------------------------
+Programa: DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4
+Usando flags extra: P4FLAGS="-Xp4c=--disable-parse-depth-limit"
+
+🔁 Execução 1 de 1 - Sun Oct 26 15:19:48 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS="-Xp4c=--disable-parse-depth-limit"
+Using SDE          /home/docker/bf-sde-9.13.3
+Using SDE_INSTALL /home/docker/bf-sde-9.13.3/install
+INFO: Adding /home/docker/bf-sde-9.13.3/install/bin to $PATH
+Using SDE version bf-sde-9.13.3
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.13.3/install/bin/bf-p4c
+P4 compiler version: 9.13.3 (SHA: 7de9294) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.13.3/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.13.3/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... FAILED
+========================= make.log =========================
+    ingress::custom_metadata.bytes_to_add<12b>
+    ingress::custom_metadata.tmp_add_bytes<16b>[11:0]
+    ingress::custom_metadata.target_size<16b>[11:0]
+    ingress::__bfp4c_bridged_metadata.__pad_1<4b>
+    ingress::padding_meta.totalLen<16b>[15:12]
+    ingress::ipv4.totalLen<16b>[15:12]
+    ingress::padding_meta.origLen<16b>[15:12]
+    ingress::custom_metadata.tmp_add_bytes<16b>[15:12]
+    ingress::custom_metadata.target_size<16b>[15:12]
+    egress::custom_metadata.bytes_to_add<12b>
+
+
+
+1 error, 10 warnings generated.
+
+Skipping assembler, assembly file is empty
+make[2]: *** [CMakeFiles/traffic_pattern_tofino-tofino-gen.dir/build.make:74: traffic_pattern_tofino/tofino/manifest.json] Error 2
+make[2]: *** Deleting file 'traffic_pattern_tofino/tofino/manifest.json'
+make[1]: *** [CMakeFiles/Makefile2:223: CMakeFiles/traffic_pattern_tofino-tofino-gen.dir/all] Error 2
+make: *** [Makefile:130: all] Error 2
+========================= make.log =========================
+
+ERROR: For the details and to obtain technical support see the file
+       /home/docker/bf-sde-9.13.3/logs/p4-build//traffic_pattern_tofino/make.log
+
+
+real	0m18.084s
+user	0m21.983s
+sys	0m1.014s
+❌ Erro na execução 1
+
+=== Fim da compilação (Sun Oct 26 15:20:06 WET 2025) ===

@@ -22,10 +22,8 @@ HANDLER sales_to_sales
     .in label
     .out label
     .br.cond label == 1, L_FWD:
-    .exit
   L_FWD:
     .fwd pToSales
-  end:
 END
 
 # Stage 2: Dev → Dev (DEV_TAG = 0x00000002)
@@ -38,10 +36,8 @@ HANDLER dev_to_dev
     .in label
     .out label
     .br.cond label == 2, L_FWD:
-    .exit
   L_FWD:
     .fwd pToDev
-  end:
 END
 
 # Stage 3: Alice (1.0.0.1) → Dev (2.0.0.0)
@@ -54,10 +50,8 @@ HANDLER alice_to_dev
     .in label
     .out label
     .br.cond label == 1, L_FWD:
-    .exit
   L_FWD:
     .fwd pToDev
-  end:
 END
 
 # Stage 4: Dev admin (2.0.0.1) → Server1 (3.0.0.1)
@@ -71,8 +65,6 @@ HANDLER dev_admin_to_server1
     .out label
     # Check if (DEV_TAG | SECRET)
     .br.cond label == 305140274, L_FWD: # (0x00000002 | 0x12301230):
-    .exit
   L_FWD:
     .fwd pToServer
-  end:
 END

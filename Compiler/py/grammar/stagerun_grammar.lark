@@ -1,6 +1,6 @@
 // stagerun_grammar.lark
 
-start: statement (NEWLINE+ statement)* NEWLINE*
+start: NEWLINE* statement (NEWLINE+ statement)* NEWLINE*
 
 ?statement: port_in_decl
           | port_out_decl
@@ -8,7 +8,7 @@ start: statement (NEWLINE+ statement)* NEWLINE*
           | var_decl
           | reg_decl
           | hash_decl
-          | prefilter
+          | handler
 
 // PORTS
 // port_declr: "PORT" NAME
@@ -23,13 +23,7 @@ var_decl: "VAR" NAME
 reg_decl: "REG" NAME
 hash_decl: "HASH" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}"
 
-// Prefilter
-// prefilter: "HANDLER" NAME NEWLINE* (key_clause | default_clause | body_clause)* "END"
-// key_clause: "KEY" key_ref (comp_op | mask_op) value NEWLINE*
-// default_clause: "DEFAULT" default_instr NEWLINE*
-// body_clause: "begin:" NEWLINE* (instr NEWLINE)* "end:" NEWLINE*
-
-prefilter: "HANDLER" NAME NEWLINE+ clause_line* "END"
+handler: "HANDLER" NAME NEWLINE+ clause_line* "END"
 
 ?clause_line: key_clause NEWLINE+
             | default_clause NEWLINE+
@@ -38,25 +32,17 @@ prefilter: "HANDLER" NAME NEWLINE+ clause_line* "END"
 key_clause: "KEY" key_ref (comp_op | mask_op) value
 default_clause: "DEFAULT" default_instr
 
-body_clause: "begin:" NEWLINE+ instr_line* "end:" NEWLINE+
-instr_line: instr NEWLINE+
+body_clause: label_decl NEWLINE+ instr_line+ NEWLINE*
+instr_line: instr NEWLINE
 
+?default_instr: default_fwd_instr
+              | default_drop_instr
+              | default_fwd_queue_instr
 
-
-// prefilter: "HANDLER" NAME NEWLINE* (clause NEWLINE*)* "END"
-
-// ?clause: key_clause
-//        | default_clause
-//        | body_clause
-
-// key_clause: "KEY" key_ref (comp_op | mask_op) value
-// default_clause: "DEFAULT" default_instr
-// body_clause: "begin:" NEWLINE* (instr NEWLINE+)* "end:"
-
-
-?default_instr: fwd_instr
-              | drop_instr
-              | fwd_queue_instr
+default_fwd_instr: "FWD" NAME
+default_fwd_queue_instr: "ENQUEUE" NAME SIGNED_INT
+default_drop_instr: "DROP"
+// default_rts_instr: "RTS"
 
 
       // Fwd Ops      
@@ -64,66 +50,79 @@ instr_line: instr NEWLINE+
       | fwd_queue_instr
       | drop_instr
       | rts_instr
-
+      // Arith Instructions
+      | sum_instr
+      | sub_instr
+      | mul_instr
       | hinc_instr
       | header_assign_instr
       | clone_instr
       | paddtern_instr
+      | time_instr
       // Mem Ops
       | minc_instr
       | mget_instr
       | mset_instr
       // Convert ops
-      | htovar_instr
-      | hash_to_var_instr
-      | var_to_hdr_instr
+      | copy_header_to_var_instr
+      | copy_hash_to_var_instr
+      | copy_var_to_header_instr
       | activate_instr
       | ingress_ts_instr
-      | airth_instr
+      // | airth_instr
       | hairth_instr
       | random_instr
       | in_instr
       | out_instr
-      | if_block
+      | conditional_clause
 
 
 // Instructions List
-fwd_instr: "FWD" NAME
-fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
-drop_instr: "DROP"
-rts_instr: "RTS"
+fwd_instr: ".fwd" NAME
+fwd_queue_instr: ".fwd.enq" NAME SIGNED_INT
+drop_instr: ".drop"
+rts_instr: ".rts"
 
 hinc_instr: ".hinc" header_ref "," SIGNED_INT
-header_assign_instr: "HASSIGN" header_ref (SIGNED_INT | STRING)
-clone_instr: "CLONE" NAME
-paddtern_instr: "PADTTERN" INT+
-activate_instr: "ACTIVATE" NAME
-ingress_ts_instr: "IGTS" "->" var_ref
-random_instr: "RAND" SIGNED_INT "->" var_ref
+header_assign_instr: ".hassign" header_ref "," (SIGNED_INT | STRING)
+clone_instr: ".clone" NAME
+paddtern_instr: ".pad.pattern" INT+
+activate_instr: ".activate" NAME
+ingress_ts_instr: ".igts" "->" var_ref
+random_instr: ".rand" SIGNED_INT "," var_ref
+time_instr: ".time" "," var_ref
 
-airth_instr: "ARIT" var_ref arith_op (var_ref | SIGNED_INT) "->" var_ref
-hairth_instr: "HARIT" header_ref arith_op (header_ref | SIGNED_INT) "->" header_ref
+// Arithmetic Operations
+  // Headers
+hairth_instr: ".harit" header_ref arith_op (header_ref | SIGNED_INT) "->" header_ref
+  // Vars
+// airth_instr: ".arit" var_ref arith_op (var_ref | SIGNED_INT) "->" var_ref
+sum_instr: ".sum" var_ref "," var_ref "," var_ref
+sub_instr: ".sub" var_ref "," var_ref "," var_ref
+mul_instr: ".mul" var_ref "," SIGNED_INT "," var_ref
 
 // Memory Instructions
-minc_instr: "MINC" reg_ref "[" (header_ref | hash_ref) "]" (header_ref | SIGNED_INT) "->" var_ref ("(" NAME ")")?
-mget_instr: "MGET" reg_ref "[" (header_ref | hash_ref) "]" "->" var_ref ("(" NAME ")")?
-mset_instr: "MSET" reg_ref "[" (header_ref | hash_ref) "]" (header_ref | var_ref | SIGNED_INT)
+minc_instr: ".minc" reg_ref "[" (header_ref | hash_ref) "]" (header_ref | SIGNED_INT) "," var_ref ("(" NAME ")")?
+mget_instr: ".mget" reg_ref "[" (header_ref | hash_ref) "]" "," var_ref ("(" NAME ")")?
+mset_instr: ".mset" reg_ref "[" (header_ref | hash_ref) "]" "," (header_ref | var_ref | SIGNED_INT)
 
 // Convert Instrs
-htovar_instr: "HTOVAR" header_ref "->" NAME
-hash_to_var_instr: "HASHTOVAR" hash_ref "->" var_ref
-var_to_hdr_instr: "VTOHEADER" var_ref "->" header_ref
+copy_header_to_var_instr: ".hcopy" header_ref "," var_ref
+copy_hash_to_var_instr: ".hashcopy" hash_ref "," var_ref
+copy_var_to_header_instr: ".copy" var_ref "," header_ref
 
 // State Instrs
 in_instr: "IN" var_ref
 out_instr: "OUT" var_ref
 
 // Conditional Instrs
+//TODO: delete
 if_block: if_clause elif_clause* else_clause? "ENDIF"
 if_clause: "IF" bool_expr ":" instr+
 elif_clause: "ELIF" bool_expr ":" instr+
 else_clause: "ELSE" ":" instr+
 
+conditional_clause: ".br.cond" bool_expr "," label
 
 // =====================
 // Expressões booleanas SEM headers
@@ -158,7 +157,6 @@ comp_op: EQ | NE | LT | LE | GT | GE
 MASK: "&"
 mask_op: MASK
 
-
 ?arith_val: var_ref
           | SIGNED_INT
           | "(" arith_val ")"
@@ -179,21 +177,28 @@ arith_op: ARIT_OR | ARIT_AND | ARIT_SUM | ARIT_SUB | ARIT_MUL
 
 key_ref:  NAME "." NAME
 header_ref: NAME "." NAME
-var_ref: NAME
+var_ref: "$"NAME
 reg_ref: NAME
 hash_ref: NAME
 value: NAME | STRING | SIGNED_INT
 
+// Label
+label_decl: NAME ":"
+label: NAME
+
 // IPV4_ADDR: /(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3})/
 NAME: /[A-Za-z_][A-Za-z0-9_]*/
 STRING: /"[^"]*"/
+LINE_COMMENT: /#[^\n]*/
+BLOCK_COMMENT: /\/\*[\s\S]*?\*\//
+%ignore LINE_COMMENT
+%ignore BLOCK_COMMENT
 %import common.INT
 %import common.SIGNED_INT
-// %import common.WS
-// %ignore WS
-// %ignore /#[^\n]*/
-// %ignore /[\r\n]+/
-
 %import common.NEWLINE
 %import common.WS_INLINE
 %ignore WS_INLINE
+// %import common.WS
+// %ignore WS
+// %ignore /#[^\n]*/ // Language Comments
+// %ignore /[\r\n]+/

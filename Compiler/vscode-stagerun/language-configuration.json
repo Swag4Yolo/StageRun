@@ -3,8 +3,8 @@
     "lineComment": "#"
   },
   "brackets": [
-    ["BEGIN", "END"],
-    ["BODY", "END"]
+    ["HANDLER", "END"],
+    // ["BODY", "END"]
   ],
   "autoClosingPairs": [
     { "open": "\"", "close": "\"" }

@@ -44,12 +44,9 @@ HANDLER from_external #handler
 
   L_TEST_DROP:
     .br.cond $nSlowFlows > 1, L_DROP
-    .exit
 
   L_DROP:
     .fwd.drop
-    .exit
-  end:
 
 END
 

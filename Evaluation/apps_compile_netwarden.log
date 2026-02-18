@@ -1,0 +1,238 @@
+=== Início da compilação (Sun 26 Oct 13:51:29 UTC 2025) ===
+Cada programa será compilado 10 vez(es)
+
+---------------------------------------------
+Programa: NetWarden/release/pack_mal/pack_mal.p4
+Usando flags extra: P4FLAGS=""
+
+🔁 Execução 1 de 10 - Sun 26 Oct 13:51:29 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m13.977s
+user	6m25.482s
+sys	0m9.424s
+✅ Execução 1 concluída com sucesso
+
+🔁 Execução 2 de 10 - Sun 26 Oct 13:52:43 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m18.232s
+user	6m31.406s
+sys	0m9.450s
+✅ Execução 2 concluída com sucesso
+
+🔁 Execução 3 de 10 - Sun 26 Oct 13:54:01 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m15.228s
+user	6m20.494s
+sys	0m9.739s
+✅ Execução 3 concluída com sucesso
+
+🔁 Execução 4 de 10 - Sun 26 Oct 13:55:16 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m16.172s
+user	6m17.655s
+sys	0m9.718s
+✅ Execução 4 concluída com sucesso
+
+🔁 Execução 5 de 10 - Sun 26 Oct 13:56:32 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m17.489s
+user	6m22.888s
+sys	0m9.457s
+✅ Execução 5 concluída com sucesso
+
+🔁 Execução 6 de 10 - Sun 26 Oct 13:57:50 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m16.724s
+user	6m20.975s
+sys	0m9.787s
+✅ Execução 6 concluída com sucesso
+
+🔁 Execução 7 de 10 - Sun 26 Oct 13:59:07 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m17.419s
+user	6m25.871s
+sys	0m9.492s
+✅ Execução 7 concluída com sucesso
+
+🔁 Execução 8 de 10 - Sun 26 Oct 14:00:24 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m16.378s
+user	6m21.075s
+sys	0m9.601s
+✅ Execução 8 concluída com sucesso
+
+🔁 Execução 9 de 10 - Sun 26 Oct 14:01:40 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m17.025s
+user	6m22.591s
+sys	0m9.781s
+✅ Execução 9 concluída com sucesso
+
+🔁 Execução 10 de 10 - Sun 26 Oct 14:02:57 UTC 2025
+Comando: /home/tofino/tools/p4_build.sh -p NetWarden/release/pack_mal/pack_mal.p4 P4FLAGS=""
+Using SDE          /home/tofino/bf-sde-9.13.2
+Using SDE_INSTALL /home/tofino/bf-sde-9.13.2/install
+Using SDE version bf-sde-9.13.2
+
+OS Name: Ubuntu 22.04.4 LTS
+This system has 32GB of RAM and 16 CPU(s)
+Parallelization:  Recommended: -j16   Actual: -j16
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/tofino/bf-sde-9.13.2/install/bin/bf-p4c
+P4 compiler version: 9.13.2 (SHA: 1baf055) (p4c-based)
+Build Dir: /home/tofino/bf-sde-9.13.2/build/p4-build//pack_mal
+ Logs Dir: /home/tofino/bf-sde-9.13.2/logs/p4-build//pack_mal
+
+  Building pack_mal        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	1m16.405s
+user	6m19.120s
+sys	0m9.560s
+✅ Execução 10 concluída com sucesso
+
+=== Fim da compilação (Sun 26 Oct 14:04:14 UTC 2025) ===

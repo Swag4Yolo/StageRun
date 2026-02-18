@@ -44,6 +44,17 @@ class RegDecl(ASTNode):
     """REG <name>."""
     name: str
 
+@dataclass
+class LabelDecl(ASTNode):
+    """<name>:"""
+    name: str
+
+@dataclass
+class HashDecl(ASTNode):
+    """Hash <name>"""
+    name: str
+    args: List
+
 
 # ======================
 # Instructions
@@ -66,29 +77,41 @@ class DropInstr(InstructionNode):
 
 @dataclass
 class FwdAndEnqueueInstr(InstructionNode):
-    target: str
+    port: str
     qid: int
 
 
 @dataclass
 class HeaderIncrementInstr(InstructionNode):
     """HINC IPV4.TTL <value>."""
-    target: str         # e.g., "IPV4.TTL"
+    header: str         # e.g., "IPV4.TTL"
     value: int
 
 
 @dataclass
 class HeaderAssignInstr(InstructionNode):
     """HASSIGN IPV4.ID <value>."""
-    target: str         # e.g., "IPV4.ID"
+    header: str         # e.g., "IPV4.ID"
     value: int
 
 
 @dataclass
-class HtoVarInstr(InstructionNode):
-    """HTOVAR IPV4.PROTO -> proto."""
-    target: str         # e.g., "IPV4.PROTO"
-    var_name: str
+class CopyHeaderToVarInstr(InstructionNode):
+    """.copy IPV4.PROTO, $proto"""
+    header: str         # e.g., "IPV4.PROTO"
+    var: str
+
+@dataclass
+class CopyHashToVarInstr(InstructionNode):
+    """.hashcopy hash_name, $value"""
+    hash: str         # e.g., "IPV4.PROTO"
+    var: str
+
+@dataclass
+class CopyVarToHeaderInstr(InstructionNode):
+    """.hcopy $proto, IPV4.TCP"""
+    var: str         # e.g., "IPV4.PROTO"
+    header: str
 
 @dataclass
 class PadToPatternInstr(InstructionNode):
@@ -125,30 +148,30 @@ class IfNode(InstructionNode):
 
 
 # ======================
-# Prefilter
+# Handler
 # ======================
 
 @dataclass
-class PreFilterKey(ASTNode):
+class HandlerKey(ASTNode):
     field: str
     operand: str
     value: str | int
 
 @dataclass
-class PreFilterDefault(ASTNode):
+class HandlerDefault(ASTNode):
     instr: InstructionNode
 
 @dataclass
-class BodyNode(ASTNode):
+class HandlerBodyNode(ASTNode):
     instructions: List[InstructionNode] = field(default_factory=list)
 
 
 @dataclass
-class PreFilterNode(ASTNode):
+class HandlerNode(ASTNode):
     name: str
-    keys: List[PreFilterKey] = field(default_factory=list)
+    keys: List[HandlerKey] = field(default_factory=list)
     default_action: Optional[InstructionNode] = None
-    body: Optional[BodyNode] = None
+    body: Optional[HandlerBodyNode] = None
 
 
 # ======================
@@ -162,4 +185,5 @@ class ProgramNode(ASTNode):
     qsets: List[QueueSetDecl] = field(default_factory=list)
     vars: List[VarDecl] = field(default_factory=list)
     regs: List[RegDecl] = field(default_factory=list)
-    prefilters: List[PreFilterNode] = field(default_factory=list)
+    hashes: List[HashDecl] = field(default_factory=list)
+    prefilters: List[HandlerNode] = field(default_factory=list)

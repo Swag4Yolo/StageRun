@@ -190,6 +190,10 @@ def _serialize_resources(program: ProgramNode):
 
     regs = [reg.name for reg in program.regs]
     vars = [var.name for var in program.vars]
+    # hashes = [h[name] = h.args for h in program.hashes]
+    hashes = dict()
+    for h in program.hashes:
+        hashes[h.name] = h.args
     resources = {
         "ingress_ports": pin,
         "egress_ports": pout,
@@ -197,6 +201,7 @@ def _serialize_resources(program: ProgramNode):
         # "hashes": program.hashes,
         "registers": regs,
         "vars": vars,
+        "hashes": hashes
         # "clones": program.,
     }
 

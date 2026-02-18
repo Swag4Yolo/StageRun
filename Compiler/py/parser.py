@@ -43,7 +43,7 @@ class StageRunTransformer(Transformer):
 
     # --- Top-level program assembly ----------------------------------------
     def start(self, *statements):
-        ports_in, ports_out, qsets, program_vars, regs, prefilters = [], [], [], [], [], []
+        ports_in, ports_out, qsets, program_vars, regs, prefilters, hashes = [], [], [], [], [], [], []
         for s in statements:
             if isinstance(s, PortDecl):
                 (ports_in if s.direction == "IN" else ports_out).append(s)
@@ -53,7 +53,9 @@ class StageRunTransformer(Transformer):
                 program_vars.append(s)
             elif isinstance(s, RegDecl):
                 regs.append(s)
-            elif isinstance(s, PreFilterNode):
+            elif isinstance(s, HashDecl):
+                hashes.append(s)
+            elif isinstance(s, HandlerNode):
                 prefilters.append(s)
         return ProgramNode(
             ports_in=ports_in,
@@ -61,6 +63,7 @@ class StageRunTransformer(Transformer):
             qsets=qsets,
             vars=program_vars,
             regs=regs,
+            hashes=hashes,
             prefilters=prefilters,
         )
 
@@ -83,13 +86,25 @@ class StageRunTransformer(Transformer):
         # "VAR" NAME
         return VarDecl(name=str(name))
 
+    def hash_decl(self, name, *refs):
+        # "HASH" NAME
+        return HashDecl(name=str(name), args=refs)
+    
+    def reg_decl(self, name):
+        # "HASH" NAME
+        return RegDecl(name=str(name))
+    
+    def label_decl(self, name):
+        return LabelDecl(name=str(name))
+    
+
     # --- Prefilter + clauses ------------------------------------------------
     def key_clause(self, key_ref, op, val):
-        return PreFilterKey(field=key_ref,  operand=op, value=val)
+        return HandlerKey(field=key_ref,  operand=op, value=val)
 
     def default_clause(self, instr):
         # instr já é, por exemplo, ForwardInstr ou DropInstruction
-        return PreFilterDefault(instr=instr)
+        return HandlerDefault(instr=instr)
 
     # def body_clause(self, *instrs):
     #     return BodyNode(instructions=list(instrs))
@@ -97,19 +112,21 @@ class StageRunTransformer(Transformer):
     def body_clause(self, *items):
         instrs = [x for x in items
                 if x is not None and not (isinstance(x, Token) and x.type == "NEWLINE")]
-        return BodyNode(instructions=instrs)
+        for x in items:
+            print("x=>",x) 
+        return HandlerBodyNode(instructions=instrs)
 
-    def prefilter(self, name, *clauses):
+    def handler(self, name, *clauses):
         keys, default, body = [], None, None
 
         for c in clauses:
-            if isinstance(c, PreFilterKey):
+            if isinstance(c, HandlerKey):
                 keys.append(c)
-            elif isinstance(c, PreFilterDefault):
+            elif isinstance(c, HandlerDefault):
                 default = c.instr
-            elif isinstance(c, BodyNode):
+            elif isinstance(c, HandlerBodyNode):
                 body = c
-        return PreFilterNode(name=str(name), keys=keys,
+        return HandlerNode(name=str(name), keys=keys,
                             default_action=default, body=body)
 
     # --- Instructions -------------------------------------------------------
@@ -117,7 +134,7 @@ class StageRunTransformer(Transformer):
         return FwdInstr(port=str(target))
     
     def fwd_queue_instr(self, target, qid):
-        return FwdAndEnqueueInstr(target=str(target), qid=int(qid))
+        return FwdAndEnqueueInstr(port=str(target), qid=int(qid))
 
     def drop_instr(self):
         return DropInstr()
@@ -126,19 +143,30 @@ class StageRunTransformer(Transformer):
         res_value = value
         if isinstance(value, str):
             res_value = ipaddress.ip_address(value)
-        return HeaderAssignInstr(target=str(hdr_ref), value=int(res_value))
+        return HeaderAssignInstr(header=str(hdr_ref), value=int(res_value))
 
     def hinc_instr(self, hdr_ref, value):
-        return HeaderIncrementInstr(target=str(hdr_ref), value=int(value))
-
-    def htovar_instr(self, hdr_ref, varname):
-        return HtoVarInstr(target=str(hdr_ref), var_name=str(varname))
+        return HeaderIncrementInstr(header=str(hdr_ref), value=int(value))
 
     def paddtern_instr(self, *pattern):
         return PadToPatternInstr(pattern=pattern)
 
     def clone_instr(self, target):
         return CloneInstr(port=str(target))
+
+    # Copy Convertion Instructions
+    def copy_header_to_var_instr(self, header_ref, var_ref):
+        return CopyHeaderToVarInstr(header=str(header_ref), var=str(var_ref))
+
+    def copy_hash_to_var_instr(self, hash_ref, var_ref):
+        return CopyHashToVarInstr(hash=str(hash_ref), var=str(var_ref))
+
+    def copy_var_to_header_instr(self, var_ref, header_ref):
+        return CopyVarToHeaderInstr(var=str(var_ref), header=str(header_ref))
+    
+# htovar_instr: "HTOVAR" header_ref "->" NAME
+# hash_to_var_instr: "HASHTOVAR" hash_ref "->" var_ref
+# var_to_hdr_instr: "VTOHEADER" var_ref "->" header_ref
 
     # --- IF / ELIF / ELSE / ENDIF ------------------------------------------
     def if_block(self, if_clause, *rest):
@@ -161,6 +189,15 @@ class StageRunTransformer(Transformer):
     def else_clause(self, *instrs):
         return list(instrs)
 
+    # --- Default Instructions -------------------------------------------------------
+    def default_fwd_instr(self, target):
+        return FwdInstr(port=str(target))
+    
+    def default_fwd_queue_instr(self, target, qid):
+        return FwdAndEnqueueInstr(port=str(target), qid=int(qid))
+
+    def default_drop_instr(self):
+        return DropInstr()
 
     # --- Boolean expressions → canonical string ----------------------------
     # We render a safe, fully-parenthesized textual form so semantics/IR

@@ -18,6 +18,29 @@ from Core.ast_nodes import *
 class SemanticError(Exception):
     pass
 
+class UndefinedVariableError(SemanticError):
+    def __init__(self, handler, var):
+        super().__init__(f"Undefined Variable '{var}' used in {handler}.")
+
+class UndefinedHashError(SemanticError):
+    def __init__(self, handler, var):
+        super().__init__(f"Undefined Hash '{var}' used in {handler}.")
+
+class UnsupportedHeaderError(SemanticError):
+    def __init__(self, handler:str, header:str):
+        super().__init__(f"Unsupported Header {header} used in {handler}.")
+
+class UndefinedInPortError(SemanticError):
+    def __init__(self, port:str):
+        super().__init__(f"Undefined In Port {port}.")
+
+class UndefinedOutPortError(SemanticError):
+    def __init__(self, port:str):
+        super().__init__(f"Undefined Out Port {port}.")
+
+# -------------------------
+# Supported Headers
+# -------------------------
 
 SUPPORTED_HEADERS = {"IPV4.TTL", "IPV4.ID", "IPV4.LEN", "IPV4.PROTO", "IPV4.DST", "IPV4.SRC", "TCP.ACKNO", "IPV4.IHL", "TCP.DATAOFFSET", "TCP.FLAGS"}
 
@@ -37,12 +60,31 @@ def _validate_ports(program: ProgramNode) -> tuple[List[str], List[str]]:
         raise SemanticError(f"Duplicate port name(s): {', '.join(dups)}")
     return pin, pout
 
+def _validate_in_port(program:ProgramNode, handler:str, port:str):
+    pin = [p.name for p in program.ports_in]
+    if port not in pin:
+        raise UndefinedInPortError(port=port)
+def _validate_out_port(program:ProgramNode, handler:str, port:str):
+    pout = [p.name for p in program.ports_out]
+    if port not in pout:
+        raise UndefinedOutPortError(port=port)
+def _validate_header(program:ProgramNode, handler:str, header:str):
+    if header not in SUPPORTED_HEADERS:
+        raise UnsupportedHeaderError(handler=handler, header=header)
+def _validate_var(program:ProgramNode, handler:str, var:str):
+    vars = [v.name for v in program.vars]
+    if var not in vars:
+        raise UndefinedVariableError(handler=handler, var=var)
+def _validate_hash(program:ProgramNode, handler:str, hash:str):
+    if hash not in program.hashes:
+        raise UndefinedHashError(handler=handler, hash=hash)
 
-def _validate_prefilter(pf: PreFilterNode, ports_in: Set[str], ports_out: Set[str]) -> Dict[str, Any]:
+
+def _validate_prefilter(program: ProgramNode, pf: HandlerNode, ports_in: Set[str], ports_out: Set[str]) -> Dict[str, Any]:
     # keys
     keys = []
     for k in pf.keys or []:
-        if not isinstance(k, PreFilterKey):
+        if not isinstance(k, HandlerKey):
             raise SemanticError(f"PREFILTER '{pf.name}': invalid key entry")
         # field like "PKT.PORT" or "HDR.FIELD"
         field = k.field
@@ -53,47 +95,43 @@ def _validate_prefilter(pf: PreFilterNode, ports_in: Set[str], ports_out: Set[st
                 raise SemanticError(f"PREFILTER '{pf.name}': KEY references unknown port '{value}'")
         keys.append({"field": field, "value": value})
 
-    # default action (only DROP, FWD, FWD_AND_ENQUEUE are allowed here)
-    default_action = None
-    if pf.default_action is not None:
+    if pf.default_action:
         da = pf.default_action
-        
         if isinstance(da, FwdInstr):
-            if da.port not in ports_out:
-                raise SemanticError(f"PREFILTER '{pf.name}': DEFAULT FWD to undefined egress '{da.port}'")
-            default_action = {"op": "FWD", "args": {"dest": da.port}}
-
+            _validate_out_port(program, pf.name, da.port)
         elif isinstance(da, FwdAndEnqueueInstr):
-            if da.target not in ports_out:
-                raise SemanticError(f"PREFILTER '{pf.name}': DEFAULT FWD_AND_ENQUEUE to undefined egress '{da.target}'")
-            default_action = {"op": "FWD_AND_ENQUEUE", "args": {"dest": da.target, "qid": da.qid}}
-        
+            _validate_out_port(program, pf.name, da.port)
         elif isinstance(da, DropInstr):
-            default_action = {"op": "DROP", "args": {}}
+            pass
         else:
             raise SemanticError(f"PREFILTER '{pf.name}': unsupported DEFAULT instruction")
 
     # body checks (headers validity, ports existence)
-    if pf.body and isinstance(pf.body, BodyNode):
+    if pf.body and isinstance(pf.body, HandlerBodyNode):
         for instr in pf.body.instructions:
             if isinstance(instr, FwdInstr):
-                if instr.port not in ports_out:
-                    raise SemanticError(f"PREFILTER '{pf.name}': FWD to undefined egress '{instr.port}'")
+                _validate_out_port(program, pf.name, instr.port)
             elif isinstance(instr, FwdAndEnqueueInstr):
-                if instr.target not in ports_out:
-                    raise SemanticError(f"PREFILTER '{pf.name}': FWD_AND_ENQUEUE to undefined egress '{instr.target}'")
+                _validate_out_port(program, pf.name, instr.port)
+                # _validate_queue_port(program, pf.name, instr.target)
             elif isinstance(instr, DropInstr):
                 pass
             elif isinstance(instr, HeaderAssignInstr):
-                if instr.target not in SUPPORTED_HEADERS:
-                    raise SemanticError(f"PREFILTER '{pf.name}': ASSIGN unsupported header '{instr.target}'")
+                _validate_header(program, pf.name, instr.header)
             elif isinstance(instr, HeaderIncrementInstr):
-                if instr.target not in SUPPORTED_HEADERS:
-                    raise SemanticError(f"PREFILTER '{pf.name}': HINC unsupported header '{instr.target}'")
-            elif isinstance(instr, HtoVarInstr):
-                # allow any header here; If you want, restrict to SUPPORTED_HEADERS
-                if instr.target not in SUPPORTED_HEADERS:
-                    raise SemanticError(f"PREFILTER '{pf.name}': HTOVAR unsupported header '{instr.target}'")
+                _validate_header(program, pf.name, instr.header)
+
+            # Copy Instructions
+            elif isinstance(instr, CopyHeaderToVarInstr):
+                _validate_header(program, pf.name, instr.header)
+                _validate_var(program, pf.name, instr.var)
+            elif isinstance(instr, CopyHashToVarInstr):
+                _validate_hash(program, pf.name, instr.hash)
+                _validate_var(program, pf.name, instr.var)
+            elif isinstance(instr, CopyVarToHeaderInstr):
+                _validate_header(program, pf.name, instr.header)
+                _validate_var(program, pf.name, instr.var)
+
             elif isinstance(instr, PadToPatternInstr):
                 for pat in instr.pattern:
                     if pat < 64:
@@ -102,8 +140,6 @@ def _validate_prefilter(pf: PreFilterNode, ports_in: Set[str], ports_out: Set[st
                 # block-level structures (IfNode etc.) are allowed — CFG builder tratará depois
                 # Se quiseres ser estrito: testar nomes de classe aqui.
                 pass
-
-    return {"name": pf.name, "keys": keys, "default": default_action}
 
 
 def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
@@ -116,6 +152,12 @@ def semantic_check(program: ProgramNode, program_name: str) -> Dict[str, Any]:
 
     # validate prefilters independently
     for pf in program.prefilters or []:
-        if not isinstance(pf, PreFilterNode):
+        if not isinstance(pf, HandlerNode):
             raise SemanticError("Invalid prefilter node in AST")
-        _validate_prefilter(pf, ports_in_set, ports_out_set)
+        _validate_prefilter(program, pf, ports_in_set, ports_out_set)
+
+# TODO LIST:
+# 1. Copy Instructions
+#    - Should validate if variable or hash exists along the program
+
+

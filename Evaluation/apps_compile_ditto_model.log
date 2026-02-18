@@ -1,0 +1,248 @@
+=== Início da compilação (Sun Oct 26 15:43:00 WET 2025) ===
+Cada programa será compilado 10 vez(es)
+
+---------------------------------------------
+Programa: DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4
+Usando flags extra: P4FLAGS=""
+
+🔁 Execução 1 de 10 - Sun Oct 26 15:43:00 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m41.971s
+user	11m35.774s
+sys	0m18.458s
+✅ Execução 1 concluída com sucesso
+
+🔁 Execução 2 de 10 - Sun Oct 26 15:45:42 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m41.776s
+user	11m49.527s
+sys	0m18.842s
+✅ Execução 2 concluída com sucesso
+
+🔁 Execução 3 de 10 - Sun Oct 26 15:48:24 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m52.331s
+user	12m9.321s
+sys	0m18.987s
+✅ Execução 3 concluída com sucesso
+
+🔁 Execução 4 de 10 - Sun Oct 26 15:51:17 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m50.288s
+user	12m18.830s
+sys	0m19.157s
+✅ Execução 4 concluída com sucesso
+
+🔁 Execução 5 de 10 - Sun Oct 26 15:54:07 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m53.834s
+user	12m49.133s
+sys	0m20.014s
+✅ Execução 5 concluída com sucesso
+
+🔁 Execução 6 de 10 - Sun Oct 26 15:57:01 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m51.467s
+user	12m40.859s
+sys	0m19.942s
+✅ Execução 6 concluída com sucesso
+
+🔁 Execução 7 de 10 - Sun Oct 26 15:59:52 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m53.541s
+user	12m31.331s
+sys	0m19.498s
+✅ Execução 7 concluída com sucesso
+
+🔁 Execução 8 de 10 - Sun Oct 26 16:02:46 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m53.812s
+user	12m48.888s
+sys	0m19.897s
+✅ Execução 8 concluída com sucesso
+
+🔁 Execução 9 de 10 - Sun Oct 26 16:05:40 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m55.381s
+user	12m40.276s
+sys	0m20.068s
+✅ Execução 9 concluída com sucesso
+
+🔁 Execução 10 de 10 - Sun Oct 26 16:08:35 WET 2025
+Comando: /home/docker/tools/p4_build.sh -p DANE/NativeP4Apps/Ditto/Tofino1/originalImplementation/p4/traffic_pattern_tofino/p4src/traffic_pattern_tofino.p4 P4FLAGS=""
+Using SDE          /home/docker/bf-sde-9.7.0
+Using SDE_INSTALL /home/docker/bf-sde-9.7.0/install
+INFO: Adding /home/docker/bf-sde-9.7.0/install/bin to $PATH
+Using SDE version bf-sde-9.7.0
+
+OS Name: Ubuntu 20.04.6 LTS
+This system has 16GB of RAM and 8 CPU(s)
+Parallelization:  Recommended: -j8   Actual: -j8
+
+Compiling for p4_14/v1model
+P4 compiler path:    /home/docker/bf-sde-9.7.0/install/bin/bf-p4c
+P4 compiler version: 9.7.0 (SHA: da5115f) (p4c-based)
+Build Dir: /home/docker/bf-sde-9.7.0/build/p4-build//traffic_pattern_tofino
+ Logs Dir: /home/docker/bf-sde-9.7.0/logs/p4-build//traffic_pattern_tofino
+
+  Building traffic_pattern_tofino        ... CLEAR ... CMAKE ... MAKE ... INSTALL ... DONE
+
+real	2m51.244s
+user	12m46.957s
+sys	0m20.357s
+✅ Execução 10 concluída com sucesso
+
+=== Fim da compilação (Sun Oct 26 16:11:26 WET 2025) ===

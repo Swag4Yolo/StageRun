@@ -26,7 +26,6 @@ HANDLER dns_from_server
     .time, $time # IG_TS = Ingress Timestamp
     .mset dns_checker[four_tuple], 1
     .mset timer[four_tuple], $time
-  end:
 END
 
 # Stage 2: DNS amplification detection - from internet (requests)
@@ -40,9 +39,7 @@ HANDLER dns_from_internet
     .mget dns_checker[inverse_four_tuple], $checker
     .mget timer[inverse_four_tuple], $old_time
     .sub $time, $old_time, $result_time
-    .br.cond $checker == 1 && $result_time < 4000, L_FWD: #Convert to seconds
-    .exit
+    .br.cond $checker == 1 && $result_time < 4000, L_FWD #Convert to seconds
   L_FWD:
       .fwd pToExternal
-  end:
 END

@@ -1,0 +1,59 @@
+=== Início das execuções (Sun 26 Oct 12:56:11 UTC 2025) ===
+Iterações: 10 | Timeout: 60s
+Usando SDE: /home/tofino/bf-sde-9.13.2
+
+=============================================
+🏷️  Programa: netshuffle
+Caminho: NetShuffle/tofino-v2/netshuffle.p4
+
+🔁 Execução 1 de 10 - Sun 26 Oct 12:56:11 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.091882492s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 2 de 10 - Sun 26 Oct 12:56:22 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.292549439s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 3 de 10 - Sun 26 Oct 12:56:34 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.083971247s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 4 de 10 - Sun 26 Oct 12:56:45 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.076478551s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 5 de 10 - Sun 26 Oct 12:56:56 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.083352197s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 6 de 10 - Sun 26 Oct 12:57:07 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.086298243s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 7 de 10 - Sun 26 Oct 12:57:18 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.099460385s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 8 de 10 - Sun 26 Oct 12:57:30 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.077830093s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 9 de 10 - Sun 26 Oct 12:57:41 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.090594079s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+🔁 Execução 10 de 10 - Sun 26 Oct 12:57:52 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.103967724s
+🛑 Sessão tmux encerrada (switchd_netshuffle)
+
+=== Fim das execuções (Sun 26 Oct 12:58:03 UTC 2025) ===

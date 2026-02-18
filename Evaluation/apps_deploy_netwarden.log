@@ -1,0 +1,59 @@
+=== Início das execuções (Sun 26 Oct 14:22:23 UTC 2025) ===
+Iterações: 10 | Timeout: 60s
+Usando SDE: /home/tofino/bf-sde-9.13.2
+
+=============================================
+🏷️  Programa: pack_mal
+Caminho: NetWarden/release/pack_mal/pack_mal.p4
+
+🔁 Execução 1 de 10 - Sun 26 Oct 14:22:23 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.084690321s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 2 de 10 - Sun 26 Oct 14:22:35 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.888656489s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 3 de 10 - Sun 26 Oct 14:22:46 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.882784213s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 4 de 10 - Sun 26 Oct 14:22:57 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.868382908s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 5 de 10 - Sun 26 Oct 14:23:08 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.890982205s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 6 de 10 - Sun 26 Oct 14:23:19 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.097038212s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 7 de 10 - Sun 26 Oct 14:23:30 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.088369153s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 8 de 10 - Sun 26 Oct 14:23:41 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.082188826s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 9 de 10 - Sun 26 Oct 14:23:52 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 9.089548704s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+🔁 Execução 10 de 10 - Sun 26 Oct 14:24:04 UTC 2025
+🟡 A iniciar switchd (via tmux)...
+✅ bfshell iniciado após 8.883821632s
+🛑 Sessão tmux encerrada (switchd_pack_mal)
+
+=== Fim das execuções (Sun 26 Oct 14:24:15 UTC 2025) ===

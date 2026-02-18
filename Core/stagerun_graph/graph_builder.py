@@ -71,7 +71,7 @@ class StageRunGraphBuilder:
 
         # return self._finalize()
     
-    def _build_keys(self, keys:List[PreFilterKey]):
+    def _build_keys(self, keys:List[HandlerKey]):
         for key in keys:
             self.keys.append({
                 "field": key.field, 
@@ -93,7 +93,7 @@ class StageRunGraphBuilder:
                 self.default_action = {
                     "op": ISA.FWD_AND_ENQUEUE.value, 
                     "args": {
-                        "dest": instr.target, "qid" : instr.qid
+                        "dest": instr.port, "qid" : instr.qid
                         }
                     }
             elif isinstance(instr, DropInstr):
