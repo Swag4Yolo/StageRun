@@ -6,7 +6,6 @@ from typing import List, Optional, Dict
 # ======================
 # Base AST nodes
 # ======================
-
 @dataclass
 class ASTNode:
     """Base class for all AST nodes."""
@@ -123,10 +122,74 @@ class PadToPatternInstr(InstructionNode):
 class CloneInstr(InstructionNode):
     port: str
 
+@dataclass
+class RandomInstr(InstructionNode):
+    num_bits: int
+    var: str
+
+@dataclass
+class InInstr(InstructionNode):
+    var: str
+
+@dataclass
+class OutInstr(InstructionNode):
+    var: str
+
+@dataclass
+class MemoryGetInstr(InstructionNode):
+    reg: str
+    index: str
+    var: str
+    acess_type: str
+
+
+@dataclass
+class MemorySetInstr(InstructionNode):
+    reg: str
+    index: str
+    value: str | int
+
+
+@dataclass
+class MemoryIncInstr(InstructionNode):
+    reg: str
+    index: str
+    increment: str | int
+    var: str
+    acess_type: str
+
+
+# ======================
+# Arithmetics
+# ======================
+@dataclass
+class SubInstr(InstructionNode):
+    lvar: str
+    rvar: str
+    resvar: str
+
+@dataclass
+class SumInstr(InstructionNode):
+    lvar: str
+    rvar: str
+    resvar: str
+
+@dataclass
+class MulInstr(InstructionNode):
+    lvar: str
+    value: int
+    resvar: str
+
 
 # ======================
 # Conditionals
 # ======================
+
+@dataclass
+class BrCondInstr(InstructionNode):
+    """ .br.cond <bool_expr>, <label> """
+    cond: BooleanExpression
+    label: str
 
 @dataclass
 class BooleanExpression(ASTNode):

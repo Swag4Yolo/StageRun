@@ -15,6 +15,7 @@ VAR ackNo
 VAR random
 VAR tmp
 VAR payload_len
+VAR ihl
 
 # Stage 1: Pack from external (modify ACK)
 HANDLER pack_from_external

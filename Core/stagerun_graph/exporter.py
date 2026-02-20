@@ -111,9 +111,21 @@ _instructions_dict = {
     "FwdAndEnqueueInstr": ISA.FWD_AND_ENQUEUE,
     "HeaderIncrementInstr": ISA.HINC,
     "HeaderAssignInstr": ISA.HASSIGN,
-    "HtoVarInstr": ISA.HTOVAR,
+    "CopyHeaderToVarInstr": ISA.HTOVAR,
+    "CopyHashToVarInstr": ISA.HASHTOVAR,
+    "CopyVarToHeaderInstr": ISA.VTOHEADER,
+    "RandomInstr": ISA.RAND,
+    "MemoryGetInstr": ISA.MGET,
+    "MemorySetInstr": ISA.MSET,
+    "MemoryIncInstr": ISA.MINC,
+    "BrCondInstr": ISA.BRCOND,
+    "SubInstr": ISA.SUB,
+    "SumInstr": ISA.SUM,
+    "MulInstr": ISA.MUL,
     "PadToPatternInstr": ISA.PADTTERN,
     "CloneInstr": ISA.CLONE,
+    "InInstr": ISA.IN,
+    "OutInstr": ISA.OUT,
 }
 
 def _serialize_instr(instr: Any) -> Dict[str, Any]:
@@ -170,9 +182,6 @@ def _serialize_instr(instr: Any) -> Dict[str, Any]:
 def _serialize_node(node: StageRunNode) -> Dict[str, Any]:
     """Serialize a StageRunNode into JSON-safe dictionary."""
     # Handle instruction-based nodes
-    print(node)
-    print(node.id)
-    print(node.instr)
 
     if hasattr(node, "instr") and node.instr is not None:
         instr_data = _serialize_instr(node.instr)

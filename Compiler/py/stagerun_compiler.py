@@ -56,6 +56,8 @@ def main():
         print(f"Semantic Error: {e}", file=sys.stderr)
         sys.exit(1)
 
+    print("Program", program)
+
     # 3) Export JSON (+ checksum header)
     checksum = export_stage_run_graphs(
         program=program,

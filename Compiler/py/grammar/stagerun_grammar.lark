@@ -37,7 +37,7 @@ key_clause: "KEY" key_ref (comp_op | mask_op) value
 default_clause: "DEFAULT" default_instr
 
 body_clause: label_decl NEWLINE+ instr_line+ NEWLINE*
-instr_line: instr NEWLINE
+instr_line: instr NEWLINE+
 
 ?default_instr: default_fwd_instr
               | default_drop_instr
@@ -74,7 +74,7 @@ default_drop_instr: "DROP"
       | activate_instr
       | ingress_ts_instr
       // | airth_instr
-      | hairth_instr
+      // | hairth_instr
       | random_instr
       | in_instr
       | out_instr
@@ -97,18 +97,15 @@ random_instr: ".rand" SIGNED_INT "," var_ref
 time_instr: ".time" "," var_ref
 
 // Arithmetic Operations
-  // Headers
-hairth_instr: ".harit" header_ref arith_op (header_ref | SIGNED_INT) "->" header_ref
-  // Vars
-// airth_instr: ".arit" var_ref arith_op (var_ref | SIGNED_INT) "->" var_ref
 sum_instr: ".sum" var_ref "," var_ref "," var_ref
 sub_instr: ".sub" var_ref "," var_ref "," var_ref
 mul_instr: ".mul" var_ref "," SIGNED_INT "," var_ref
 
 // Memory Instructions
-minc_instr: ".minc" reg_ref "[" (header_ref | hash_ref) "]" (header_ref | SIGNED_INT) "," var_ref ("(" NAME ")")?
-mget_instr: ".mget" reg_ref "[" (header_ref | hash_ref) "]" "," var_ref ("(" NAME ")")?
-mset_instr: ".mset" reg_ref "[" (header_ref | hash_ref) "]" "," (header_ref | var_ref | SIGNED_INT)
+
+minc_instr: ".minc" reg_ref "[" (hash_ref | header_ref) "]" (header_ref | SIGNED_INT) "," var_ref ("(" NAME ")")?
+mget_instr: ".mget" reg_ref "[" (hash_ref | header_ref) "]" "," var_ref ("(" NAME ")")?
+mset_instr: ".mset" reg_ref "[" (hash_ref | header_ref) "]" "," (header_ref | var_ref | SIGNED_INT)
 
 // Convert Instrs
 copy_header_to_var_instr: ".hcopy" header_ref "," var_ref
@@ -116,8 +113,8 @@ copy_hash_to_var_instr: ".hashcopy" hash_ref "," var_ref
 copy_var_to_header_instr: ".copy" var_ref "," header_ref
 
 // State Instrs
-in_instr: "IN" var_ref
-out_instr: "OUT" var_ref
+in_instr: ".in" var_ref
+out_instr: ".out" var_ref
 
 // Conditional Instrs
 //TODO: delete

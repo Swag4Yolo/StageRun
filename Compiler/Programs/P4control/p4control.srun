@@ -19,9 +19,9 @@ HANDLER sales_to_sales
   KEY IPV4.DST == "1.0.0.0"
   DEFAULT FWD pToSales
   begin:
-    .in label
-    .out label
-    .br.cond label == 1, L_FWD:
+    .in $label
+    .out $label
+    .br.cond $label == 1, L_FWD
   L_FWD:
     .fwd pToSales
 END
@@ -33,9 +33,9 @@ HANDLER dev_to_dev
   KEY IPV4.DST == "2.0.0.0"
   DEFAULT FWD pToDev
   begin:
-    .in label
-    .out label
-    .br.cond label == 2, L_FWD:
+    .in $label
+    .out $label
+    .br.cond $label == 2, L_FWD
   L_FWD:
     .fwd pToDev
 END
@@ -47,9 +47,9 @@ HANDLER alice_to_dev
   KEY IPV4.DST == "2.0.0.0"
   DEFAULT FWD pToDev
   begin:
-    .in label
-    .out label
-    .br.cond label == 1, L_FWD:
+    .in $label
+    .out $label
+    .br.cond $label == 1, L_FWD
   L_FWD:
     .fwd pToDev
 END
@@ -61,10 +61,10 @@ HANDLER dev_admin_to_server1
   KEY IPV4.DST == "3.0.0.1"
   DEFAULT FWD pToServer
   begin:
-    .in label
-    .out label
+    .in $label
+    .out $label
     # Check if (DEV_TAG | SECRET)
-    .br.cond label == 305140274, L_FWD: # (0x00000002 | 0x12301230):
+    .br.cond $label == 305140274, L_FWD # (0x00000002 | 0x12301230):
   L_FWD:
     .fwd pToServer
 END

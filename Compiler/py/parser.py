@@ -98,7 +98,7 @@ class StageRunTransformer(Transformer):
         return LabelDecl(name=str(name))
     
 
-    # --- Prefilter + clauses ------------------------------------------------
+    # --- Handler + clauses ------------------------------------------------
     def key_clause(self, key_ref, op, val):
         return HandlerKey(field=key_ref,  operand=op, value=val)
 
@@ -106,20 +106,10 @@ class StageRunTransformer(Transformer):
         # instr já é, por exemplo, ForwardInstr ou DropInstruction
         return HandlerDefault(instr=instr)
 
-    # def body_clause(self, *instrs):
-    #     return BodyNode(instructions=list(instrs))
-
-    # def body_clause(self, *items):
-    #     instrs = [x for x in items
-    #             if x is not None and not (isinstance(x, Token) and x.type == "NEWLINE")]
-    #     for x in items:
-    #         print("x=>",x) 
-    #     return HandlerBodyNode(instructions=instrs)
+    def body_clause(self, label_decl, *items):
+        instrs = [x for x in items if x is not None]
+        return BasicBlockNode(label=label_decl.name, instructions=instrs)
     
-    def body_clause(self, label_decl, *instrs):
-        # label_decl is LabelDecl, instrs are InstructionNode (thanks to instr_line)
-        return BasicBlockNode(label=label_decl.name, instructions=list(instrs))
-
     def handler(self, name, *clauses):
         keys, default = [], None
         blocks = []
@@ -135,7 +125,7 @@ class StageRunTransformer(Transformer):
         body = HandlerBodyNode(blocks=blocks) if blocks else None
         return HandlerNode(name=str(name), keys=keys, default_action=default, body=body)
 
-    # --- Instructions -------------------------------------------------------
+    # --- Instructions: Forwarding -------------------------------------------
     def fwd_instr(self, target):
         return FwdInstr(port=str(target))
     
@@ -145,6 +135,7 @@ class StageRunTransformer(Transformer):
     def drop_instr(self):
         return DropInstr()
 
+    # --- Instructions: Header operations ------------------------------------
     def header_assign_instr(self, hdr_ref, value):
         res_value = value
         if isinstance(value, str):
@@ -160,7 +151,7 @@ class StageRunTransformer(Transformer):
     def clone_instr(self, target):
         return CloneInstr(port=str(target))
 
-    # Copy Convertion Instructions
+    # --- Instructions: Conversion -------------------------------------------
     def copy_header_to_var_instr(self, header_ref, var_ref):
         return CopyHeaderToVarInstr(header=str(header_ref), var=str(var_ref))
 
@@ -169,33 +160,56 @@ class StageRunTransformer(Transformer):
 
     def copy_var_to_header_instr(self, var_ref, header_ref):
         return CopyVarToHeaderInstr(var=str(var_ref), header=str(header_ref))
+
+    def random_instr(self, num_bits, var_ref):
+        return RandomInstr(num_bits, var=str(var_ref))
+
+    # --- Instructions: Memory ------------------------------------------------
+    def mget_instr(self, *args):
+        access_type="NEW"
+        reg=args[0]
+        index=args[1]
+        var=args[2]
+        if len(args) == 4:
+            access_type=args[3]
+
+        return MemoryGetInstr(reg, index, var, access_type)
+
+    def mset_instr(self, reg, index, value):
+        return MemorySetInstr(reg, index, value)
+
+    def minc_instr(self, *args):
+        access_type = "NEW"
+        reg = args[0]
+        index = args[1]
+        increment = args[2]
+        var = args[3]
+        if len(args) == 5:
+            access_type = args[4]
+
+        return MemoryIncInstr(reg, index, increment, var, access_type)
+
+    def conditional_clause(self, cond_expr, target_label):
+        return BrCondInstr(cond=cond_expr, label=str(target_label))
     
-# htovar_instr: "HTOVAR" header_ref "->" NAME
-# hash_to_var_instr: "HASHTOVAR" hash_ref "->" var_ref
-# var_to_hdr_instr: "VTOHEADER" var_ref "->" header_ref
+    # --- Instructions: Arithmetic -------------------------------------------
+    def sub_instr(self, lvar, rvar, resvar):
+        return SubInstr(lvar, rvar, resvar)
+    
+    def sum_instr(self, lvar, rvar, resvar):
+        return SumInstr(lvar, rvar, resvar)
+    
+    def mul_instr(self, lvar, value, resvar):
+        return MulInstr(lvar, value, resvar)
 
-    # --- IF / ELIF / ELSE / ENDIF ------------------------------------------
-    def if_block(self, if_clause, *rest):
-        branches = [ConditionBlock(condition=if_clause[0], body=if_clause[1])]
-        else_body = None
-        for part in rest:
-            if isinstance(part, tuple):       # elif
-                branches.append(ConditionBlock(condition=part[0], body=part[1]))
-            elif isinstance(part, list):      # else
-                else_body = part
-        return IfNode(branches=branches, else_body=else_body)
+    # --- Instructions: State -------------------------------------------------
+    def in_instr(self, var_ref):
+        return InInstr(var=str(var_ref))
 
-    def if_clause(self, cond_expr, *instrs):
-        # cond_expr já é BooleanExpression vindo do transformer
-        return (cond_expr, list(instrs))
+    def out_instr(self, var_ref):
+        return OutInstr(var=str(var_ref))
 
-    def elif_clause(self, cond_expr, *instrs):
-        return (cond_expr, list(instrs))
-
-    def else_clause(self, *instrs):
-        return list(instrs)
-
-    # --- Default Instructions -------------------------------------------------------
+    # --- Instructions: Default actions --------------------------------------
     def default_fwd_instr(self, target):
         return FwdInstr(port=str(target))
     
@@ -206,8 +220,6 @@ class StageRunTransformer(Transformer):
         return DropInstr()
 
     # --- Boolean expressions → canonical string ----------------------------
-    # We render a safe, fully-parenthesized textual form so semantics/IR
-    # never see Tokens/Trees and the controller can parse/evaluate later.
     def comparison(self, left, op, right):
         return BooleanExpression(left=str(left), op=str(op), right=right)
 

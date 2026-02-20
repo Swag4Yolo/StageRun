@@ -19,10 +19,10 @@ HANDLER ssh_access
   KEY L4.DPORT == 22
   DEFAULT FWD toInternal
   begin:
-    MGET acceptedConnections[IPV4.SRC] -> isAccepted
-    IF isAccepted == 0:
+    .mget acceptedConnections[IPV4.SRC], $isAccepted
+    .br.cond $isAccepted == 0, L_DROP
+  L_DROP:
       DROP
-    ENDIF
 END
 
 # Stage 2: Knock step 1
@@ -30,33 +30,33 @@ HANDLER knock_step1
   KEY PKT.PORT == fromExternal
   KEY L4.DPORT == 1234
   begin:
-    MSET knockStatus[IPV4.SRC] 1
+    .mset knockStatus[IPV4.SRC], 1
 END
 
 # Stage 3: Knock step 2 (requires step 1)
 HANDLER knock_step2
   KEY PKT.PORT == fromExternal
   KEY L4.DPORT == 5678
-begin:
-  MGET knockStatus[IPV4.SRC] -> status
-  IF status == 1:
-    MSET knockStatus[IPV4.SRC] 2
-  ELSE:
-    MSET knockStatus[IPV4.SRC] 0
-  ENDIF
+  begin:
+    .mget knockStatus[IPV4.SRC], $status
+    .br.cond $status == 1, L_CORRECT_KNOCK
+    .mset knockStatus[IPV4.SRC], 0
+  
+  L_CORRECT_KNOCK:
+    .mset knockStatus[IPV4.SRC], 2 
 END
 
 # Stage 4: Knock step 3 (requires step 2) -> grant access
 HANDLER knock_step3
   KEY PKT.PORT == fromExternal
   KEY L4.DPORT == 9012
-begin:
-  MGET knockStatus[IPV4.SRC] -> status
-  IF status == 2:
-    MSET acceptedConnections[IPV4.SRC] 1
-  ELSE:
-    MSET knockStatus[IPV4.SRC] 0
-  ENDIF
+  begin:
+    .mget knockStatus[IPV4.SRC], $status
+    .br.cond $status == 2, L_ACCEPT_CONN
+    #else
+    .mset knockStatus[IPV4.SRC], 0
+  L_ACCEPT_CONN:
+    .mset acceptedConnections[IPV4.SRC], 1
 END
 
 # Stage 5: Other inbound traffic (default path)

@@ -3,7 +3,7 @@
 # ===============================
 
 SHELL := /bin/bash
-
+MAKEFLAGS += -k
 # -------- Config --------
 VENV := py/compiler_env
 PYTHON := python3
@@ -47,7 +47,9 @@ compile: $(OUT_FILES)
 
 %.out.json: %.srun venv
 	@echo "Compiling $<"
-	@time -p $(PYTHON_BIN) $(PROGRAM) $< -o $@ > $(basename $@).log 2>&1
+	@out_file="$(@)"; \
+	log_file="$(@:.out.json=.log)"; \
+	time -p $(PYTHON_BIN) $(PROGRAM) "$<" -o "$$out_file" > "$$log_file" 2>&1
 
 # ===============================
 # Cleaning
