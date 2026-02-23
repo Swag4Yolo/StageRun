@@ -30,6 +30,22 @@ def _collect_bool_expr_reads(expr: BooleanExpression | None) -> set[str]:
             reads |= _operand_reads(right)
     return reads
 
+def _memory_index_reads(index) -> set[str]:
+    ref_kind = getattr(index, "ref_kind", None)
+    if ref_kind == "header_ref":
+        return {f"hdr:{index}"}
+    if ref_kind == "reg_ref":
+        return {f"reg:{index}"}
+    if ref_kind == "var_ref":
+        return {f"var:{index}"}
+    if ref_kind == "hash_ref":
+        return {f"hash:{index}"}
+
+    # Backward-compatible fallback when index is a plain string.
+    if isinstance(index, str) and "." in index:
+        return {f"hdr:{index}"}
+    return {f"hash:{index}"}
+
 def effect_of_instr(instr) -> StageRunEffect:
 
     # --- PADTTERN ---
@@ -61,6 +77,9 @@ def effect_of_instr(instr) -> StageRunEffect:
 
     if isinstance(instr, DropInstr):
         return StageRunEffect()
+    
+    if isinstance(instr, RtsInstr):
+        return StageRunEffect()
 
     if isinstance(instr, CloneInstr):
         return StageRunEffect()
@@ -68,12 +87,15 @@ def effect_of_instr(instr) -> StageRunEffect:
         # uses = {f"port:{dest}"} if dest else set()
         # return StageRunEffect(uses=uses)
 
+    if isinstance(instr, ActivateInstr):
+        return StageRunEffect(uses={f"program:{instr.program}"})
+
     # --- ASSIGN / HINC ---
     if isinstance(instr, HeaderAssignInstr):
         return StageRunEffect(writes={f"hdr:{instr.header}"})
 
     if isinstance(instr, HeaderIncrementInstr):
-        return StageRunEffect(reads={f"hdr:{instr.header}"}, writes={f"hdr:{instr.header}"})
+        return StageRunEffect(reads={f"hdr:{instr.header}"}, writes={f"hdr:{instr.reshdr}"})
 
     # --- HASH / RANDOM ---
     if isinstance(instr, CopyHashToVarInstr):
@@ -81,11 +103,14 @@ def effect_of_instr(instr) -> StageRunEffect:
 
     if isinstance(instr, RandomInstr):
         return StageRunEffect(writes={f"var:{instr.var}"})
+    
+    if isinstance(instr, TimeInstr):
+        return StageRunEffect(writes={f"var:{instr.resvar}"})
 
     # --- MEMORY ---
     if isinstance(instr, MemoryGetInstr):
         return StageRunEffect(
-            reads={f"hash:{instr.index}"},
+            reads=_memory_index_reads(instr.index),
             writes={f"var:{instr.var}"},
             uses={f"{instr.acess_type}"}
         )
@@ -93,14 +118,14 @@ def effect_of_instr(instr) -> StageRunEffect:
     if isinstance(instr, MemorySetInstr):
         return StageRunEffect(
             # reads=_operand_reads(instr.index) | _operand_reads(instr.value),
-            reads={f"hash:{instr.index}"},
+            reads=_memory_index_reads(instr.index),
             writes={f"reg:{instr.reg}"},
             # uses={f"mem_set:{instr.reg}"}
         )
 
     if isinstance(instr, MemoryIncInstr):
         return StageRunEffect(
-            reads={f"hash:{instr.index}"},
+            reads=_memory_index_reads(instr.index),
             # reads=_operand_reads(instr.index) | _operand_reads(instr.increment) | {f"reg:{instr.reg}"},
             writes={f"reg:{instr.reg}", f"var:{instr.var}"},
             uses={f"{instr.acess_type}"}
@@ -125,9 +150,18 @@ def effect_of_instr(instr) -> StageRunEffect:
             writes={f"var:{instr.resvar}"}
         )
 
+    if isinstance(instr, IncInstr):
+        return StageRunEffect(
+            reads={f"var:{instr.lvar}"},
+            writes={f"var:{instr.resvar}"}
+        )
+
     # --- CONDITIONALS ---
     if isinstance(instr, BrCondInstr):
         return StageRunEffect(reads=_collect_bool_expr_reads(instr.cond), uses={f"label:{instr.label}"})
+
+    if isinstance(instr, JmpInstr):
+        return StageRunEffect(uses={f"label:{instr.label}"})
 
     if isinstance(instr, IfNode):
         reads = set()

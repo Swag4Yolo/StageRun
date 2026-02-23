@@ -1,65 +1,65 @@
 # Ports
-PIN  pFromSales
-PIN  pFromDev
-PIN  pFromServer
-PIN  pFromInternet
+pin  pFromSales
+pin  pFromDev
+pin  pFromServer
+pin  pFromInternet
 
-POUT pToSales
-POUT pToDev
-POUT pToServer
-POUT pToInternet
+pout pToSales
+pout pToDev
+pout pToServer
+pout pToInternet
 
 # State
-VAR label
+var label
 
 # Stage 1: Sales → Sales (SALES_TAG = 0x00000001)
-HANDLER sales_to_sales
-  KEY PKT.PORT == pFromSales
-  KEY IPV4.SRC == "1.0.0.0"    # SALES_IP
-  KEY IPV4.DST == "1.0.0.0"
-  DEFAULT FWD pToSales
+handler sales_to_sales
+  key PKT.PORT == pFromSales
+  key IPV4.SRC == "1.0.0.0"    # SALES_IP
+  key IPV4.DST == "1.0.0.0"
+  default FWD pToSales
   begin:
     .in $label
     .out $label
     .br.cond $label == 1, L_FWD
   L_FWD:
     .fwd pToSales
-END
+end
 
 # Stage 2: Dev → Dev (DEV_TAG = 0x00000002)
-HANDLER dev_to_dev
-  KEY PKT.PORT == pFromDev
-  KEY IPV4.SRC == "2.0.0.0"
-  KEY IPV4.DST == "2.0.0.0"
-  DEFAULT FWD pToDev
+handler dev_to_dev
+  key PKT.PORT == pFromDev
+  key IPV4.SRC == "2.0.0.0"
+  key IPV4.DST == "2.0.0.0"
+  default FWD pToDev
   begin:
     .in $label
     .out $label
     .br.cond $label == 2, L_FWD
   L_FWD:
     .fwd pToDev
-END
+end
 
 # Stage 3: Alice (1.0.0.1) → Dev (2.0.0.0)
-HANDLER alice_to_dev
-  KEY PKT.PORT == pFromSales
-  KEY IPV4.SRC == "1.0.0.1"
-  KEY IPV4.DST == "2.0.0.0"
-  DEFAULT FWD pToDev
+handler alice_to_dev
+  key PKT.PORT == pFromSales
+  key IPV4.SRC == "1.0.0.1"
+  key IPV4.DST == "2.0.0.0"
+  default FWD pToDev
   begin:
     .in $label
     .out $label
     .br.cond $label == 1, L_FWD
   L_FWD:
     .fwd pToDev
-END
+end
 
 # Stage 4: Dev admin (2.0.0.1) → Server1 (3.0.0.1)
-HANDLER dev_admin_to_server1
-  KEY PKT.PORT == pFromDev
-  KEY IPV4.SRC == "2.0.0.1"
-  KEY IPV4.DST == "3.0.0.1"
-  DEFAULT FWD pToServer
+handler dev_admin_to_server1
+  key PKT.PORT == pFromDev
+  key IPV4.SRC == "2.0.0.1"
+  key IPV4.DST == "3.0.0.1"
+  default FWD pToServer
   begin:
     .in $label
     .out $label
@@ -67,4 +67,4 @@ HANDLER dev_admin_to_server1
     .br.cond $label == 305140274, L_FWD # (0x00000002 | 0x12301230):
   L_FWD:
     .fwd pToServer
-END
+end

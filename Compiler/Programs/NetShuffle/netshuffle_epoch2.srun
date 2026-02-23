@@ -1,70 +1,70 @@
 # Ports
-PIN  pFromExternal
-PIN  pFromInternal
-POUT pToExternal
-POUT pToInternal
+pin  pFromExternal
+pin  pFromInternal
+pout pToExternal
+pout pToInternal
 # Stage 1: ToEdgeNetwork (external → internal)
-HANDLER toEdge_s1
-  KEY PKT.PORT == pFromExternal
-  KEY IPV4.DST == "1.1.1.127"
-  DEFAULT FWD pToInternal
+handler toEdge_s1
+  key PKT.PORT == pFromExternal
+  key IPV4.DST == "1.1.1.127"
+  default FWD pToInternal
   begin:
     .hassign IPV4.DST, "192.168.1.1"
-END
+end
 
-HANDLER toEdge_s2
-  KEY PKT.PORT == pFromExternal
-  KEY IPV4.DST == "1.1.1.128"
-  DEFAULT FWD pToInternal
+handler toEdge_s2
+  key PKT.PORT == pFromExternal
+  key IPV4.DST == "1.1.1.128"
+  default FWD pToInternal
   begin:
     .hassign IPV4.DST, "192.168.1.2"
-END
+end
 
-HANDLER toEdge_s3
-  KEY PKT.PORT == pFromExternal
-  KEY IPV4.DST == "1.1.1.129"
-  DEFAULT FWD pToInternal
+handler toEdge_s3
+  key PKT.PORT == pFromExternal
+  key IPV4.DST == "1.1.1.129"
+  default FWD pToInternal
   begin:
     .hassign IPV4.DST, "192.168.1.3"
-END
+end
 
-HANDLER toEdge_proxy
-  KEY PKT.PORT == pFromExternal
-  KEY IPV4.DST == "1.1.1.130"
-  DEFAULT FWD pToInternal
+handler toEdge_proxy
+  key PKT.PORT == pFromExternal
+  key IPV4.DST == "1.1.1.130"
+  default FWD pToInternal
   begin:
     .hassign IPV4.DST, "192.168.1.4"
-END
+end
 
 # Stage 2: FromEdgeNetwork (internal → external)
-HANDLER fromEdge_s1
-  KEY PKT.PORT == pFromInternal
-  KEY IPV4.SRC == "192.168.1.1"
-  DEFAULT FWD pToExternal
+handler fromEdge_s1
+  key PKT.PORT == pFromInternal
+  key IPV4.SRC == "192.168.1.1"
+  default FWD pToExternal
   begin:
     .hassign IPV4.SRC, "1.1.1.127"
-END
+end
 
-HANDLER fromEdge_s2
-  KEY PKT.PORT == pFromInternal
-  KEY IPV4.SRC == "192.168.1.2"
-  DEFAULT FWD pToExternal
+handler fromEdge_s2
+  key PKT.PORT == pFromInternal
+  key IPV4.SRC == "192.168.1.2"
+  default FWD pToExternal
   begin:
     .hassign IPV4.SRC, "1.1.1.128"
-END
+end
 
-HANDLER fromEdge_s3
-  KEY PKT.PORT == pFromInternal
-  KEY IPV4.SRC == "192.168.1.3"
-  DEFAULT FWD pToExternal
+handler fromEdge_s3
+  key PKT.PORT == pFromInternal
+  key IPV4.SRC == "192.168.1.3"
+  default FWD pToExternal
   begin:
     .hassign IPV4.SRC, "1.1.1.129"
-END
+end
 
-HANDLER fromEdge_proxy
-  KEY PKT.PORT == pFromInternal
-  KEY IPV4.SRC == "192.168.1.4"
-  DEFAULT FWD pToExternal
+handler fromEdge_proxy
+  key PKT.PORT == pFromInternal
+  key IPV4.SRC == "192.168.1.4"
+  default FWD pToExternal
   begin:
     .hassign IPV4.SRC, "1.1.1.130"
-END
+end

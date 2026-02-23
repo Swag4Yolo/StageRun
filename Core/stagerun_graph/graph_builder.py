@@ -98,6 +98,8 @@ class StageRunGraphBuilder:
                     }
             elif isinstance(instr, DropInstr):
                 self.default_action = {"op": ISA.DROP.value}
+            elif isinstance(instr, RtsInstr):
+                self.default_action = {"op": ISA.RTS.value}
 
     def build(self, keys, default_action, instructions):
         self._build_keys(keys)

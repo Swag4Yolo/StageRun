@@ -48,6 +48,7 @@ def main():
 
     # 1) Parse
     program: ProgramNode = parse_stagerun_program(srun_program)
+    # print("program", program)
 
     # 2) Semantic validation (returns resources for controller)
     try:

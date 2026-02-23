@@ -1,27 +1,27 @@
 # Ports
-PIN  fromExternal
-PIN  fromInternal
-POUT toExternal
-POUT toInternal
+pin  fromExternal
+pin  fromInternal
+pout toExternal
+pout toInternal
 
 # Resources Allocation
-HASH five_t {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
+hash five_t {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
 
-REG numBytesPort
-REG numBytesFlow
-REG numFlowsPort
-VAR nBytes
-VAR nFlows
-VAR oldNumBytes
+reg numBytesPort
+reg numBytesFlow
+reg numFlowsPort
+var nBytes
+var nFlows
+var oldNumBytes
 
-HANDLER from_external
-KEY PKT.PORT == fromExternal
-DEFAULT FWD toInternal
+handler from_external
+key PKT.PORT == fromExternal
+default FWD toInternal
   begin:
     .minc numBytesFlow[five_t], PKT.SIZE, $oldNumBytes, OLD
     .minc numBytesPort[PKT.PORT], PKT.SIZE, $nBytes, NEW
 
-    .br.cond oldNumBytes == 0, L_NEW_FLOW:
+    .br.cond $oldNumBytes == 0, L_NEW_FLOW
     .mget numFlowsPort[PKT.PORT], $nFlows, NEW
     .jmp L_CHECK_ACTIVATE
 
@@ -30,14 +30,13 @@ DEFAULT FWD toInternal
     .jmp L_CHECK_ACTIVATE
 
   L_CHECK_ACTIVATE:
-    .br.cond nBytes > 1000 && nFlows > 2, L_ACTIVATE:
-    .exit
+    .br.cond $nBytes > 1000 && $nFlows > 2, L_ACTIVATE
 
   L_ACTIVATE:
     .activate CrossFire
-END
+end
 
-HANDLER from_internal
-  KEY PKT.PORT == fromInternal
-  DEFAULT FWD toExternal
-END
+handler from_internal
+  key PKT.PORT == fromInternal
+  default FWD toExternal
+end

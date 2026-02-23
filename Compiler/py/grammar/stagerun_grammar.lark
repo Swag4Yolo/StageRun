@@ -12,29 +12,25 @@ start: NEWLINE* statement (NEWLINE+ statement)* NEWLINE*
 
 // PORTS
 // port_declr: "PORT" NAME
-port_in_decl: "PIN" NAME
-port_out_decl: "POUT" NAME NAME?
+port_in_decl: "pin" NAME
+port_out_decl: "pout" NAME NAME?
 
 // QUEUES
 qset_decl: "QSET" NAME NAME INT
 
 // Resources
-var_decl: "VAR" NAME
-reg_decl: "REG" NAME
-hash_decl: "HASH" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}"
+var_decl: "var" NAME
+reg_decl: "reg" NAME
+hash_decl: "hash" NAME "{" (header_ref | INT) ("," (header_ref | INT))* "}"
 
-handler: "HANDLER" NAME NEWLINE+ clause_line* "END"
+handler: "handler" NAME NEWLINE+ clause_line* "end"
 
 
 ?clause_line: (key_clause | default_clause) NEWLINE+
             | body_clause NEWLINE*
 
-// ?clause_line: key_clause NEWLINE+
-//             | default_clause NEWLINE+
-//             | body_clause
-
-key_clause: "KEY" key_ref (comp_op | mask_op) value
-default_clause: "DEFAULT" default_instr
+key_clause: "key" key_ref (comp_op | mask_op) value
+default_clause: "default" default_instr
 
 body_clause: label_decl NEWLINE+ instr_line+ NEWLINE*
 instr_line: instr NEWLINE+
@@ -58,6 +54,7 @@ default_drop_instr: "DROP"
       | sum_instr
       | sub_instr
       | mul_instr
+      | inc_instr
       | hinc_instr
       | header_assign_instr
       | clone_instr
@@ -72,13 +69,14 @@ default_drop_instr: "DROP"
       | copy_hash_to_var_instr
       | copy_var_to_header_instr
       | activate_instr
-      | ingress_ts_instr
+      // | ingress_ts_instr
       // | airth_instr
       // | hairth_instr
       | random_instr
       | in_instr
       | out_instr
       | conditional_clause
+      | jmp_instr
 
 
 // Instructions List
@@ -87,25 +85,26 @@ fwd_queue_instr: ".fwd.enq" NAME SIGNED_INT
 drop_instr: ".drop"
 rts_instr: ".rts"
 
-hinc_instr: ".hinc" header_ref "," SIGNED_INT
+// Header Arithmetic Operations
+hinc_instr: ".hinc" header_ref "," SIGNED_INT "," header_ref
 header_assign_instr: ".hassign" header_ref "," (SIGNED_INT | STRING)
 clone_instr: ".clone" NAME
 paddtern_instr: ".pad.pattern" INT+
 activate_instr: ".activate" NAME
-ingress_ts_instr: ".igts" "->" var_ref
+// ingress_ts_instr: ".igts" "->" var_ref
 random_instr: ".rand" SIGNED_INT "," var_ref
 time_instr: ".time" "," var_ref
 
 // Arithmetic Operations
+inc_instr: ".inc" var_ref "," SIGNED_INT "," var_ref
 sum_instr: ".sum" var_ref "," var_ref "," var_ref
 sub_instr: ".sub" var_ref "," var_ref "," var_ref
 mul_instr: ".mul" var_ref "," SIGNED_INT "," var_ref
 
 // Memory Instructions
-
-minc_instr: ".minc" reg_ref "[" (hash_ref | header_ref) "]" (header_ref | SIGNED_INT) "," var_ref ("(" NAME ")")?
-mget_instr: ".mget" reg_ref "[" (hash_ref | header_ref) "]" "," var_ref ("(" NAME ")")?
-mset_instr: ".mset" reg_ref "[" (hash_ref | header_ref) "]" "," (header_ref | var_ref | SIGNED_INT)
+minc_instr: ".minc" reg_ref "[" (hash_ref | header_ref) "]" "," (header_ref | SIGNED_INT) "," var_ref ("," NAME)?
+mget_instr: ".mget" reg_ref "[" (hash_ref | header_ref) "]" "," var_ref ("," NAME)?
+mset_instr: ".mset" reg_ref "[" (hash_ref | header_ref) "]" "," (header_ref | var_ref | SIGNED_INT) ("," NAME)?
 
 // Convert Instrs
 copy_header_to_var_instr: ".hcopy" header_ref "," var_ref
@@ -124,6 +123,9 @@ elif_clause: "ELIF" bool_expr ":" instr+
 else_clause: "ELSE" ":" instr+
 
 conditional_clause: ".br.cond" bool_expr "," label
+
+// Label Instruction
+jmp_instr: ".jmp" NAME
 
 // =====================
 // Expressões booleanas SEM headers

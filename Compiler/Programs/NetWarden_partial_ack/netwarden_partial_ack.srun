@@ -1,28 +1,28 @@
 # Ports
-PIN  pFromExternal
-PIN  pFromInternal
-POUT pToExternal
-POUT pToInternal
+pin  pFromExternal
+pin  pFromInternal
+pout pToExternal
+pout pToInternal
 
 # Resources Allocation
-HASH five_tuple {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
-HASH five_tuple_inverse {IPV4.DST, IPV4.SRC, L4.DPORT, L4.SPORT, IPV4.PROTO}
+hash five_tuple {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
+hash five_tuple_inverse {IPV4.DST, IPV4.SRC, L4.DPORT, L4.SPORT, IPV4.PROTO}
 
 # State
-REG tracker
-VAR highwater
-VAR ackNo
-VAR random
-VAR tmp
-VAR payload_len
-VAR ihl
+reg tracker
+var highwater
+var ackNo
+var random
+var tmp
+var payload_len
+var ihl
 
 # Stage 1: Pack from external (modify ACK)
-HANDLER pack_from_external
-  KEY PKT.PORT == pFromExternal
-  KEY IPV4.PROTO == 6  # TCP
-  KEY TCP.FLAGS == 16 # ACK FLAG ON
-  DEFAULT FWD pToInternal
+handler pack_from_external
+  key PKT.PORT == pFromExternal
+  key IPV4.PROTO == 6  # TCP
+  key TCP.FLAGS == 16 # ACK FLAG ON
+  default FWD pToInternal
   begin:
     .rand 4, $random
     .mget tracker[five_tuple], $highwater
@@ -32,13 +32,13 @@ HANDLER pack_from_external
   L_UPDATE_ACK:
     .sub $ackNo, $random, $ackNo
     .copy $ackNo, TCP.ACKNO
-END
+end
 
 # Stage 2: Pack from internal (update highwater)
-HANDLER pack_from_internal
-  KEY PKT.PORT == pFromInternal
-  KEY IPV4.PROTO == 6  # TCP
-  DEFAULT FWD pToExternal
+handler pack_from_internal
+  key PKT.PORT == pFromInternal
+  key IPV4.PROTO == 6  # TCP
+  default FWD pToExternal
   begin:
     # Compute payload length = totalLen + seqNo - header offsets
     .hcopy IPV4.LEN, $payload_len
@@ -53,4 +53,4 @@ HANDLER pack_from_internal
 
     L_UPDATE_TRACKER:
       .mset tracker[five_tuple_inverse], $payload_len
-END
+end

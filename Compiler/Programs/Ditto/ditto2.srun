@@ -10,74 +10,74 @@ QSET prio_queues PRIO 2;
 QSET rr_queues RR 2;
 
 ### For Real Traffic and Chaff Injection
-PIN  P_INPUT;
+pin  P_INPUT;
 
 ### Priority Queues 
-PIN  P1_IN;
-PIN  P2_IN;
-POUT P1_OUT prio_queues;
-POUT P2_OUT prio_queues;
+pin  P1_IN;
+pin  P2_IN;
+pout P1_OUT prio_queues;
+pout P2_OUT prio_queues;
 
 ### Used for Cloning
-PIN  PC1_IN;
-PIN  PC2_IN;
-POUT PC1_OUT;
-POUT PC2_OUT;
+pin  PC1_IN;
+pin  PC2_IN;
+pout PC1_OUT;
+pout PC2_OUT;
 
 ### Used for Recirc 
-PIN  P_RECIRC_IN;
-POUT P_RECIRC_OUT;
+pin  P_RECIRC_IN;
+pout P_RECIRC_OUT;
 
 ### Used for Talking w TF2
-PIN  P_FROM_TF2;
-POUT PRR_OUT rr_queues; # to tf2
-POUT P_TO_SERVER; # to receive final traffic w/timestamps from tf2
+pin  P_FROM_TF2;
+pout PRR_OUT rr_queues; # to tf2
+pout P_TO_SERVER; # to receive final traffic w/timestamps from tf2
 
 
 ### Resources
-VAR proto;
-VAR size;
+var proto;
+var size;
 
 ##############################
 ####### Cloned Packets #######
 ##############################
 
-PREFILTER gen_p1_clone
-  KEY PKT.PORT == PC1_IN;
-  DEFAULT FWD_AND_ENQUEUE P1_OUT 0;
+handler gen_p1_clone
+  key PKT.PORT == PC1_IN;
+  default FWD_AND_ENQUEUE P1_OUT 0;
   BODY
     CLONE PC2_OUT;
-  END
-END
+  end
+end
 
-PREFILTER gen_p2_clone
-  KEY PKT.PORT == PC2_IN;
-  DEFAULT FWD_AND_ENQUEUE P2_OUT 0;
+handler gen_p2_clone
+  key PKT.PORT == PC2_IN;
+  default FWD_AND_ENQUEUE P2_OUT 0;
   BODY
     CLONE PC1_OUT;
-  END
-END
+  end
+end
 
 ##############################
 #######    Patterns    #######
 ##############################
 
-PREFILTER pat1
-  KEY PKT.PORT == P1_IN;
-  DEFAULT FWD_AND_ENQUEUE PRR_OUT 0;
-END
+handler pat1
+  key PKT.PORT == P1_IN;
+  default FWD_AND_ENQUEUE PRR_OUT 0;
+end
 
-PREFILTER pat2
-  KEY PKT.PORT == P2_IN;
-  DEFAULT FWD_AND_ENQUEUE PRR_OUT 1;
-END
+handler pat2
+  key PKT.PORT == P2_IN;
+  default FWD_AND_ENQUEUE PRR_OUT 1;
+end
 
 ##############################
 ##### Incoming  Traffic ######
 ##############################
-PREFILTER input_chaff
-  KEY PKT.PORT == P_INPUT;
-  KEY IPV4.PROTO == 200;
+handler input_chaff
+  key PKT.PORT == P_INPUT;
+  key IPV4.PROTO == 200;
   BODY
     PADTTERN 1500 1600;
     # 1. Chaff Traffic Initially Sent
@@ -90,11 +90,11 @@ PREFILTER input_chaff
     ELIF size == 1600:
       FWD PC1_OUT;
     ENDIF
-  END
-END
+  end
+end
 
-PREFILTER input
-  KEY PKT.PORT == P_INPUT;
+handler input
+  key PKT.PORT == P_INPUT;
   BODY
     PADTTERN 1500 1600;
     
@@ -107,11 +107,11 @@ PREFILTER input
     ELSE:
       FWD P_RECIRC_OUT;
     ENDIF
-  END
-END
+  end
+end
 
-PREFILTER input_recirc_port
-  KEY PKT.PORT == P_RECIRC_IN;
+handler input_recirc_port
+  key PKT.PORT == P_RECIRC_IN;
   BODY
     PADTTERN 1500 1600;
 
@@ -124,16 +124,16 @@ PREFILTER input_recirc_port
     ELSE:
       FWD P_RECIRC_OUT;
     ENDIF
-  END
-END
+  end
+end
 
 ##############################
 #####     2nd Tofino    ######
 ##############################
-PREFILTER from_tf2
-  KEY PKT.PORT == P_FROM_TF2;
-  DEFAULT FWD P_TO_SERVER;
-END
+handler from_tf2
+  key PKT.PORT == P_FROM_TF2;
+  default FWD P_TO_SERVER;
+end
 
 # DISABLED RECIRC_PORTS FOR THIS ENGINE SINCE WE DO NOT HAVE ENOUGH PORTS
 # RECIRC NEEDS TO BE AT RUNTIME, AND SO DEPLOYER CANNOT PUT FIXED RECIRC PATH

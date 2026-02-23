@@ -1,16 +1,16 @@
-PIN  InternalPortIN
-PIN  ExternalPortIN
-POUT InternalPortOUT
-POUT ExternalPortOUT
+pin  InternalPortIN
+pin  ExternalPortIN
+pout InternalPortOUT
+pout ExternalPortOUT
 
-HANDLER FromExternal
-  KEY PKT.PORT == ExternalPortIN
-  DEFAULT FWD InternalPortOUT
+handler FromExternal
+  key PKT.PORT == ExternalPortIN
+  default FWD InternalPortOUT
   begin:
     .hassign IPV4.ID, 1023
-END
+end
 
-HANDLER FromInternal
-  KEY PKT.PORT == InternalPortIN
-  DEFAULT FWD ExternalPortOUT
-END
+handler FromInternal
+  key PKT.PORT == InternalPortIN
+  default FWD ExternalPortOUT
+end

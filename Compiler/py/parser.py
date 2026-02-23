@@ -35,11 +35,17 @@ class StageRunTransformer(Transformer):
     # --- Atoms: dotted refs -------------------------------------------------
     def header_ref(self, left, right):
         # "IPV4" "." "TTL" -> "IPV4.TTL"
-        return f"{left}.{right}"
+        return TypedRef(f"{left}.{right}", "header_ref")
 
     def key_ref(self, left, right):
         # "PKT" "." "PORT" -> "PKT.PORT"
         return f"{left}.{right}"
+
+    def hash_ref(self, name):
+        return TypedRef(str(name), "hash_ref")
+
+    def reg_ref(self, name):
+        return TypedRef(str(name), "reg_ref")
 
     # --- Top-level program assembly ----------------------------------------
     def start(self, *statements):
@@ -134,6 +140,9 @@ class StageRunTransformer(Transformer):
 
     def drop_instr(self):
         return DropInstr()
+    
+    def rts_instr(self):
+        return RtsInstr()
 
     # --- Instructions: Header operations ------------------------------------
     def header_assign_instr(self, hdr_ref, value):
@@ -142,14 +151,17 @@ class StageRunTransformer(Transformer):
             res_value = ipaddress.ip_address(value)
         return HeaderAssignInstr(header=str(hdr_ref), value=int(res_value))
 
-    def hinc_instr(self, hdr_ref, value):
-        return HeaderIncrementInstr(header=str(hdr_ref), value=int(value))
+    def hinc_instr(self, hdr_ref, value, reshdr_ref):
+        return HeaderIncrementInstr(header=str(hdr_ref), value=int(value), reshdr=str(reshdr_ref))
 
     def paddtern_instr(self, *pattern):
         return PadToPatternInstr(pattern=pattern)
 
     def clone_instr(self, target):
         return CloneInstr(port=str(target))
+
+    def activate_instr(self, target):
+        return ActivateInstr(program=str(target))
 
     # --- Instructions: Conversion -------------------------------------------
     def copy_header_to_var_instr(self, header_ref, var_ref):
@@ -163,6 +175,9 @@ class StageRunTransformer(Transformer):
 
     def random_instr(self, num_bits, var_ref):
         return RandomInstr(num_bits, var=str(var_ref))
+    
+    def time_instr(self, var_ref):
+        return TimeInstr(resvar=str(var_ref))
 
     # --- Instructions: Memory ------------------------------------------------
     def mget_instr(self, *args):
@@ -191,6 +206,9 @@ class StageRunTransformer(Transformer):
 
     def conditional_clause(self, cond_expr, target_label):
         return BrCondInstr(cond=cond_expr, label=str(target_label))
+
+    def jmp_instr(self, target_label):
+        return JmpInstr(label=str(target_label))
     
     # --- Instructions: Arithmetic -------------------------------------------
     def sub_instr(self, lvar, rvar, resvar):
@@ -201,6 +219,9 @@ class StageRunTransformer(Transformer):
     
     def mul_instr(self, lvar, value, resvar):
         return MulInstr(lvar, value, resvar)
+
+    def inc_instr(self, lvar, value, resvar):
+        return IncInstr(lvar, int(value), resvar)
 
     # --- Instructions: State -------------------------------------------------
     def in_instr(self, var_ref):
@@ -240,7 +261,7 @@ class StageRunTransformer(Transformer):
 
     def comp_op(self, t):          return str(t.type)
     def arith_val(self, x):        return x
-    def var_ref(self, name):       return str(name)
+    def var_ref(self, name):       return TypedRef(str(name), "var_ref")
 
     def NEWLINE(self, t):
         return None

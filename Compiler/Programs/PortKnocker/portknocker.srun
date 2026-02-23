@@ -1,42 +1,42 @@
 # Ports
-PIN  fromExternal
-PIN  fromInternal
-POUT toExternal
-POUT toInternal
+pin  fromExternal
+pin  fromInternal
+pout toExternal
+pout toInternal
 
 # Resources Allocation
-HASH ipv4_hash {IPV4.SRC}
+hash ipv4_hash {IPV4.SRC}
 
 # State
-REG knockStatus
-REG acceptedConnections
-VAR status
-VAR isAccepted
+reg knockStatus
+reg acceptedConnections
+var status
+var isAccepted
 
 # Stage 1: SSH access (only afater full knock)
-HANDLER ssh_access
-  KEY PKT.PORT == fromExternal
-  KEY L4.DPORT == 22
-  DEFAULT FWD toInternal
+handler ssh_access
+  key PKT.PORT == fromExternal
+  key L4.DPORT == 22
+  default FWD toInternal
   begin:
     .mget acceptedConnections[IPV4.SRC], $isAccepted
     .br.cond $isAccepted == 0, L_DROP
   L_DROP:
-      DROP
-END
+      .drop
+end
 
 # Stage 2: Knock step 1
-HANDLER knock_step1
-  KEY PKT.PORT == fromExternal
-  KEY L4.DPORT == 1234
+handler knock_step1
+  key PKT.PORT == fromExternal
+  key L4.DPORT == 1234
   begin:
     .mset knockStatus[IPV4.SRC], 1
-END
+end
 
 # Stage 3: Knock step 2 (requires step 1)
-HANDLER knock_step2
-  KEY PKT.PORT == fromExternal
-  KEY L4.DPORT == 5678
+handler knock_step2
+  key PKT.PORT == fromExternal
+  key L4.DPORT == 5678
   begin:
     .mget knockStatus[IPV4.SRC], $status
     .br.cond $status == 1, L_CORRECT_KNOCK
@@ -44,12 +44,12 @@ HANDLER knock_step2
   
   L_CORRECT_KNOCK:
     .mset knockStatus[IPV4.SRC], 2 
-END
+end
 
 # Stage 4: Knock step 3 (requires step 2) -> grant access
-HANDLER knock_step3
-  KEY PKT.PORT == fromExternal
-  KEY L4.DPORT == 9012
+handler knock_step3
+  key PKT.PORT == fromExternal
+  key L4.DPORT == 9012
   begin:
     .mget knockStatus[IPV4.SRC], $status
     .br.cond $status == 2, L_ACCEPT_CONN
@@ -57,16 +57,16 @@ HANDLER knock_step3
     .mset knockStatus[IPV4.SRC], 0
   L_ACCEPT_CONN:
     .mset acceptedConnections[IPV4.SRC], 1
-END
+end
 
 # Stage 5: Other inbound traffic (default path)
-HANDLER from_external_default
-  KEY PKT.PORT == fromExternal
-  DEFAULT FWD toInternal
-END
+handler from_external_default
+  key PKT.PORT == fromExternal
+  default FWD toInternal
+end
 
 # Outbound: plain forwarding
-HANDLER from_internal
-  KEY PKT.PORT == fromInternal
-  DEFAULT FWD toExternal
-END
+handler from_internal
+  key PKT.PORT == fromInternal
+  default FWD toExternal
+end

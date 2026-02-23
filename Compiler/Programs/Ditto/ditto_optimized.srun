@@ -1,32 +1,29 @@
-/////// Ports and Queues ///////
-port  P_INPUT_TRAFFIC IN
-port  P_PAT1_IN       IN
-port  P_PAT2_IN       IN
-port  P_PAT1_OUT      OUT
-port  P_PAT2_OUT      OUT
+####### Ports and Queues #######
+pin  P_INPUT_TRAFFIC
+pin  P_PAT1_IN
+pin  P_PAT2_IN
+pout  P_PAT1_OUT
+pout  P_PAT2_OUT
 queue Q_PAT1          P_PAT1_OUT     PRIO 2
 queue Q_PAT2          P_PAT2_OUT     PRIO 2
 
-/////// Control Plane ///////
+####### Control Plane #######
 setup   loop P_PAT1_OUT P_PAT1_IN
 setup   loop P_PAT2_OUT P_PAT2_IN
 setup   pgen ONESHOT 1 1500 P_CLONE_PAT1_OUT
 setup   pgen ONESHOT 1 1600 P_CLONE_PAT2_OUT
 setup   pattern PAT1 1500 1600
 
-/////// Handlers ///////
+####### Handlers #######
 handler padding_handler
   key   PKT.PORT == P_INPUT_TRAFFIC
   vars  $size
   begin:
     .pad.pattern PAT1
     .copy        IPV4.LEN, $size
-    .br.cond     EQ, $size, #1500, L_FWD_PAT1
-    .br.cond     EQ, $size, #1600, L_FWD_PAT2
-    .jmp         end
+    .br.cond     $size == 1500, L_FWD_PAT1
+    .br.cond     $size == 1600, L_FWD_PAT2
   L_FWD_PAT1:
-    .fwd.enq     Q_PAT1, #1
-    .jmp         end
+    .fwd.enq     Q_PAT1, 1
   L_FWD_PAT2:
-    .fwd.enq     Q_PAT2, #1
-  end:
+    .fwd.enq     Q_PAT2, 1

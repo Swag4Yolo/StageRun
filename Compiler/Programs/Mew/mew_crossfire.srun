@@ -1,23 +1,23 @@
 # Ports
-PIN  fromExternal
-PIN  fromInternal
-POUT toExternal
-POUT toInternal
+pin  fromExternal
+pin  fromInternal
+pout toExternal
+pout toInternal
 
 # Resources Allocation
-HASH host_pair {IPV4.SRC, IPV4.DST}
-HASH flow_key  {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
+hash host_pair {IPV4.SRC, IPV4.DST}
+hash flow_key  {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, IPV4.PROTO}
 
-REG numBytesFlow
-REG numBytesFlow2
-REG slowFlowCounter
-VAR oldNBytes
-VAR nBytes
-VAR nSlowFlows
+reg numBytesFlow
+reg numBytesFlow2
+reg slowFlowCounter
+var oldNBytes
+var nBytes
+var nSlowFlows
 
-HANDLER from_external #handler
-  KEY PKT.PORT == fromExternal
-  DEFAULT FWD toInternal
+handler from_external #handler
+  key PKT.PORT == fromExternal
+  default FWD toInternal
   begin:
     .minc numBytesFlow[flow_key], PKT.SIZE, $oldNBytes, OLD
     .minc numBytesFlow2[flow_key], PKT.SIZE, $nBytes, NEW
@@ -46,11 +46,11 @@ HANDLER from_external #handler
     .br.cond $nSlowFlows > 1, L_DROP
 
   L_DROP:
-    .fwd.drop
+    .drop
 
-END
+end
 
-HANDLER from_internal
-  KEY PKT.PORT == fromInternal;
-  DEFAULT FWD toExternal;
-END
+handler from_internal
+  key PKT.PORT == fromInternal
+  default FWD toExternal
+end

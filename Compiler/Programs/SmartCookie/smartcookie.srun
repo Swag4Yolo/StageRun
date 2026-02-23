@@ -1,57 +1,52 @@
 # Ports
-PIN  pFromInternet
-PIN  pFromServer
-POUT pToInternet
-POUT pToServer
+pin  pFromInternet
+pin  pFromServer
+pout pToInternet
+pout pToServer
 
 # Resources Allocation
 # 0xA1B2C3D4 => 2712847316
-HASH syn_cookie {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, 2712847316}
+hash syn_cookie {IPV4.SRC, IPV4.DST, L4.SPORT, L4.DPORT, 2712847316}
 
 # State
-VAR tmp
-VAR cookie
+var tmp
+var cookie
 
 # Stage 1: SYN packet handling — generate cookie and reply
-HANDLER handle_syn
-  KEY PKT.PORT == pFromInternet
-  KEY L4.PROTO == 6  # TCP
-  KEY TCP.FLAGS & 2 # TCP.SYN_FLAG
-  DEFAULT FWD pToInternet
+handler handle_syn
+  key PKT.PORT == pFromInternet
+  key L4.PROTO == 6  # TCP
+  key TCP.FLAGS & 2 # TCP.SYN_FLAG
+  default FWD pToInternet
   begin:
     # ACK = SEQ + 1
-    HARIT TCP.SEQNO + 1 -> TCP.ACKNO
-    HASHTOVAR syn_cookie -> tmp
-    VTOHEADER tmp -> TCP.SEQNO
-    # Set flags = SYN+ACK
-    HASSIGN TCP.FLAGS 12 # pass ack flag
-    RTS
-  end:
-END
+    .hinc TCP.SEQNO, 1, TCP.ACKNO
+    .hashcopy syn_cookie, $tmp
+    .copy $tmp, TCP.SEQNO
+    .hassign TCP.FLAGS, 12 
+    .rts
+end
 
 # Stage 2: ACK packet handling — validate cookie and forward to server if valid
-HANDLER handle_ack
-  KEY PKT.PORT == pFromInternet
-  KEY L4.PROTO == 6  # TCP
-  KEY TCP.FLAGS & 12 # TCP.ACK_FLAG
-  DEFAULT FWD pToInternet
+handler handle_ack
+  key PKT.PORT == pFromInternet
+  key L4.PROTO == 6  # TCP
+  key TCP.FLAGS & 12 # TCP.ACK_FLAG
+  default FWD pToInternet
   begin:
-    # tmp = ACK - 1
-    HTOVAR TCP.ACKNO -> tmp
-    ARIT tmp - 1 -> tmp
+    .hcopy TCP.ACKNO, $tmp
+    .inc $tmp, -1, $tmp
+    .hashcopy syn_cookie, $cookie
 
-    HASHTOVAR syn_cookie -> cookie
-
-    IF tmp == cookie:
-      FWD pToServer
-    ELSE:
-      DROP
-    ENDIF
-  end:
-END
+    .br.cond $tmp == $cookie, L_COOKIE_MATCHED
+    #else
+    .drop
+  L_COOKIE_MATCHED:
+    .fwd pToServer
+end
 
 # Stage 3: Allow all traffic from internal servers to the Internet
-HANDLER from_server
-  KEY PKT.PORT == pFromServer
-  DEFAULT FWD pToInternet
-END
+handler from_server
+  key PKT.PORT == pFromServer
+  default FWD pToInternet
+end

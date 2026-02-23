@@ -6,6 +6,22 @@ from typing import List, Optional, Dict
 # ======================
 # Base AST nodes
 # ======================
+class TypedRef(str):
+    """
+    String-like reference carrying internal type metadata.
+    It serializes as a plain string in JSON.
+    """
+    __slots__ = ("ref_kind",)
+
+    def __new__(cls, value: str, ref_kind: str):
+        obj = str.__new__(cls, value)
+        obj.ref_kind = ref_kind
+        return obj
+
+    def __reduce__(self):
+        return (TypedRef, (str(self), self.ref_kind))
+
+
 @dataclass
 class ASTNode:
     """Base class for all AST nodes."""
@@ -78,6 +94,11 @@ class DropInstr(InstructionNode):
 
 
 @dataclass
+class RtsInstr(InstructionNode):
+    pass
+
+
+@dataclass
 class FwdAndEnqueueInstr(InstructionNode):
     port: str
     qid: int
@@ -87,6 +108,7 @@ class FwdAndEnqueueInstr(InstructionNode):
 class HeaderIncrementInstr(InstructionNode):
     header: str
     value: int
+    reshdr: str
 
 
 @dataclass
@@ -123,9 +145,17 @@ class CloneInstr(InstructionNode):
     port: str
 
 @dataclass
+class ActivateInstr(InstructionNode):
+    program: str
+
+@dataclass
 class RandomInstr(InstructionNode):
     num_bits: int
     var: str
+
+@dataclass
+class TimeInstr(InstructionNode):
+    resvar: str
 
 @dataclass
 class InInstr(InstructionNode):
@@ -180,6 +210,12 @@ class MulInstr(InstructionNode):
     value: int
     resvar: str
 
+@dataclass
+class IncInstr(InstructionNode):
+    lvar: str
+    value: int
+    resvar: str
+
 
 # ======================
 # Conditionals
@@ -189,6 +225,11 @@ class MulInstr(InstructionNode):
 class BrCondInstr(InstructionNode):
     """ .br.cond <bool_expr>, <label> """
     cond: BooleanExpression
+    label: str
+
+@dataclass
+class JmpInstr(InstructionNode):
+    """ .jmp <label> """
     label: str
 
 @dataclass

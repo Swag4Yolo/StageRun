@@ -1,25 +1,25 @@
-PIN  InternalPortIn
-PIN  ExternalPortIn
-POUT InternalPortOut
-POUT ExternalPortOut
+pin  InternalPortIn
+pin  ExternalPortIn
+pout InternalPortOut
+pout ExternalPortOut
 
-HANDLER toRouterA
-  KEY PKT.PORT == ExternalPortIn
-  KEY IPV4.DST == "10.10.1.0/24"
-  DEFAULT FWD InternalPortOut
+handler toRouterA
+  key PKT.PORT == ExternalPortIn
+  key IPV4.DST == "10.10.1.0/24"
+  default FWD InternalPortOut
   begin:
-    .hinc IPV4.TTL, 1
-END
+    .hinc IPV4.TTL, 1, IPV4.TTL
+end
 
-HANDLER toRouterB
-  KEY PKT.PORT == ExternalPortIn
-  KEY IPV4.DST == "10.10.2.0/24"
-  DEFAULT FWD InternalPortOut
+handler toRouterB
+  key PKT.PORT == ExternalPortIn
+  key IPV4.DST == "10.10.2.0/24"
+  default FWD InternalPortOut
   begin:
-    .hinc IPV4.TTL, -1
-END
+    .hinc IPV4.TTL, -1, IPV4.TTL
+end
 
-HANDLER FromInternal
-  KEY PKT.PORT == InternalPortIn
-  DEFAULT FWD ExternalPortOut
-END
+handler FromInternal
+  key PKT.PORT == InternalPortIn
+  default FWD ExternalPortOut
+end
