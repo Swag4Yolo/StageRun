@@ -1,0 +1,119 @@
+
+####### Real and Chaff Injection #######
+pin  P_INPUT
+
+####### Priority Queues #######
+pin  P_PAT1_IN
+pin  P_PAT2_IN
+pout P_PAT1_OUT
+pout P_PAT2_OUT
+
+####### Cloning #######
+pin  P_CLONE_PAT1_IN
+pin  P_CLONE_PAT2_IN
+pout P_CLONE_PAT1_OUT
+pout P_CLONE_PAT2_OUT
+
+####### Recirc #######
+pin  P_RECIRC_IN
+pout P_RECIRC_OUT
+
+####### Used for Talking w TF2 #######
+pin  P_FROM_TF2
+pout P_RR_OUT # to tf2
+pout P_TO_SERVER # to receive final traffic w/timestamps from tf2
+
+queue Q_PAT1          P_PAT1_OUT     PRIO 2
+queue Q_PAT2          P_PAT2_OUT     PRIO 2
+queue Q_RR            P_RR_OUT       RR 2
+
+####### Control Plane #######
+# ports needs to be physically looped
+setup   loop P_PAT1_OUT P_PAT1_IN 
+setup   loop P_PAT2_OUT P_PAT2_IN
+setup   pattern PAT1 1500 1600
+
+### Resources
+var proto
+var size
+
+##############################
+####### Cloned Packets #######
+##############################
+
+handler gen_p1_clone
+  key PKT.PORT == P_CLONE_PAT1_IN
+  default FWD_AND_ENQUEUE Q_PAT1 0
+  begin:
+    .clone P_CLONE_PAT2_OUT
+end
+
+handler gen_p2_clone
+  key PKT.PORT == P_CLONE_PAT2_IN
+  default FWD_AND_ENQUEUE Q_PAT2 0
+  begin:
+    .clone P_CLONE_PAT1_OUT
+end
+
+##############################
+#######    Patterns    #######
+##############################
+
+handler pat1
+  key PKT.PORT == P_PAT1_IN
+  default FWD_AND_ENQUEUE Q_RR 0
+end
+
+handler pat2
+  key PKT.PORT == P_PAT2_IN
+  default FWD_AND_ENQUEUE Q_RR 1
+end
+
+##############################
+##### Incoming  Traffic ######
+##############################
+handler input_chaff
+  key PKT.PORT == P_INPUT
+  key IPV4.PROTO == 200
+  begin:
+    .pad.pattern 1500 1600
+
+  poskey PKT.SIZE == 1500
+  posdefault FWD P_CLONE_PAT2_OUT
+  poskey PKT.SIZE == 1600
+  posdefault FWD P_CLONE_PAT1_OUT
+end
+
+handler input
+  key PKT.PORT == P_INPUT
+  begin:
+    .pad.pattern 1500 1600
+
+  poskey PKT.SIZE == 1500
+  posdefault FWD_AND_ENQUEUE Q_PAT1 1
+  poskey PKT.SIZE == 1600
+  posdefault FWD_AND_ENQUEUE Q_PAT2 1
+
+end
+
+handler input_recirc_port
+  key PKT.PORT == P_RECIRC_IN
+  begin:
+    .pad.pattern 1500 1600
+
+  poskey PKT.SIZE == 1500
+  posdefault FWD_AND_ENQUEUE Q_PAT1 1
+  poskey PKT.SIZE == 1600
+  posdefault FWD_AND_ENQUEUE Q_PAT2 1
+end
+
+##############################
+#####     2nd Tofino    ######
+##############################
+handler from_tf2
+  key PKT.PORT == P_FROM_TF2
+  default FWD P_TO_SERVER
+end
+
+# DISABLED RECIRC_PORTS FOR THIS ENGINE SINCE WE DO NOT HAVE ENOUGH PORTS
+# RECIRC NEEDS TO BE AT RUNTIME, AND SO DEPLOYER CANNOT PUT FIXED RECIRC PATH

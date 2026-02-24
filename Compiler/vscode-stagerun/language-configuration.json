@@ -3,7 +3,7 @@
     "lineComment": "#"
   },
   "brackets": [
-    ["HANDLER", "END"],
+    ["handler", "end"],
     // ["BODY", "END"]
   ],
   "autoClosingPairs": [

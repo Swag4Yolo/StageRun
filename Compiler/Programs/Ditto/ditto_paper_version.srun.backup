@@ -1,39 +1,37 @@
-### Configurations
 
-# QSET [NAME] [TYPE] [NUM_QUEUES]
-# TYPE: 
-# 1. 'PRIO' for priority queues, the bigger the number the higher priority it has
-# 2. 'RR' for round robin queues, the priority is the same for a bunch of queues
-
-#PCONFIG [NAME] [SPEED LIMITER %]
-queue prio_queues PRIO 2;
-queue rr_queues RR 2;
-
-
-### For Real Traffic and Chaff Injection
+####### Real and Chaff Injection #######
 pin  P_INPUT;
 
-### Priority Queues 
-pin  P1_IN;
-pin  P2_IN;
-pout P1_OUT prio_queues;
-pout P2_OUT prio_queues;
+####### Priority Queues #######
+pin  P_PAT1_IN;
+pin  P_PAT2_IN;
+pout P_PAT1_OUT;
+pout P_PAT2_OUT;
 
-### Used for Cloning
-pin  PC1_IN;
-pin  PC2_IN;
-pout PC1_OUT;
-pout PC2_OUT;
+####### Cloning #######
+pin  P_CLONE_PAT1_IN;
+pin  P_CLONE_PAT2_IN;
+pout P_CLONE_PAT1_OUT;
+pout P_CLONE_PAT2_OUT;
 
-### Used for Recirc 
+####### Recirc #######
 pin  P_RECIRC_IN;
 pout P_RECIRC_OUT;
 
-### Used for Talking w TF2
+####### Used for Talking w TF2 #######
 pin  P_FROM_TF2;
-pout PRR_OUT rr_queues; # to tf2
+pout P_RR_OUT; # to tf2
 pout P_TO_SERVER; # to receive final traffic w/timestamps from tf2
 
+queue Q_PAT1          P_PAT1_OUT     PRIO 2
+queue Q_PAT2          P_PAT2_OUT     PRIO 2
+queue Q_RR            P_RR_OUT       RR 2
+
+####### Control Plane #######
+# ports needs to be physically looped
+setup   loop P_PAT1_OUT P_PAT1_IN 
+setup   loop P_PAT2_OUT P_PAT2_IN
+setup   pattern PAT1 1500 1600
 
 ### Resources
 var proto;
@@ -44,17 +42,17 @@ var size;
 ##############################
 
 handler gen_p1_clone
-  key PKT.PORT == PC1_IN;
-  default FWD_AND_ENQUEUE P1_OUT 0;
+  key PKT.PORT == P_CLONE_PAT1_IN;
+  default FWD_AND_ENQUEUE Q_PAT1 0;
   begin:
-    CLONE PC2_OUT;
+    CLONE P_CLONE_PAT2_OUT;
 end
 
 handler gen_p2_clone
-  key PKT.PORT == PC2_IN;
-  default FWD_AND_ENQUEUE P2_OUT 0;
+  key PKT.PORT == P_CLONE_PAT2_IN;
+  default FWD_AND_ENQUEUE Q_PAT2 0;
   begin:
-    CLONE PC1_OUT;
+    CLONE P_CLONE_PAT1_OUT;
 end
 
 ##############################
@@ -62,13 +60,13 @@ end
 ##############################
 
 handler pat1
-  key PKT.PORT == P1_IN;
-  default FWD_AND_ENQUEUE PRR_OUT 0;
+  key PKT.PORT == P_PAT1_IN;
+  default FWD_AND_ENQUEUE Q_RR 0;
 end
 
 handler pat2
-  key PKT.PORT == P2_IN;
-  default FWD_AND_ENQUEUE PRR_OUT 1;
+  key PKT.PORT == P_PAT2_IN;
+  default FWD_AND_ENQUEUE Q_RR 1;
 end
 
 ##############################
@@ -85,9 +83,9 @@ handler input_chaff
     HTOVAR IPV4.LEN -> size;
 
     IF size == 1500:
-      FWD PC2_OUT;
+      FWD P_CLONE_PAT2_OUT;
     ELIF size == 1600:
-      FWD PC1_OUT;
+      FWD P_CLONE_PAT1_OUT;
     ENDIF
 end
 
@@ -99,9 +97,9 @@ handler input
     HTOVAR IPV4.LEN -> size;
 
     IF size == 1500:
-      FWD_AND_ENQUEUE P1_OUT 1;
+      FWD_AND_ENQUEUE P_PAT1_OUT 1;
     ELIF size == 1600:
-      FWD_AND_ENQUEUE P2_OUT 1;
+      FWD_AND_ENQUEUE P_PAT2_OUT 1;
     ELSE:
       FWD P_RECIRC_OUT;
     ENDIF
@@ -115,9 +113,9 @@ handler input_recirc_port
     HTOVAR IPV4.LEN -> size;
     
     IF size == 1500:
-      FWD_AND_ENQUEUE P1_OUT 1;
+      FWD_AND_ENQUEUE P_PAT1_OUT 1;
     ELIF size == 1600:
-      FWD_AND_ENQUEUE P2_OUT 1;
+      FWD_AND_ENQUEUE P_PAT2_OUT 1;
     ELSE:
       FWD P_RECIRC_OUT;
     ENDIF

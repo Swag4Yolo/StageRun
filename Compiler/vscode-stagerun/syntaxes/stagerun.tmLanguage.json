@@ -13,15 +13,15 @@
       "patterns": [
         {
           "name": "entity.name.type.stagerun", 
-          "match": "\\b(HANDLER)\\b"
+          "match": "\\b(handler)\\b"
         },
         {
           "name": "entity.name.function.stagerun", 
-          "match": "\\b(KEY|DEFAULT|END)\\b"
+          "match": "\\b(key|default|end)\\b"
         },
         {
           "name": "keyword.control.stagerun",
-          "match": "(?<!\\.)\\b(MAIN|BODY)\\b|(?<!\\.)\\b(PORT|PIN|POUT|QSET|HASH|REG|VAR)\\b" 
+          "match": "(?<!\\.)\\b(MAIN|BODY)\\b|(?<!\\.)\\b(port|pin|pout|hash|reg|var|queue|setup)\\b" 
         }
       ]
     },

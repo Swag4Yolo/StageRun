@@ -84,9 +84,9 @@ class StageRunTransformer(Transformer):
             return PortDecl(direction="OUT", name=str(name),qset="")
         return PortDecl(direction="OUT", name=str(name), qset=str(qset[0]))
 
-    def qset_decl(self, name, port, size):
+    def qset_decl(self, name, port, type, size):
         # "QSET" NAME NAME INT
-        return QueueSetDecl(name=str(name), type=str(port), size=int(size))
+        return QueueSetDecl(name=str(name), port=str(port), type=type, size=int(size))
 
     def var_decl(self, name):
         # "VAR" NAME

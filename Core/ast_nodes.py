@@ -44,6 +44,7 @@ class PortDecl(ASTNode):
 class QueueSetDecl(ASTNode):
     """QSET <queue_name> <type> <size>."""
     name: str
+    port: str
     type: str
     size: int
 

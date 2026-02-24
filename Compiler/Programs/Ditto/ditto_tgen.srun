@@ -19,7 +19,7 @@ pout FINAL_PORT RR 2; # Configure the port with two RR queues
 ################ Phase 1 ###############
 handler input_traffic
   key PKT.PORT == P_INPUT_TRAFFIC;
-  BODY
+  begin:
     PADTTERN 1500 1600; # Pads packets until one of the patterns
     HTOVAR IPV4.LEN -> size; # size = IPV4.LEN
     IF size == 1500: # size - 1500 == 0
@@ -38,14 +38,14 @@ TGEN ONESHOT 1 1600 CLONE_PORT_PAT2_OUT;
 handler clone_pattern_1
   key PKT.PORT == CLONE_PORT_PAT1_IN;
   default FWD_AND_ENQUEUE PAT1_OUT 0; # The packet default mecanism is to forward to the port corresponding of the first pattern to the queue 0
-  BODY
+  begin:
     CLONE CLONE_PORT_PAT1_OUT; # CLONE [PORT_TO_SEND_CLONED_PKT]
   end
 end
 handler clone_pattern_2
   key PKT.PORT == CLONE_PORT_PAT2_IN;
   default FWD_AND_ENQUEUE PAT2_OUT 0;
-  BODY
+  begin:
     CLONE CLONE_PORT_PAT2_OUT;
   end
 end

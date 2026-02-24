@@ -9,6 +9,7 @@ start: NEWLINE* statement (NEWLINE+ statement)* NEWLINE*
           | reg_decl
           | hash_decl
           | handler
+          | setup
 
 // PORTS
 // port_declr: "PORT" NAME
@@ -16,7 +17,16 @@ port_in_decl: "pin" NAME
 port_out_decl: "pout" NAME NAME?
 
 // QUEUES
-qset_decl: "QSET" NAME NAME INT
+//TODO: I have written rules for qset_decl (line 21) setup (lines 24, 25) and for setup options, such as loop_setup, and pattern_setup (lines 27, 28). I want you to modify the necessary files to implement this new instructions.
+qset_decl: "queue" NAME NAME NAME INT
+
+// Control Plane Setup
+setup: "setup" setup_type 
+setup_type: loop_setup
+          | pattern_setup
+loop_setup:    "loop" NAME NAME
+pattern_setup: "pattern" NAME INT+
+
 
 // Resources
 var_decl: "var" NAME
@@ -28,9 +38,14 @@ handler: "handler" NAME NEWLINE+ clause_line* "end"
 
 ?clause_line: (key_clause | default_clause) NEWLINE+
             | body_clause NEWLINE*
+            | pos_clause NEWLINE*
 
 key_clause: "key" key_ref (comp_op | mask_op) value
 default_clause: "default" default_instr
+
+pos_clause: pos_key_clause NEWLINE pos_default_clause NEWLINE+
+pos_key_clause: "poskey" key_ref (comp_op | mask_op) value
+pos_default_clause: "posdefault" default_instr
 
 body_clause: label_decl NEWLINE+ instr_line+ NEWLINE*
 instr_line: instr NEWLINE+
@@ -40,7 +55,7 @@ instr_line: instr NEWLINE+
               | default_fwd_queue_instr
 
 default_fwd_instr: "FWD" NAME
-default_fwd_queue_instr: "ENQUEUE" NAME SIGNED_INT
+default_fwd_queue_instr: "FWD_AND_ENQUEUE" NAME SIGNED_INT
 default_drop_instr: "DROP"
 // default_rts_instr: "RTS"
 
