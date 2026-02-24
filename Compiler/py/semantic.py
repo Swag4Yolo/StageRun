@@ -113,6 +113,13 @@ def _validate_setups(program: ProgramNode, ports_in: Set[str], ports_out: Set[st
             for value in setup.pattern:
                 if value <= 0:
                     raise SemanticError(f"Pattern setup '{setup.name}' has invalid non-positive value '{value}'")
+        elif isinstance(setup, PgenSetupDecl):
+            if setup.rate <= 0:
+                raise SemanticError(f"Pgen setup '{setup.name}' has invalid non-positive rate '{setup.rate}'")
+            if setup.size <= 0:
+                raise SemanticError(f"Pgen setup '{setup.name}' has invalid non-positive size '{setup.size}'")
+            if setup.port not in ports_out:
+                raise SemanticError(f"Pgen setup '{setup.name}' references unknown egress port '{setup.port}'")
 
 
 def _validate_handler(program: ProgramNode, handler: HandlerNode, ports_in: Set[str], ports_out: Set[str]) -> Dict[str, Any]:

@@ -72,16 +72,28 @@ end
 ##############################
 ##### Incoming  Traffic ######
 ##############################
-handler input_chaff
+# handler input_chaff
+#   key PKT.PORT == P_INPUT
+#   key IPV4.PROTO == 200
+#   begin:
+#     .pad.pattern 1500 1600
+
+#   poskey PKT.SIZE == 1500
+#   posdefault FWD P_CLONE_PAT2_OUT
+#   poskey PKT.SIZE == 1600
+#   posdefault FWD P_CLONE_PAT1_OUT
+# end
+handler input_chaff_pat1
   key PKT.PORT == P_INPUT
   key IPV4.PROTO == 200
-  begin:
-    .pad.pattern 1500 1600
-
-  poskey PKT.SIZE == 1500
-  posdefault FWD P_CLONE_PAT2_OUT
-  poskey PKT.SIZE == 1600
-  posdefault FWD P_CLONE_PAT1_OUT
+  key PKT.SIZE == 1500
+  default FWD P_CLONE_PAT2_OUT
+end
+handler input_chaff_pat2
+  key PKT.PORT == P_INPUT
+  key IPV4.PROTO == 200
+  key PKT.SIZE == 1600
+  default FWD P_CLONE_PAT1_OUT
 end
 
 handler input

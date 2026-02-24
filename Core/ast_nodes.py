@@ -70,6 +70,15 @@ class PatternSetupDecl(SetupDecl):
 
 
 @dataclass
+class PgenSetupDecl(SetupDecl):
+    """setup pgen <name> <rate> <size> <port>"""
+    name: str
+    rate: int
+    size: int
+    port: str
+
+
+@dataclass
 class VarDecl(ASTNode):
     """VAR <name>."""
     name: str

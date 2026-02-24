@@ -100,6 +100,9 @@ class StageRunTransformer(Transformer):
     def pattern_setup(self, name, *pattern):
         return PatternSetupDecl(name=str(name), pattern=[int(p) for p in pattern])
 
+    def pgen_setup(self, name, rate, size, port):
+        return PgenSetupDecl(name=str(name), rate=int(rate), size=int(size), port=str(port))
+
     def var_decl(self, name):
         # "VAR" NAME
         return VarDecl(name=str(name))

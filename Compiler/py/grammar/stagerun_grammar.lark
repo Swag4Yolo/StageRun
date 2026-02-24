@@ -23,8 +23,10 @@ qset_decl: "queue" NAME NAME NAME INT
 setup: "setup" setup_type 
 setup_type: loop_setup
           | pattern_setup
+          | pgen_setup
 loop_setup:    "loop" NAME NAME
 pattern_setup: "pattern" NAME INT+
+pgen_setup: "pgen" NAME INT INT NAME
 
 
 // Resources

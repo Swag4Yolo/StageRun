@@ -27,7 +27,7 @@ import dataclasses
 
 from Core.stagerun_graph.graph_builder import StageRunGraphBuilder
 from Core.stagerun_graph.graph_core import StageRunGraph, StageRunNode, StageRunEdge
-from Core.ast_nodes import IfNode, BooleanExpression, ProgramNode, LoopSetupDecl, PatternSetupDecl
+from Core.ast_nodes import IfNode, BooleanExpression, ProgramNode, LoopSetupDecl, PatternSetupDecl, PgenSetupDecl
 from Core.stagerun_isa import ISA
 
 # ============================================================
@@ -263,12 +263,15 @@ def _serialize_resources(program: ProgramNode):
     setup = {
         "loop": [],
         "pattern": {},
+        "pgen": [],
     }
     for s in program.setups:
         if isinstance(s, LoopSetupDecl):
             setup["loop"].append({"out_port": s.out_port, "in_port": s.in_port})
         elif isinstance(s, PatternSetupDecl):
             setup["pattern"][s.name] = list(s.pattern)
+        elif isinstance(s, PgenSetupDecl):
+            setup["pgen"].append({"name": s.name, "rate": s.rate, "size": s.size, "port": s.port})
     resources = {
         "ingress_ports": pin,
         "egress_ports": pout,
