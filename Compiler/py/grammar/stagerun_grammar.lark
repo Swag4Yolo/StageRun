@@ -17,7 +17,6 @@ port_in_decl: "pin" NAME
 port_out_decl: "pout" NAME NAME?
 
 // QUEUES
-//TODO: I have written rules for qset_decl (line 21) setup (lines 24, 25) and for setup options, such as loop_setup, and pattern_setup (lines 27, 28). I want you to modify the necessary files to implement this new instructions.
 qset_decl: "queue" NAME NAME NAME INT
 
 // Control Plane Setup

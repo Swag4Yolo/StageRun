@@ -93,7 +93,9 @@ class StageRunGraphBuilder:
                 self.default_action = {
                     "op": ISA.FWD_AND_ENQUEUE.value, 
                     "args": {
-                        "port": instr.port, "qid" : instr.qid
+                        "field_name": instr.qname,
+                        "port": instr.port,
+                        "qid" : instr.qid
                         }
                     }
             elif isinstance(instr, DropInstr):

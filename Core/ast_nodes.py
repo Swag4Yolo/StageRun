@@ -50,6 +50,26 @@ class QueueSetDecl(ASTNode):
 
 
 @dataclass
+class SetupDecl(ASTNode):
+    """Base type for control-plane setup declarations."""
+    pass
+
+
+@dataclass
+class LoopSetupDecl(SetupDecl):
+    """setup loop <out_port> <in_port>"""
+    out_port: str
+    in_port: str
+
+
+@dataclass
+class PatternSetupDecl(SetupDecl):
+    """setup pattern <name> <size>..."""
+    name: str
+    pattern: List[int]
+
+
+@dataclass
 class VarDecl(ASTNode):
     """VAR <name>."""
     name: str
@@ -101,6 +121,7 @@ class RtsInstr(InstructionNode):
 
 @dataclass
 class FwdAndEnqueueInstr(InstructionNode):
+    qname: str
     port: str
     qid: int
 
@@ -269,6 +290,24 @@ class HandlerDefault(ASTNode):
 
 
 @dataclass
+class HandlerPosKey(ASTNode):
+    field: str
+    operand: str
+    value: str | int
+
+
+@dataclass
+class HandlerPosDefault(ASTNode):
+    instr: InstructionNode
+
+
+@dataclass
+class HandlerPosClause(ASTNode):
+    key: HandlerPosKey
+    default_action: InstructionNode
+
+
+@dataclass
 class BasicBlockNode(ASTNode):
     """
     A labeled basic block inside a handler body.
@@ -292,6 +331,7 @@ class HandlerNode(ASTNode):
     name: str
     keys: List[HandlerKey] = field(default_factory=list)
     default_action: Optional[InstructionNode] = None
+    pos_clauses: List[HandlerPosClause] = field(default_factory=list)
     body: Optional[HandlerBodyNode] = None
 
 
@@ -303,7 +343,8 @@ class HandlerNode(ASTNode):
 class ProgramNode(ASTNode):
     ports_in: List[PortDecl] = field(default_factory=list)
     ports_out: List[PortDecl] = field(default_factory=list)
-    qsets: List[QueueSetDecl] = field(default_factory=list)
+    queues: List[QueueSetDecl] = field(default_factory=list)
+    setups: List[SetupDecl] = field(default_factory=list)
     vars: List[VarDecl] = field(default_factory=list)
     regs: List[RegDecl] = field(default_factory=list)
     hashes: List[HashDecl] = field(default_factory=list)

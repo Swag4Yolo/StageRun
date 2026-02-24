@@ -49,12 +49,14 @@ class StageRunTransformer(Transformer):
 
     # --- Top-level program assembly ----------------------------------------
     def start(self, *statements):
-        ports_in, ports_out, qsets, program_vars, regs, handlers, hashes = [], [], [], [], [], [], []
+        ports_in, ports_out, qsets, setups, program_vars, regs, handlers, hashes = [], [], [], [], [], [], [], []
         for s in statements:
             if isinstance(s, PortDecl):
                 (ports_in if s.direction == "IN" else ports_out).append(s)
             elif isinstance(s, QueueSetDecl):
                 qsets.append(s)
+            elif isinstance(s, SetupDecl):
+                setups.append(s)
             elif isinstance(s, VarDecl):
                 program_vars.append(s)
             elif isinstance(s, RegDecl):
@@ -66,7 +68,8 @@ class StageRunTransformer(Transformer):
         return ProgramNode(
             ports_in=ports_in,
             ports_out=ports_out,
-            qsets=qsets,
+            queues=qsets,
+            setups=setups,
             vars=program_vars,
             regs=regs,
             hashes=hashes,
@@ -87,6 +90,15 @@ class StageRunTransformer(Transformer):
     def qset_decl(self, name, port, type, size):
         # "QSET" NAME NAME INT
         return QueueSetDecl(name=str(name), port=str(port), type=type, size=int(size))
+
+    def setup(self, setup_decl):
+        return setup_decl
+
+    def loop_setup(self, out_port, in_port):
+        return LoopSetupDecl(out_port=str(out_port), in_port=str(in_port))
+
+    def pattern_setup(self, name, *pattern):
+        return PatternSetupDecl(name=str(name), pattern=[int(p) for p in pattern])
 
     def var_decl(self, name):
         # "VAR" NAME
@@ -112,12 +124,27 @@ class StageRunTransformer(Transformer):
         # instr já é, por exemplo, ForwardInstr ou DropInstruction
         return HandlerDefault(instr=instr)
 
+    def pos_key_clause(self, key_ref, op, val):
+        return HandlerPosKey(field=key_ref, operand=op, value=val)
+
+    def pos_default_clause(self, instr):
+        return HandlerPosDefault(instr=instr)
+
+    def pos_clause(self, pos_key, *_rest):
+        pos_default = None
+        for item in _rest:
+            if isinstance(item, HandlerPosDefault):
+                pos_default = item
+                break
+        return HandlerPosClause(key=pos_key, default_action=pos_default.instr)
+
     def body_clause(self, label_decl, *items):
         instrs = [x for x in items if x is not None]
         return BasicBlockNode(label=label_decl.name, instructions=instrs)
     
     def handler(self, name, *clauses):
         keys, default = [], None
+        pos_clauses = []
         blocks = []
 
         for c in clauses:
@@ -125,18 +152,21 @@ class StageRunTransformer(Transformer):
                 keys.append(c)
             elif isinstance(c, HandlerDefault):
                 default = c.instr
+            elif isinstance(c, HandlerPosClause):
+                pos_clauses.append(c)
             elif isinstance(c, BasicBlockNode):
                 blocks.append(c)
 
         body = HandlerBodyNode(blocks=blocks) if blocks else None
-        return HandlerNode(name=str(name), keys=keys, default_action=default, body=body)
+        return HandlerNode(name=str(name), keys=keys, default_action=default, pos_clauses=pos_clauses, body=body)
 
     # --- Instructions: Forwarding -------------------------------------------
     def fwd_instr(self, target):
         return FwdInstr(port=str(target))
     
     def fwd_queue_instr(self, target, qid):
-        return FwdAndEnqueueInstr(port=str(target), qid=int(qid))
+        target_str = str(target)
+        return FwdAndEnqueueInstr(qname=target_str, port=target_str, qid=int(qid))
 
     def drop_instr(self):
         return DropInstr()
@@ -235,7 +265,8 @@ class StageRunTransformer(Transformer):
         return FwdInstr(port=str(target))
     
     def default_fwd_queue_instr(self, target, qid):
-        return FwdAndEnqueueInstr(port=str(target), qid=int(qid))
+        target_str = str(target)
+        return FwdAndEnqueueInstr(qname=target_str, port=target_str, qid=int(qid))
 
     def default_drop_instr(self):
         return DropInstr()

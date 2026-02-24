@@ -27,7 +27,7 @@ import dataclasses
 
 from Core.stagerun_graph.graph_builder import StageRunGraphBuilder
 from Core.stagerun_graph.graph_core import StageRunGraph, StageRunNode, StageRunEdge
-from Core.ast_nodes import IfNode, BooleanExpression, ProgramNode
+from Core.ast_nodes import IfNode, BooleanExpression, ProgramNode, LoopSetupDecl, PatternSetupDecl
 from Core.stagerun_isa import ISA
 
 # ============================================================
@@ -74,11 +74,26 @@ def _serialize_labels(graph: StageRunGraph, label_sizes: list[tuple[str, int]]) 
 
     return labels_out
 
-def _serialize_handler(graph: StageRunGraph, label_sizes: list[tuple[str, int]]) -> Dict[str, Any]:
+def _serialize_pos_clauses(pos_clauses: list[Any]) -> list[Dict[str, Any]]:
+    out = []
+    for clause in pos_clauses or []:
+        out.append({
+            "poskey": {
+                "field": clause.key.field,
+                "operand": clause.key.operand,
+                "value": clause.key.value,
+            },
+            "posdefault": _serialize_instr(clause.default_action),
+        })
+    return out
+
+
+def _serialize_handler(graph: StageRunGraph, label_sizes: list[tuple[str, int]], pos_clauses: list[Any]) -> Dict[str, Any]:
     return {
         "id": graph.graph_id,
         "keys": graph.keys,
         "default_action": graph.default_action,
+        "pos": _serialize_pos_clauses(pos_clauses),
         "labels": _serialize_labels(graph, label_sizes),
         "edges": [_serialize_edge(e) for e in graph.edges],
     }
@@ -229,22 +244,15 @@ def _serialize_graph(graph: StageRunGraph) -> Dict[str, Any]:
 
 def _serialize_resources(program: ProgramNode):
     pin = [p.name for p in program.ports_in]
-    pout = []
-    # pout = [p.name for p in program.ports_out]
+    pout = [p.name for p in program.ports_out]
     qsets = {}
 
-    for qset in program.qsets:
+    for qset in program.queues:
         qsets[qset.name] = {
             "type": qset.type, 
             "size": qset.size,
-            "ports": []
+            "ports": [qset.port]
             }
-
-    for p in program.ports_out:
-        pout.append(p.name)
-        qset_name = p.qset
-        if qset_name and qset_name in qsets:
-            qsets[qset_name]["ports"].append(p.name)
 
     regs = [reg.name for reg in program.regs]
     vars = [var.name for var in program.vars]
@@ -252,6 +260,15 @@ def _serialize_resources(program: ProgramNode):
     hashes = dict()
     for h in program.hashes:
         hashes[h.name] = h.args
+    setup = {
+        "loop": [],
+        "pattern": {},
+    }
+    for s in program.setups:
+        if isinstance(s, LoopSetupDecl):
+            setup["loop"].append({"out_port": s.out_port, "in_port": s.in_port})
+        elif isinstance(s, PatternSetupDecl):
+            setup["pattern"][s.name] = list(s.pattern)
     resources = {
         "ingress_ports": pin,
         "egress_ports": pout,
@@ -259,7 +276,8 @@ def _serialize_resources(program: ProgramNode):
         # "hashes": program.hashes,
         "registers": regs,
         "vars": vars,
-        "hashes": hashes
+        "hashes": hashes,
+        "setup": setup
         # "clones": program.,
     }
 
@@ -268,6 +286,7 @@ def _serialize_resources(program: ProgramNode):
 def _build_stagerun_graphs(program: ProgramNode):
     graphs = []
     label_sizes_by_handler = {}
+    pos_clauses_by_handler = {}
 
     for h in program.handlers:
         keys = h.keys or []
@@ -282,15 +301,16 @@ def _build_stagerun_graphs(program: ProgramNode):
         g = StageRunGraphBuilder(graph_id=h.name).build(keys, default_action, flat_body)
         graphs.append(g)
         label_sizes_by_handler[h.name] = label_sizes
+        pos_clauses_by_handler[h.name] = h.pos_clauses or []
 
-    return graphs, label_sizes_by_handler
+    return graphs, label_sizes_by_handler, pos_clauses_by_handler
 
 def _build_stagerun_resources(program: ProgramNode):
     # Build a resources summary for the controller/exporter
     resources = {
         "ingress_ports": program.ports_in,
         "egress_ports": program.ports_out,
-        "queues": program.qsets,       # e.g., [{"port":"P1_OUT","qid":1}]
+        "queues": program.queues,       # e.g., [{"port":"P1_OUT","qid":1}]
         # "hashes": program.hashes,
         "registers": program.regs,
         "vars": program.vars,
@@ -314,7 +334,7 @@ def export_stage_run_graphs(
     """
 
     # 1) Build handler graphs
-    graphs, label_sizes_by_handler = _build_stagerun_graphs(program)
+    graphs, label_sizes_by_handler, pos_clauses_by_handler = _build_stagerun_graphs(program)
 
     # 2) Build payload WITHOUT checksum first
     payload = {
@@ -322,7 +342,11 @@ def export_stage_run_graphs(
         "isa_version": ISA.VERSION.value,
         "schema_version": schema_version,
         "handlers": [
-            _serialize_handler(g, label_sizes_by_handler.get(g.graph_id, []))
+            _serialize_handler(
+                g,
+                label_sizes_by_handler.get(g.graph_id, []),
+                pos_clauses_by_handler.get(g.graph_id, []),
+            )
             for g in graphs
         ],
         "resources": _serialize_resources(program),
