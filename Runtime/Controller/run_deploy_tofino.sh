@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CONTROLLER_VERSION="v1.0"
+CONTROLLER_VERSION="v1.1"
 TUNNEL_SSH_ENTITY="onitof"
 TUNNEL_HOST="localhost"
 TUNNEL_PORT=1337

@@ -153,11 +153,7 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     # print("Recirc Ports")
     # print(recirc_ports)
 
-    # Convert to "-D FLAG" form
-    ppflags = " ".join([f"-D {flag}" for flag in flag_list])
 
-    # print("ppflags")
-    # print(ppflags)
 
     # --- Prepare build dir ---
     build_path = os.path.join(sm.BUILD_DIR_PATH, f"{engine_key}")
@@ -185,6 +181,22 @@ async def compile_engine(tag: str, version: str, flags: str = ""):
     #TODO: delete file? What 
     # program_name = f"{tag}.v{version}"
 
+
+    # Convert to "-D FLAG" form
+    ppflags = " ".join([f"-D {flag}" for flag in flag_list])
+
+    dir_list = [
+        f"{build_path}/Utils",
+        f"{build_path}/Blocks",
+        f"{build_path}/Instructions",
+        f"{build_path}/Mechanisms",
+    ]           
+    
+    ppflags += " " + " ".join(f"-I {flag}" for flag in dir_list)
+
+    print("[!!!]")
+    print("ppflags")
+    print(ppflags)
 
     cmd = [
         "time",
