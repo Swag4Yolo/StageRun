@@ -2,10 +2,10 @@ from lib.tofino.types import *
 from lib.tofino.constants import *
 
 class WritePhaseConditionalMechanismAfterRegKeys(BaseTableKeys):
-    def __init__(self, program_id=1, next_instruction=DISABLED, pkt_id=DISABLED):
+    def __init__(self, program_id=1, flow_id=DISABLED, pkt_id=DISABLED):
         super().__init__()
         self.program_id = program_id
-        self.next_instruction = next_instruction
+        self.flow_id = flow_id
         self.pkt_id = pkt_id
 
     def to_key_list(self):
@@ -15,7 +15,7 @@ class WritePhaseConditionalMechanismAfterRegKeys(BaseTableKeys):
 
         # self.annotations = [["hdr.ipv4.dstAddr", "ipv4"]]
         return [
-            ["hdr.bridge_meta.f1.next_instruction",     self.next_instruction,  "exact"],
+            ["hdr.bridge_meta.f1.flow_id",     self.flow_id,  "exact"],
             ["ig_md.pkt_filter_md.pkt_id",              self.pkt_id,            "exact"],
             ["hdr.bridge_meta.program_id", self.program_id, "exact"],
 
@@ -25,7 +25,7 @@ class WritePhaseConditionalMechanismAfterRegKeys(BaseTableKeys):
     def from_key_dict(cls, key_dict):
         return cls(
             program_id=key_dict['hdr.bridge_meta.program_id']['value'],
-            next_instruction=key_dict['hdr.bridge_meta.f1.next_instruction']['value'],
+            flow_id=key_dict['hdr.bridge_meta.f1.flow_id']['value'],
             pkt_id=key_dict['ig_md.pkt_filter_md.pkt_id']['value']
         )
 

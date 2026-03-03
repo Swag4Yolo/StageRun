@@ -174,7 +174,10 @@ class EngineController():
             ToFwd(self.runtime, self.location, i)
             ExternalVar(self.runtime, self.location, i)
             Var1Var3(self.runtime, self.location, i)
-            Var2Var4(self.runtime, self.location, i)
+            if i == 9:
+                Var2Var4Ternary(self.runtime, self.location, i)
+            else:
+                Var2Var4(self.runtime, self.location, i)
             if i == FINAL_STAGE:
                 HeaderWrite(self.runtime, self.location, i, True)
             else:

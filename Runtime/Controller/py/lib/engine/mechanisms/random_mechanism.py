@@ -19,12 +19,12 @@ class RandomKeys(BaseTableKeys):
     def from_key_dict(cls, key_dict):
         return cls(
             f1_next_instr=[
-                key_dict['hdr.bridge_meta.f1.next_instruction']['value'],
-                key_dict['hdr.bridge_meta.f1.next_instruction']['mask']
+                key_dict['hdr.bridge_meta.f1.flow_id']['value'],
+                key_dict['hdr.bridge_meta.f1.flow_id']['mask']
             ],
             f2_next_instr=[
-                key_dict['hdr.bridge_meta.f2.next_instruction']['value'],
-                key_dict['hdr.bridge_meta.f2.next_instruction']['mask']
+                key_dict['hdr.bridge_meta.f2.flow_id']['value'],
+                key_dict['hdr.bridge_meta.f2.flow_id']['mask']
             ],
             ingress_port=[
                 key_dict['ig_intr_md.ingress_port']['value'],
@@ -43,8 +43,8 @@ class RandomKeys(BaseTableKeys):
 
         # self.annotations = [["hdr.ipv4.dstAddr", "ipv4"]]
         return [
-            ["hdr.bridge_meta.f1.next_instruction", self.f1_next_instr[0], self.f1_next_instr[1] ,  "ternary"],
-            ["hdr.bridge_meta.f2.next_instruction", self.f2_next_instr[0], self.f2_next_instr[1] ,  "ternary"],
+            ["hdr.bridge_meta.f1.flow_id", self.f1_next_instr[0], self.f1_next_instr[1] ,  "ternary"],
+            ["hdr.bridge_meta.f2.flow_id", self.f2_next_instr[0], self.f2_next_instr[1] ,  "ternary"],
             ["ig_intr_md.ingress_port", self.ingress_port[0], self.ingress_port[1] ,                "ternary"],
             ["hdr.bridge_meta.original_ingress_port", self.original_ingress_port[0], self.original_ingress_port[1] ,"ternary"],
             ["hdr.bridge_meta.program_id", self.program_id,                                         "exact"],

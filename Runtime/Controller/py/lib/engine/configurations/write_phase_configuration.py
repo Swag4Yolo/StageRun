@@ -81,8 +81,51 @@ class ExternalVar(BaseTable):
         action = BaseAction("update_v1_f2")
         self.add_entry(keys, action)
 
+#######################
+####### TERNARY #######
+#######################
+class Var1Var3KeysTernary(BaseTableKeys):
+    def __init__(self, f1_id=[DISABLED, DISABLED], f2_id=[DISABLED, DISABLED], f1_update=[DISABLED, DISABLED], f2_update = [DISABLED, DISABLED]):
+        super().__init__()
+        self.f1_id = f1_id
+        self.f2_id = f2_id
+        self.f1_update = f1_update
+        self.f2_update = f2_update
 
-class Var1Var3Keys(BaseTableKeys):
+    def to_key_list(self):
+        """
+        Converts the key values to the format required by the runtime.
+        """
+        return [
+            ["res_md_f1.local_var_md.id", self.f1_id[0], self.f1_id[1], "ternary"],
+            ["res_md_f1.local_var_md.update", self.f1_update[0], self.f1_update[1], "ternary"],
+            ["res_md_f2.local_var_md.id", self.f2_id[0], self.f2_id[1], "ternary"],
+            ["res_md_f2.local_var_md.update", self.f2_update[0], self.f2_update[1], "ternary"],
+        ]
+
+class Var1Var3Ternary(BaseTable):
+    def __init__(self, runtime, location, stage):
+        super().__init__(runtime, f"{location}.write_phase_s{stage}.local_var_v1_v3_write_t")
+
+        keys = Var1Var3KeysTernary(f1_id=[1, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3KeysTernary(f2_id=[1, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var1_f2")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3KeysTernary(f1_id=[3, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var3_f1")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3KeysTernary(f2_id=[3, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var3_f2")
+        self.add_entry(keys, action)
+
+
+
+class Var2Var4KeysTernary(BaseTableKeys):
     def __init__(self, f1_id=[DISABLED, DISABLED], f2_id=[DISABLED, DISABLED], f1_update=[DISABLED, DISABLED], f2_update = [DISABLED, DISABLED]):
         super().__init__()
         self.f1_id = f1_id
@@ -100,32 +143,128 @@ class Var1Var3Keys(BaseTableKeys):
             ["res_md_f1.local_var_md.update", self.f1_update[0], self.f1_update[1], "ternary"],
             ["res_md_f2.local_var_md.id", self.f2_id[0], self.f2_id[1], "ternary"],
             ["res_md_f2.local_var_md.update", self.f2_update[0], self.f2_update[1], "ternary"],
+        ]
+
+class Var2Var4Ternary(BaseTable):
+    def __init__(self, runtime, location, stage):
+        super().__init__(runtime, f"{location}.write_phase_s{stage}.local_var_v2_v4_write_t")
+
+        keys = Var2Var4KeysTernary(f1_id=[2, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var2_f1")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4KeysTernary(f2_id=[2, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var2_f2")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4KeysTernary(f1_id=[4, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var4_f1")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4KeysTernary(f2_id=[4, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        action = BaseAction("update_local_var4_f2")
+        self.add_entry(keys, action)
+
+#######################
+#######  EXACT  #######
+#######################
+class Var1Var3Keys(BaseTableKeys):
+    def __init__(self, f1_id=DISABLED, f2_id=DISABLED, f1_update=DISABLED, f2_update=DISABLED):
+        super().__init__()
+        self.f1_id = f1_id
+        self.f2_id = f2_id
+        self.f1_update = f1_update
+        self.f2_update = f2_update
+
+    def to_key_list(self):
+        """
+        Converts the key values to the format required by the runtime.
+        """
+        return [
+            ["res_md_f1.local_var_md.id", self.f1_id, self.f1_id, "exact"],
+            ["res_md_f1.local_var_md.update", self.f1_update, self.f1_update, "exact"],
+            ["res_md_f2.local_var_md.id", self.f2_id, self.f2_id, "exact"],
+            ["res_md_f2.local_var_md.update", self.f2_update, self.f2_update, "exact"],
         ]
 
 class Var1Var3(BaseTable):
     def __init__(self, runtime, location, stage):
         super().__init__(runtime, f"{location}.write_phase_s{stage}.local_var_v1_v3_write_t")
 
-        keys = Var1Var3Keys(f1_id=[1, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        # ===== FLOW 1 / VAR 1 =====
+        keys = Var1Var3Keys(f1_id=1, f1_update=1, f2_id=DISABLED, f2_update=DISABLED)
         action = BaseAction("update_local_var1_f1")
         self.add_entry(keys, action)
 
-        keys = Var1Var3Keys(f2_id=[1, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var1Var3Keys(f1_id=1, f1_update=1, f2_id=1, f2_update=DISABLED)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3Keys(f1_id=1, f1_update=1, f2_id=DISABLED, f2_update=1)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3Keys(f1_id=1, f1_update=1, f2_id=1, f2_update=1)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        # ===== FLOW 1 / VAR 3 =====
+        keys = Var1Var3Keys(f1_id=3, f1_update=1, f2_id=DISABLED, f2_update=DISABLED)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var1Var3Keys(f1_id=3, f1_update=1, f2_id=1, f2_update=DISABLED)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3Keys(f1_id=3, f1_update=1, f2_id=DISABLED, f2_update=1)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        keys = Var1Var3Keys(f1_id=3, f1_update=1, f2_id=1, f2_update=1)
+        action = BaseAction("update_local_var1_f1")
+        self.add_entry(keys, action)
+
+        # ===== FLOW 2 / VAR 1 =====
+        keys = Var1Var3Keys(f1_id=DISABLED, f1_update=DISABLED, f2_id=1, f2_update=1)
         action = BaseAction("update_local_var1_f2")
         self.add_entry(keys, action)
 
-        keys = Var1Var3Keys(f1_id=[3, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
-        action = BaseAction("update_local_var3_f1")
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var1Var3Keys(f1_id=1, f1_update=DISABLED, f2_id=1, f2_update=1)
+        action = BaseAction("update_local_var1_f2")
         self.add_entry(keys, action)
 
-        keys = Var1Var3Keys(f2_id=[3, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        keys = Var1Var3Keys(f1_id=DISABLED, f1_update=1, f2_id=1, f2_update=1)
+        action = BaseAction("update_local_var1_f2")
+        self.add_entry(keys, action)
+
+        # keys = Var1Var3Keys(f1_id=1, f1_update=1, f2_id=1, f2_update=1)
+        # action = BaseAction("update_local_var1_f2")
+        # self.add_entry(keys, action)
+
+        # ===== FLOW 2 / VAR 3 =====
+        keys = Var1Var3Keys(f1_id=DISABLED, f1_update=DISABLED, f2_id=3, f2_update=1)
         action = BaseAction("update_local_var3_f2")
         self.add_entry(keys, action)
 
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var1Var3Keys(f1_id=1, f1_update=DISABLED, f2_id=3, f2_update=1)
+        action = BaseAction("update_local_var3_f2")
+        self.add_entry(keys, action)
 
+        keys = Var1Var3Keys(f1_id=DISABLED, f1_update=1, f2_id=3, f2_update=1)
+        action = BaseAction("update_local_var3_f2")
+        self.add_entry(keys, action)
+
+        # keys = Var1Var3Keys(f1_id=1, f1_update=1, f2_id=3, f2_update=1)
+        # action = BaseAction("update_local_var3_f2")
+        # self.add_entry(keys, action)
 
 class Var2Var4Keys(BaseTableKeys):
-    def __init__(self, f1_id=[DISABLED, DISABLED], f2_id=[DISABLED, DISABLED], f1_update=[DISABLED, DISABLED], f2_update = [DISABLED, DISABLED]):
+    def __init__(self, f1_id=DISABLED, f2_id=DISABLED, f1_update=DISABLED, f2_update=DISABLED):
         super().__init__()
         self.f1_id = f1_id
         self.f2_id = f2_id
@@ -137,32 +276,88 @@ class Var2Var4Keys(BaseTableKeys):
         Converts the key values to the format required by the runtime.
         """
         return [
-
-            ["res_md_f1.local_var_md.id", self.f1_id[0], self.f1_id[1], "ternary"],
-            ["res_md_f1.local_var_md.update", self.f1_update[0], self.f1_update[1], "ternary"],
-            ["res_md_f2.local_var_md.id", self.f2_id[0], self.f2_id[1], "ternary"],
-            ["res_md_f2.local_var_md.update", self.f2_update[0], self.f2_update[1], "ternary"],
+            ["res_md_f1.local_var_md.id", self.f1_id, self.f1_id, "exact"],
+            ["res_md_f1.local_var_md.update", self.f1_update, self.f1_update, "exact"],
+            ["res_md_f2.local_var_md.id", self.f2_id, self.f2_id, "exact"],
+            ["res_md_f2.local_var_md.update", self.f2_update, self.f2_update, "exact"],
         ]
 
 class Var2Var4(BaseTable):
     def __init__(self, runtime, location, stage):
         super().__init__(runtime, f"{location}.write_phase_s{stage}.local_var_v2_v4_write_t")
 
-        keys = Var2Var4Keys(f1_id=[2, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        # ===== FLOW 1 / VAR 2 =====
+        keys = Var2Var4Keys(f1_id=2, f1_update=1, f2_id=DISABLED, f2_update=DISABLED)
         action = BaseAction("update_local_var2_f1")
         self.add_entry(keys, action)
 
-        keys = Var2Var4Keys(f2_id=[2, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
-        action = BaseAction("update_local_var2_f2")
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var2Var4Keys(f1_id=2, f1_update=1, f2_id=2, f2_update=DISABLED)
+        action = BaseAction("update_local_var2_f1")
         self.add_entry(keys, action)
 
-        keys = Var2Var4Keys(f1_id=[4, MASK_LOCAL_VAR], f1_update=[1, MASK_FLAG])
+        keys = Var2Var4Keys(f1_id=2, f1_update=1, f2_id=DISABLED, f2_update=1)
+        action = BaseAction("update_local_var2_f1")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4Keys(f1_id=2, f1_update=1, f2_id=2, f2_update=1)
+        action = BaseAction("update_local_var2_f1")
+        self.add_entry(keys, action)
+
+        # ===== FLOW 1 / VAR 4 =====
+        keys = Var2Var4Keys(f1_id=4, f1_update=1, f2_id=DISABLED, f2_update=DISABLED)
         action = BaseAction("update_local_var4_f1")
         self.add_entry(keys, action)
 
-        keys = Var2Var4Keys(f2_id=[4, MASK_LOCAL_VAR], f2_update=[1, MASK_FLAG])
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var2Var4Keys(f1_id=4, f1_update=1, f2_id=2, f2_update=DISABLED)
+        action = BaseAction("update_local_var4_f1")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4Keys(f1_id=4, f1_update=1, f2_id=DISABLED, f2_update=1)
+        action = BaseAction("update_local_var4_f1")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4Keys(f1_id=4, f1_update=1, f2_id=2, f2_update=1)
+        action = BaseAction("update_local_var4_f1")
+        self.add_entry(keys, action)
+
+        # ===== FLOW 2 / VAR 2 =====
+        keys = Var2Var4Keys(f1_id=DISABLED, f1_update=DISABLED, f2_id=2, f2_update=1)
+        action = BaseAction("update_local_var2_f2")
+        self.add_entry(keys, action)
+
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var2Var4Keys(f1_id=2, f1_update=DISABLED, f2_id=2, f2_update=1)
+        action = BaseAction("update_local_var2_f2")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4Keys(f1_id=DISABLED, f1_update=1, f2_id=2, f2_update=1)
+        action = BaseAction("update_local_var2_f2")
+        self.add_entry(keys, action)
+
+        # keys = Var2Var4Keys(f1_id=2, f1_update=1, f2_id=2, f2_update=1)
+        # action = BaseAction("update_local_var2_f2")
+        # self.add_entry(keys, action)
+
+        # ===== FLOW 2 / VAR 4 =====
+        keys = Var2Var4Keys(f1_id=DISABLED, f1_update=DISABLED, f2_id=4, f2_update=1)
         action = BaseAction("update_local_var4_f2")
         self.add_entry(keys, action)
+
+        #   - Enabling 'Ternary' wildcard combinations
+        keys = Var2Var4Keys(f1_id=4, f1_update=DISABLED, f2_id=4, f2_update=1)
+        action = BaseAction("update_local_var4_f2")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4Keys(f1_id=DISABLED, f1_update=1, f2_id=4, f2_update=1)
+        action = BaseAction("update_local_var4_f2")
+        self.add_entry(keys, action)
+
+        keys = Var2Var4Keys(f1_id=4, f1_update=1, f2_id=4, f2_update=1)
+        action = BaseAction("update_local_var4_f2")
+        self.add_entry(keys, action)
+
 
 
 class HeaderWriteKeys(BaseTableKeys):

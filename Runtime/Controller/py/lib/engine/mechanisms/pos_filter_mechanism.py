@@ -7,15 +7,15 @@ class PosFilterKeys(BaseTableKeys):
     Represents the keys for the MultiInstructionP1Table.
     Provides a structured way to define key values with IntelliSense support.
     """
-    def __init__(self, f1_mark_to_drop=[DISABLED, DISABLED], f2_mark_to_drop=[DISABLED, DISABLED], need_recirc=[DISABLED, DISABLED], fwd_and_enqueue=[DISABLED, DISABLED], rts=[DISABLED, DISABLED], f1_next_instr=[DISABLED, DISABLED], f2_next_instr=[DISABLED, DISABLED], ig_port=[DISABLED, DISABLED], original_ig_port=[DISABLED, DISABLED], ipv4_total_len=[DISABLED, DISABLED], tcp_dport=[DISABLED, DISABLED], ipv4_dst=[DISABLED, DISABLED], ipv4_proto=[DISABLED, DISABLED], program_id=[DISABLED, DISABLED], match_priority=DISABLED):
+    def __init__(self, f1_mark_to_drop=[DISABLED, DISABLED], f2_mark_to_drop=[DISABLED, DISABLED], need_recirc=[DISABLED, DISABLED], fwd_and_enqueue=[DISABLED, DISABLED], rts=[DISABLED, DISABLED], f1_next_flow_id=[DISABLED, DISABLED], f2_next_flow_id=[DISABLED, DISABLED], ig_port=[DISABLED, DISABLED], original_ig_port=[DISABLED, DISABLED], ipv4_total_len=[DISABLED, DISABLED], tcp_dport=[DISABLED, DISABLED], ipv4_dst=[DISABLED, DISABLED], ipv4_proto=[DISABLED, DISABLED], program_id=[DISABLED, DISABLED], match_priority=DISABLED):
         super().__init__()
         self.f1_mark_to_drop = f1_mark_to_drop
         self.f2_mark_to_drop = f2_mark_to_drop
         self.need_recirc = need_recirc
         self.fwd_and_enqueue = fwd_and_enqueue
         self.rts = rts
-        self.f1_next_instr = f1_next_instr
-        self.f2_next_instr = f2_next_instr
+        self.f1_next_instr = f1_next_flow_id
+        self.f2_next_instr = f2_next_flow_id
         self.ig_port = ig_port
         self.original_ig_port = original_ig_port
         self.ipv4_total_len = ipv4_total_len
@@ -37,8 +37,8 @@ class PosFilterKeys(BaseTableKeys):
             ["hdr.bridge_meta.need_recirc", self.need_recirc[0], self.need_recirc[1],               "ternary"],
             ["hdr.bridge_meta.fwd_and_enqueue", self.fwd_and_enqueue[0], self.fwd_and_enqueue[1] ,  "ternary"],
             ["hdr.bridge_meta.rts", self.rts[0], self.rts[1] ,                                      "ternary"],
-            ["hdr.bridge_meta.f1.next_instruction", self.f1_next_instr[0], self.f1_next_instr[1] ,  "ternary"],
-            ["hdr.bridge_meta.f2.next_instruction", self.f2_next_instr[0], self.f2_next_instr[1] ,  "ternary"],
+            ["hdr.bridge_meta.f1.flow_id", self.f1_next_instr[0], self.f1_next_instr[1] ,  "ternary"],
+            ["hdr.bridge_meta.f2.flow_id", self.f2_next_instr[0], self.f2_next_instr[1] ,  "ternary"],
             ["ig_intr_md.ingress_port", self.ig_port[0], self.ig_port[1] ,                "ternary"],
             ["hdr.bridge_meta.original_ingress_port", self.original_ig_port[0], self.original_ig_port[1] ,"ternary"],
             ["hdr.ipv4.totalLen", self.ipv4_total_len[0], self.ipv4_total_len[1] ,                 "ternary"],
@@ -84,12 +84,12 @@ class PosFilterKeys(BaseTableKeys):
                 key_dict['hdr.bridge_meta.rts']['mask']
             ],
             f1_next_instr=[
-                key_dict['hdr.bridge_meta.f1.next_instruction']['value'],
-                key_dict['hdr.bridge_meta.f1.next_instruction']['mask']
+                key_dict['hdr.bridge_meta.f1.flow_id']['value'],
+                key_dict['hdr.bridge_meta.f1.flow_id']['mask']
             ],
             f2_next_instr=[
-                key_dict['hdr.bridge_meta.f2.next_instruction']['value'],
-                key_dict['hdr.bridge_meta.f2.next_instruction']['mask']
+                key_dict['hdr.bridge_meta.f2.flow_id']['value'],
+                key_dict['hdr.bridge_meta.f2.flow_id']['mask']
             ],
             ipv4_total_len=[
                 key_dict['hdr.ipv4.totalLen']['value'],
@@ -169,19 +169,19 @@ class PosFilterMechanism(BaseTable):
     # Action implementations
     def pos_filter_recirc_same_pipe(self, f1_next_instr=[DISABLED, DISABLED],f2_next_instr=[DISABLED, DISABLED], program_id=[1, MASK_PROGRAM_ID], next_flow_id=DISABLED):
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x000, 0x180], program_id=program_id)
+        keys = PosFilterKeys(f1_next_flow_id=f1_next_instr, f2_next_flow_id=f2_next_instr, original_ig_port=[0x000, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p0", next_flow_id)
         self.add_entry(keys, action)
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x080, 0x180], program_id=program_id)
+        keys = PosFilterKeys(f1_next_flow_id=f1_next_instr, f2_next_flow_id=f2_next_instr, original_ig_port=[0x080, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p1", next_flow_id)
         self.add_entry(keys, action)
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0100, 0x180], program_id=program_id)
+        keys = PosFilterKeys(f1_next_flow_id=f1_next_instr, f2_next_flow_id=f2_next_instr, original_ig_port=[0x0100, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p2", next_flow_id)
         self.add_entry(keys, action)
 
-        keys = PosFilterKeys(f1_next_instr=f1_next_instr, f2_next_instr=f2_next_instr, original_ig_port=[0x0180, 0x180], program_id=program_id)
+        keys = PosFilterKeys(f1_next_flow_id=f1_next_instr, f2_next_flow_id=f2_next_instr, original_ig_port=[0x0180, 0x180], program_id=program_id)
         action = BaseAction("recirculate_p3", next_flow_id)
         self.add_entry(keys, action)
 
