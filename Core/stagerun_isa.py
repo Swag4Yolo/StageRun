@@ -28,7 +28,7 @@ class ISA(Enum):
     ACTIVATE        = "ACTIVATE"
     IN              = "IN"
     OUT             = "OUT"
-    IF              = "IF"
+    # IF              = "IF"
 
     @classmethod
     def get_ISA_values(cls) -> List[str]:

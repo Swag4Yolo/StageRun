@@ -26,29 +26,29 @@ class EngineFlow():
         # self.flow_number = flow_number
 
         #Instructions
-        self.i1_p1 = P1Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
-        self.i1_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i1")
-        self.i1_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i1")
-        self.i2_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i2")
-        self.i2_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i2")
-        self.i3_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i3")
-        self.i3_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i3")
-        self.i4_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i4")
-        self.i4_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i4")
-        self.i5_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i5")
-        self.i5_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i5")
-        self.i6_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i6")
-        self.i6_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i6")
-        self.i7_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i7")
-        self.i7_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i7")
+        self.i1_p1 = FetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i1")
+        self.i1_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i1")
+        self.i1_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i1")
+        self.i2_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i2")
+        self.i2_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i2")
+        self.i3_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i3")
+        self.i3_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i3")
+        self.i4_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i4")
+        self.i4_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i4")
+        self.i5_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i5")
+        self.i5_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i5")
+        self.i6_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i6")
+        self.i6_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i6")
+        self.i7_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i7")
+        self.i7_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i7")
 
         if flow_number == 2:
-            self.i8_p2 = P2Table(self.runtime, f"SwitchIngress.f{flow_number}_i8")
-            self.i8_speculative = Speculative(self.runtime, f"SwitchIngress.f{flow_number}_i8")
+            self.i8_p2 = ExecutionTable(self.runtime, f"SwitchIngress.f{flow_number}_i8")
+            self.i8_speculative = PrefetchTable(self.runtime, f"SwitchIngress.f{flow_number}_i8")
         else:            
-            self.i8_multi = MultiInstructionLastStage(self.runtime, f"SwitchIngress.f{flow_number}_i8")
+            self.i8_multi = MultiInstructionPrefetch(self.runtime, f"SwitchIngress.f{flow_number}_i8")
 
-        self.i9_multi = MultiInstructionLastStage(self.runtime, f"SwitchIngress.f{flow_number}_i9")
+        self.i9_multi = MultiInstructionPrefetch(self.runtime, f"SwitchIngress.f{flow_number}_i9")
 
         # Registers Creation
         self.reg1_i1 = Register(self.runtime, f"SwitchIngress.f{flow_number}_i1")
@@ -108,9 +108,9 @@ class EngineController():
 
           
         # Generic Tables
-        self.p1_table   = P1Table(self.runtime, "") 
-        self.p2_table   = P2Table(self.runtime, "")
-        self.spec_table = Speculative(self.runtime, "")
+        self.p1_table   = FetchTable(self.runtime, "") 
+        self.p2_table   = ExecutionTable(self.runtime, "")
+        self.spec_table = PrefetchTable(self.runtime, "")
 
 
     def _init_configs_(self):

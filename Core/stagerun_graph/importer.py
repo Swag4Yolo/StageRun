@@ -13,15 +13,21 @@ def load_stage_run_graphs(input_path: str | Path) -> dict:
     Returns a dictionary { program, schema_version, graphs[], resources{} }.
     """
     input_path = Path(input_path)
-    with input_path.open("rb") as f:
-        checksum = f.readline().strip().decode("utf-8")
-        blob = f.read()
+    blob = input_path.read_bytes()
+    data = json.loads(blob.decode("utf-8"))
 
-    actual = _compute_checksum_bytes(blob)
+    checksum = data.get("checksum")
+    if checksum is None:
+        raise ValueError(f"Missing checksum in {input_path.name}")
+
+    payload_no_checksum = {k: v for k, v in data.items() if k != "checksum"}
+    actual = _compute_checksum_bytes(
+        json.dumps(payload_no_checksum, indent=2, sort_keys=False).encode("utf-8")
+    )
     if actual != checksum:
         raise ValueError(f"Checksum mismatch in {input_path.name}")
 
-    return json.loads(blob.decode("utf-8"))
+    return data
 
 def load_graph_objects(input_path: str | Path) -> list[StageRunGraph]:
     """

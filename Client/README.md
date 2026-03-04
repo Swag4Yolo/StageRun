@@ -21,12 +21,12 @@ install_engine -t StageRunEngine -v 2.01
 
 # 4. Upload app
 ```
-upload_app -a ../../Compiler/Programs/1/1.out -m ../../Compiler/Programs/1/1.yaml -t Test1 -v 1.0
+upload_app -a ../../Compiler/Programs/NetHide/nethide.out.json -m ../../Compiler/Programs/NetHide/nethide.yaml -t NetHide -v 1.1
 ```
 
 # 5. Install App
 ```
-install_app -t Test1 -v 1.0
+install_app -t NetHide -v 1.1
 ```
 
 # 6. Run App

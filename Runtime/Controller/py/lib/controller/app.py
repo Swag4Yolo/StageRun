@@ -49,9 +49,9 @@ async def upload_app(
     app_dir_path = os.path.join(sm.APPS_DIR_PATH, f"{app_key}/")
     os.makedirs(app_dir_path, exist_ok=True)
  
-    ####### Processing App File
+    ####### Processing App File #######
     _, ext = os.path.splitext(app_file.filename)
-    if not ext or ext != '.out': 
+    if not ext or ext != '.json': 
         return {"status": "error", "msg": f"The provided {app_file.filename} does not have a supported extension"}
     
     app_path = os.path.join(app_dir_path, f"app.out")
@@ -59,7 +59,7 @@ async def upload_app(
     with open(app_path, "wb") as f:
         shutil.copyfileobj(app_file.file, f)
 
-    ####### Processing Manifest File
+    ####### Processing Manifest File #######
     _, ext = os.path.splitext(manifest_file.filename)
     if not ext or ext != '.yaml':
         return {"status": "error", "msg": f"The provided {manifest_file.filename} does not have a supported extension"}
@@ -193,17 +193,61 @@ def validate_compiled_app(compiled_app_file_path, manifest_file_path, app_key, e
 
         # 1. ISA must be known by controller
         # 1. engine ISA must support instr
-        isa_list = ISA.get_ISA_values()
+        isa_list = set(ISA.get_ISA_values())
         engine_isa = sm.get_engine_ISA(engine_key)
-        # TODO: do POSFILTERS
-        for graph in compiled_app['graphs']:
-            for instr in graph['nodes']:
-                opcode = instr["op"]
+        engine_isa_list = set(engine_isa.get('ISA', []))
+
+        def validate_instruction_tree(instr):
+            stack = [instr]
+            while stack:
+                current = stack.pop()
+                opcode = current.get("op")
                 if opcode not in isa_list:
                     return False, f"Instruction {opcode} is not supported by the controller.", None, None
-
-                if opcode not in engine_isa['ISA']:
+                if opcode not in engine_isa_list:
                     return False, f"Instruction {opcode} is not supported by the running engine.", None, None
+
+                # if opcode == ISA.IF.value:
+                #     args = current.get("args", {})
+                #     for branch in args.get("branches", []):
+                #         stack.extend(branch.get("body", []))
+                #     stack.extend(args.get("else_body", []) or [])
+
+            return True, "", None, None
+
+        if "handlers" in compiled_app:
+            for handler in compiled_app.get("handlers", []):
+                default_action = handler.get("default_action")
+                if isinstance(default_action, dict):
+                    ok, msg, _, _ = validate_instruction_tree(default_action)
+                    if not ok:
+                        return ok, msg, None, None
+
+                for pos_clause in handler.get("pos", []):
+                    posdefault = pos_clause.get("posdefault")
+                    if isinstance(posdefault, dict):
+                        ok, msg, _, _ = validate_instruction_tree(posdefault)
+                        if not ok:
+                            return ok, msg, None, None
+
+                labels = handler.get("labels", {})
+                for nodes in labels.values():
+                    for instr in nodes:
+                        ok, msg, _, _ = validate_instruction_tree(instr)
+                        if not ok:
+                            return ok, msg, None, None
+        else:
+            for graph in compiled_app.get("graphs", []):
+                default_action = graph.get("default_action")
+                if isinstance(default_action, dict):
+                    ok, msg, _, _ = validate_instruction_tree(default_action)
+                    if not ok:
+                        return ok, msg, None, None
+
+                for instr in graph.get("nodes", []):
+                    ok, msg, _, _ = validate_instruction_tree(instr)
+                    if not ok:
+                        return ok, msg, None, None
 
         # 2. Validate Manifest structure
         if not 'switch' in manifest or not 'ports' in manifest['switch']:
@@ -232,7 +276,6 @@ def validate_compiled_app(compiled_app_file_path, manifest_file_path, app_key, e
     except Exception as e:
         print(traceback.format_exc())
         return False, f"Failed to Validate the Compiled Application. {repr(e)}", None, None
-
 
 
 async def install_app(tag: str, version: str):

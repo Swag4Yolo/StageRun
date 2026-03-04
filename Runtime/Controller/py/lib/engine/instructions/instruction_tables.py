@@ -12,17 +12,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class P1Table(BaseTable):
+class FetchTable(BaseTable):
     """
     Represents the multi_instruction_p1_t table, encapsulating its keys, actions, and functionality.
     """
 
     def __init__(self, runtime, location):
         self.runtime = runtime
-        self.table_name = f"{location}.multi_instruction_p1_t"
+        self.table_name = f"{location}.fetch_t"
     
     def _set_location_(self, location):
-        self.table_name = f"{location}.multi_instruction_p1_t"
+        self.table_name = f"{location}.fetch_t"
 
     def conditional_v1_v2(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cond_mode=DISABLED, cond_val=DISABLED, cond_mode_2=DISABLED, cond_val_2=DISABLED):
         keys = P1TableKeys(program_id, ni, pkt_id)
@@ -190,17 +190,17 @@ class P1Table(BaseTable):
         if not found:
             logger.debug(f"No entries found for program_id {pid} in {self.table_name}")
 
-class P2Table(BaseTable):
+class ExecutionTable(BaseTable):
     """
     Represents the multi_instruction_p1_t table, encapsulating its keys, actions, and functionality.
     """
 
     def __init__(self, runtime, location):
         self.runtime = runtime
-        self.table_name = f"{location}.multi_instruction_p2_t"
+        self.table_name = f"{location}.execution_t"
     
     def _set_location_(self, location):
-        self.table_name = f"{location}.multi_instruction_p2_t"
+        self.table_name = f"{location}.execution_t"
 
     def initialize_pad_ni(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cm=[DISABLED, DISABLED], cval=[DISABLED, DISABLED], cm_2 = [DISABLED, DISABLED], cval_2 = [DISABLED, DISABLED], 
                           instr_id=INSTRUCTION_FINISH, mode=DISABLED, value=DISABLED, num_bytes=DISABLED):
@@ -335,19 +335,17 @@ class P2Table(BaseTable):
         if not found:
             logger.debug(f"No entries found for program_id {pid} in {self.table_name}")
 
-
-
-class Speculative(BaseTable):
+class PrefetchTable(BaseTable):
     """
     Represents the multi_instruction_p1_t table, encapsulating its keys, actions, and functionality.
     """
 
     def __init__(self, runtime, location):
         self.runtime = runtime
-        self.table_name = f"{location}.speculative_t"
+        self.table_name = f"{location}.prefetch_t"
     
     def _set_location_(self, location):
-        self.table_name = f"{location}.speculative_t"
+        self.table_name = f"{location}.prefetch_t"
     
     def speculative_conditional_v1_v2(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cm=[DISABLED, DISABLED], cval=[DISABLED, DISABLED], cm_2 = [DISABLED, DISABLED], cval_2 = [DISABLED, DISABLED],
                             instr_id=DISABLED, cond_mode=DISABLED, cond_val=DISABLED, cond_mode_2=DISABLED, cond_val_2=DISABLED):
@@ -528,14 +526,14 @@ class Speculative(BaseTable):
         if not found:
             logger.debug(f"No entries found for program_id {pid} in {self.table_name}")
 
-class MultiInstructionLastStage(BaseTable):
+class MultiInstructionPrefetch(BaseTable):
     """
     Represents the multi_instruction_p1_t table, encapsulating its keys, actions, and functionality.
     """
 
     def __init__(self, runtime, location):
         self.runtime = runtime
-        self.table_name = f"{location}.multi_instruction_speculative_t"
+        self.table_name = f"{location}.multi_instruction_prefetch_t"
     
      
     def initialize_pad_ni(self, program_id=1,  ni=INSTRUCTION_FINISH, pkt_id=[DISABLED, DISABLED], cm=[DISABLED, DISABLED], cval=[DISABLED, DISABLED], cm_2 = [DISABLED, DISABLED], cval_2 = [DISABLED, DISABLED], 
