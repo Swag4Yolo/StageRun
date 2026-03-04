@@ -61,10 +61,10 @@ class Planner:
         self._flow_counter += 1
         return self._flow_counter
     
-    def _new_internal_id(self, graph_id) -> int:
+    def _new_internal_id(self, handler_id) -> int:
         """Generates a unique internal node ID for synthetic nodes (write-phase, recirc, etc.)."""
-        self._internal_node_counter[graph_id] += 1
-        return self._internal_node_counter[graph_id]
+        self._internal_node_counter[handler_id] += 1
+        return self._internal_node_counter[handler_id]
     
     def _new_pkt_id(self) -> int:
         """Generates a globally unique pkt_id to be used by default_action."""
@@ -87,7 +87,7 @@ class Planner:
 
         for g in micro_graphs:
             # 0. Init values
-            # self._internal_node_counter[g.graph_id] = len(g.nodes)
+            # self._internal_node_counter[g.handler_id] = len(g.nodes)
             # base_flow_id = self._new_flow_id()
 
             # 1. Add PreFilter Keys
@@ -161,7 +161,7 @@ class Planner:
             g.default_action['kwargs']['pkt_id'] = pkt_id
 
         # 3. Init Node Counter
-        self._internal_node_counter[g.graph_id] = len(g.nodes)
+        self._internal_node_counter[g.handler_id] = len(g.nodes)
 
 
         for idx, node in enumerate(order):
@@ -537,7 +537,7 @@ class Planner:
         - liga novo nó -> node (DATA)
         - gera novo flow_id e devolve-o
         """
-        rec_id = self._new_internal_id(g.graph_id)
+        rec_id = self._new_internal_id(g.handler_id)
         new_flow_id = self._new_flow_id()
 
         rec_instr = MicroInstruction(
@@ -547,7 +547,7 @@ class Planner:
         rec_node = MicroNode(
             id=rec_id, 
             instr=rec_instr, 
-            graph_id=g.graph_id, 
+            handler_id=g.handler_id, 
             allocated_table="recirculation_t",
             flow_id=prev_flow_id,
             effect=MicroEffect(),
@@ -618,7 +618,7 @@ class Planner:
         Inserir write_phase_t depois de dependências write→read.
         Evita stages já ocupados por instruções (globais por programa).
         """
-        logger.debug(f"[Planner] Inserting global write-phases for graph '{g.graph_id}'")
+        logger.debug(f"[Planner] Inserting global write-phases for graph '{g.handler_id}'")
 
         # order = self._topo_sort(g)
         pending_writes: Dict[str, int] = {}
@@ -723,7 +723,7 @@ class Planner:
         # 2) choose ONE global wp_stage (stage 1 forbidden)
         #    NOTE: _wp_next_free must be GLOBAL per pid, and should reuse an existing wp if any
         start = (last_dirty_stage or 1) + 1
-        wp_stage = self._wp_next_free(start_stage=start)  # DO NOT pass graph_id
+        wp_stage = self._wp_next_free(start_stage=start)  # DO NOT pass handler_id
         self._wp_reserve(wp_stage)                        # global reservation
         # self._mark_occupied(wp_stage)                     # exclude for future usage
 
@@ -740,12 +740,12 @@ class Planner:
             # should not happen
             return
 
-        wp_node_id = self._new_internal_id(host_graph.graph_id)
+        wp_node_id = self._new_internal_id(host_graph.handler_id)
         wp_instr = MicroInstruction(name="configure_write_phase", kwargs={"program_id": pid, f"s{wp_stage}": 1})
         wp_node = MicroNode(
             id=wp_node_id,
             instr=wp_instr,
-            graph_id=host_graph.graph_id,
+            handler_id=host_graph.handler_id,
             allocated_stage=wp_stage,
             allocated_table="write_phase_t",
             flow_id=None,   # stage-level sync; installer can read program_id & stage
@@ -877,7 +877,7 @@ class Planner:
         Inserts a write-phase node *after* the given node.
         The node represents a pipeline stall where memory writes are flushed.
         """
-        wp_id = self._new_internal_id(g.graph_id)
+        wp_id = self._new_internal_id(g.handler_id)
         wp_instr = MicroInstruction(
             name="write_phase_t",
             kwargs={"program_id": pid, "stage": wp_stage}
@@ -886,7 +886,7 @@ class Planner:
         wp_node = MicroNode(
             id=wp_id,
             instr=wp_instr,
-            graph_id=g.graph_id,
+            handler_id=g.handler_id,
             allocated_stage=None,
             allocated_table="write_phase_t",
             flow_id=node.flow_id,

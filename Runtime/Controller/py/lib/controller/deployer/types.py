@@ -58,7 +58,7 @@ class MicroNode:
     # read or write constrains
     effect: MicroEffect
 
-    graph_id: str             
+    handler_id: str             
     parent_node_id: Optional[int] = None  
 
     # Planner
@@ -77,7 +77,7 @@ class MicroEdge:
 
 @dataclass
 class MicroGraph:
-    graph_id: str
+    handler_id: str
     nodes: Dict[int, MicroNode] = field(default_factory=dict)
     edges: List[MicroEdge] = field(default_factory=list)
     keys: Dict | None = None
@@ -92,7 +92,7 @@ class MicroGraph:
                 f.write(f"{msg}\n")
 
             pprint("=" * 80)
-            pprint(f" MicroGraph: {self.graph_id}")
+            pprint(f" MicroGraph: {self.handler_id}")
             pprint("=" * 80)
 
             # Prefilter keys & default action
@@ -154,7 +154,7 @@ class MicroGraph:
         import html
 
         lines = []
-        lines.append(f'digraph "{self.graph_id}" {{')
+        lines.append(f'digraph "{self.handler_id}" {{')
         lines.append('  rankdir=LR;')
         lines.append('  node [shape=box, style="rounded,filled", fillcolor=lightgray, fontname="monospace"];')
 
@@ -166,7 +166,7 @@ class MicroGraph:
             da = self.default_action
             label_meta.append(f"DEFAULT {da['op']} {da.get('args',{})}")
         if label_meta:
-            lines.append(f'  subgraph cluster_meta {{ label="Prefilter {self.graph_id}"; color=gray; style=dashed;')
+            lines.append(f'  subgraph cluster_meta {{ label="Prefilter {self.handler_id}"; color=gray; style=dashed;')
             for i, l in enumerate(label_meta):
                 lines.append(f'    meta{i} [label="{html.escape(l)}", shape=note, fillcolor=lightyellow];')
             lines.append('  }')

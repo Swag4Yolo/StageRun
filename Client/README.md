@@ -6,17 +6,17 @@ Pre-requires to have the controller up and running (ProjectFolder/Runtime/run_de
 
 # 1. Upload Engine
 ```
-upload_engine -z ../../Runtime/Engine/StageRunEngine_v2.01.zip -i ../../Runtime/Engine/StageRunEngine_v2.01_ISA.json -t StageRunEngine -v 2.01 -m StageRunEngine.p4
+upload_engine -z ../../Runtime/Engine/StageRunEngine_v2.04.zip -i ../../Runtime/Engine/StageRunEngine_v2.04_ISA.json -t StageRunEngine -v 2.04 -m StageRunEngine.p4
 ```
 
 # 2. Compile Engine
 ```
-compile_engine -t StageRunEngine -v 2.01 -f "FLOW_2 OPTIMIZE_TCAM HW RECIR_PORT_P0=57 RECIR_PORT_P1=52 RECIR_PORT_P2=57 RECIR_PORT_P3=52"
+compile_engine -t StageRunEngine -v 2.04 -f "FLOW_2 OPTIMIZE_TCAM HW RECIR_PORT_P0=57 RECIR_PORT_P1=52 RECIR_PORT_P2=57 RECIR_PORT_P3=52"
 ```
 
 # 3. Install Engine
 ```
-install_engine -t StageRunEngine -v 2.01
+install_engine -t StageRunEngine -v 2.04
 ```
 
 # 4. Upload app

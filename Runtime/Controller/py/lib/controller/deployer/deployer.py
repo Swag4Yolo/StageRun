@@ -101,6 +101,95 @@ def load_compiled_program(compiled_path: str | Path) -> Dict[str, Any]:
     # return {"graphs": graphs, "meta": { ... }}
     return payload
 
+def _normalize_compiled_handlers(compiled_app: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Accept only the current compiler output format:
+      - {"handlers": [{"id","keys","default_action","labels","edges"}]}
+
+    Returns a handler list compatible with MicroInstructionParser.to_micro().
+    """
+    handlers = compiled_app.get("handlers")
+    if not isinstance(handlers, list):
+        return []
+
+    normalized: List[Dict[str, Any]] = []
+
+    for handler in handlers:
+        handler_id = handler.get("id")
+        labels = handler.get("labels", {}) or {}
+
+        nodes: List[Dict[str, Any]] = []
+        node_ids: set[int] = set()
+        label_heads: Dict[str, int] = {}
+        data_edges: set[tuple[int, int, str]] = set()
+        control_edges: set[tuple[int, int, str]] = set()
+
+        # Keep instruction order inside each label (program-order semantics).
+        for label_name, label_instrs in labels.items():
+            if not label_instrs:
+                continue
+
+            prev_id = None
+            head_id = None
+            for instr in label_instrs:
+                nid = instr.get("id")
+                if not isinstance(nid, int):
+                    continue
+                if nid in node_ids:
+                    continue
+
+                node_ids.add(nid)
+                nodes.append(instr)
+
+                if head_id is None:
+                    head_id = nid
+
+                if prev_id is not None:
+                    data_edges.add((prev_id, nid, "DATA"))
+                prev_id = nid
+
+                op = instr.get("op")
+                if op in ("JMP", "BRCOND"):
+                    target_label = (instr.get("args") or {}).get("label")
+                    if isinstance(target_label, str):
+                        # Resolve after all label heads are known.
+                        control_edges.add((nid, target_label, op))
+
+            if head_id is not None:
+                label_heads[label_name] = head_id
+
+        edges: List[Dict[str, Any]] = []
+
+        # Preserve compiler-provided dependency edges when possible.
+        for e in handler.get("edges", []) or []:
+            src = e.get("src")
+            dst = e.get("dst")
+            dep = e.get("dep", "DATA")
+            if src in node_ids and dst in node_ids:
+                edges.append({"src": src, "dst": dst, "dep": dep})
+
+        # Add deterministic in-label DATA edges (missing in new JSON format).
+        for src, dst, dep in sorted(data_edges):
+            edges.append({"src": src, "dst": dst, "dep": dep})
+
+        # Add explicit control-transfer edges for label jumps/branches.
+        for src, target_label, op in sorted(control_edges):
+            dst = label_heads.get(target_label)
+            if dst is not None:
+                edges.append({"src": src, "dst": dst, "dep": "CONTROL"})
+
+        normalized.append(
+            {
+                "handler_id": handler_id,
+                "keys": handler.get("keys", []),
+                "default_action": handler.get("default_action"),
+                "nodes": nodes,
+                "edges": edges,
+            }
+        )
+
+    return normalized
+
 # ---------------------------------------------------------------------------
 # Serialização leve do plan_result (só para logging / debug)
 # ---------------------------------------------------------------------------
@@ -122,7 +211,7 @@ def plan_result_to_dict(plan_result: PlanningResult) -> Dict[str, Any]:
             "allocated_table": getattr(n, "allocated_table", None),
             "flow_id": getattr(n, "flow_id", None),
             "parent_node_id": getattr(n, "parent_node_id", None),
-            "graph_id": getattr(n, "graph_id", None),
+            "handler_id": getattr(n, "handler_id", None),
             "var_slot_map": getattr(g, "var_slot_map", {}),
             # "nodes": [...],
 
@@ -131,10 +220,10 @@ def plan_result_to_dict(plan_result: PlanningResult) -> Dict[str, Any]:
     def edge_to_dict(e: MicroEdge) -> Dict[str, Any]:
         return {"src": e.src, "dst": e.dst, "dep": e.dep}
 
-    graphs_out: List[Dict[str, Any]] = []
+    handlers_out: List[Dict[str, Any]] = []
     for g in plan_result.graphs:
-        graphs_out.append({
-            "graph_id": g.graph_id,
+        handlers_out.append({
+            "handler_id": g.handler_id,
             "keys" : g.keys,
             "default_action": g.default_action,
             "nodes": [node_to_dict(n) for n in g.nodes.values()],
@@ -150,7 +239,7 @@ def plan_result_to_dict(plan_result: PlanningResult) -> Dict[str, Any]:
         "write_phases": getattr(stats, "wp_reserved", None),
     } if stats else None
 
-    return {"graphs": graphs_out, "stats": stats_out}
+    return {"handlers": handlers_out, "stats": stats_out}
 
 
 # ------------------------------------------------------
@@ -166,7 +255,7 @@ def deploy_program(
     pretty_print: bool = True,
 ) -> Dict[str, Any] | None:
     """
-    1) Lê o JSON do compilador (StageRun graphs)
+    1) Lê o JSON do compilador (handlers)
     2) Constrói MicroGraphs via MicroInstructionParser.to_micro()
     3) Corre o Planner para obter plan_result
     4) Devolve (ou imprime) um dicionário com o plano (sem instalar nada)
@@ -181,13 +270,13 @@ def deploy_program(
         # manifest = load_json(manifest_path)
         isa = sm.get_engine_ISA(sm.get_running_engine_key())
 
-        stage_run_graphs = compiled_app.get("graphs", [])
-        if not stage_run_graphs:
-            raise ValueError("Compiled program JSON has no 'graphs' entry.")
+        stage_run_handlers = _normalize_compiled_handlers(compiled_app)
+        if not stage_run_handlers:
+            raise ValueError("Compiled program JSON has no usable 'handlers' entry.")
 
         # 2) StageRun → Micro
         mip = MicroInstructionParser(isa=isa, manifest=manifest)
-        micro_graphs: List[MicroGraph] = mip.to_micro(stage_run_graphs)
+        micro_graphs: List[MicroGraph] = mip.to_micro(stage_run_handlers)
 
         if __debug__:
             with open("MicroGraphs.log", "w") as f:

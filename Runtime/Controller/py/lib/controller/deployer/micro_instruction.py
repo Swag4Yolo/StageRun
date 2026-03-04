@@ -77,20 +77,20 @@ class MicroInstructionParser:
     # Public entrypoint
     # ------------------------------------------------------------
 
-    def to_micro(self, stage_run_graphs: List[Dict[str, Any]]) -> List[MicroGraph]:
+    def to_micro(self, stage_run_handlers: List[Dict[str, Any]]) -> List[MicroGraph]:
         """
-        Converts StageRunGraph → MicroGraph.
+        Converts a normalized handler IR → MicroGraph.
         Each StageRun instruction expands into one or more MicroNodes, each with a MicroEffect.
         """
         out_graphs: List[MicroGraph] = []
 
-        for graph in stage_run_graphs:
-            mg = MicroGraph(graph_id=graph["graph_id"])
-            mg.keys = self._translate_keys_to_micro(graph.get("keys", []))
-            mg.default_action = self._translate_default_action_to_micro(graph.get("default_action"))
+        for handler in stage_run_handlers:
+            mg = MicroGraph(handler_id=handler["handler_id"])
+            mg.keys = self._translate_keys_to_micro(handler.get("keys", []))
+            mg.default_action = self._translate_default_action_to_micro(handler.get("default_action"))
             expand_map: Dict[int, List[int]] = {}
             node_id = 0
-            for srun_node in graph.get("nodes", []):
+            for srun_node in handler.get("nodes", []):
                 srun_id = srun_node["id"]
                 op = srun_node["op"]
                 args = srun_node.get("args", {})
@@ -115,7 +115,7 @@ class MicroInstructionParser:
                     node = MicroNode(
                         id=node_id,
                         instr=mi,
-                        graph_id=graph["graph_id"],
+                        handler_id=handler["handler_id"],
                         parent_node_id=srun_id,
                         effect=eff,
                     )
@@ -123,7 +123,7 @@ class MicroInstructionParser:
                     expand_map.setdefault(srun_id, []).append(node.id)
 
             # ligações (mesma lógica)
-            for e in graph.get("edges", []):
+            for e in handler.get("edges", []):
                 srcs = expand_map.get(e["src"], [])
                 dsts = expand_map.get(e["dst"], [])
                 for src_id in srcs:
@@ -138,62 +138,6 @@ class MicroInstructionParser:
     # ------------------------------------------------------------
     # Node lowering
     # ------------------------------------------------------------
-    # def _emit_if(self, args: Dict[str, Any], graph_id: str, parent_id: int, mg: MicroGraph, manifest: Dict[str, Any]) -> int:
-    #     """
-    #     Emite um IF (pode ser nested). Retorna o node_id do decide criado.
-    #     """
-    #     # cria nó decide
-    #     nid_if = self._emit_instrs([MicroInstruction("decide", {"cond": "expr"})], graph_id, parent_id, mg)[0]
-
-    #     # TRUE + ELIFs
-    #     for idx, br in enumerate(args.get("branches", [])):
-    #         label = "true" if idx == 0 else f"elif-{idx}"
-    #         first_body_id = None
-    #         for instr in br.get("body", []):
-    #             # ⚠️ se este instr for outro IF, chamamos recursivamente o _emit_if
-    #             if instr["op"].upper() == "IF":
-    #                 inner_decide = self._emit_if(instr["args"], graph_id, parent_id, mg, manifest)
-    #                 if first_body_id is None:
-    #                     first_body_id = inner_decide
-    #             else:
-    #                 lst = self._translate_instr_to_micro(instr["op"], instr.get("args", {}), manifest)
-    #                 first_ids = self._emit_list(lst, graph_id, parent_id, mg)
-    #                 if first_ids and first_body_id is None:
-    #                     first_body_id = first_ids[0]
-    #         if first_body_id:
-    #             mg.edges.append(MicroEdge(src=nid_if, dst=first_body_id, dep="CONTROL", label=label))
-
-    #     # ELSE
-    #     else_body = args.get("else_body") or []
-    #     if else_body:
-    #         first_body_id = None
-    #         for instr in else_body:
-    #             if instr["op"].upper() == "IF":
-    #                 inner_decide = self._emit_if(instr["args"], graph_id, parent_id, mg, manifest)
-    #                 if first_body_id is None:
-    #                     first_body_id = inner_decide
-    #             else:
-    #                 lst = self._translate_instr_to_micro(instr["op"], instr.get("args", {}), manifest)
-    #                 first_ids = self._emit_list(lst, graph_id, parent_id, mg)
-    #                 if first_ids and first_body_id is None:
-    #                     first_body_id = first_ids[0]
-    #         if first_body_id:
-    #             mg.edges.append(MicroEdge(src=nid_if, dst=first_body_id, dep="CONTROL", label="else"))
-
-    #     return nid_if
-
-    # def _emit_instrs(self, micro_instrs: List[MicroInstruction],
-    #                  graph_id: str, parent_id: int, mg: MicroGraph) -> List[int]:
-    #     ids: List[int] = []
-    #     for mi in micro_instrs:
-    #         nid = self.id_alloc.next()
-    #         node = MicroNode(id=nid, instr=mi, graph_id=graph_id, parent_node_id=parent_id)
-    #         mg.nodes[nid] = node
-    #         if ids:
-    #             mg.edges.append(MicroEdge(src=ids[-1], dst=nid, dep="DATA"))
-    #         ids.append(nid)
-    #     return ids
-
 
     def _translate_keys_to_micro(self, keys) -> Dict:
 
@@ -274,7 +218,7 @@ class MicroInstructionParser:
 
             elif instr_name == ISA.FWD.value:
                 # Forward to a specific port
-                dest = args["dest"]
+                dest = args.get("dest", args.get("port"))
                 front_port = get_pnum_from_endpoints(self.manifest, dest)
                 dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
 
@@ -287,7 +231,7 @@ class MicroInstructionParser:
             
             elif instr_name == ISA.FWD_AND_ENQUEUE.value:
                 # Forward and enqueue to queue
-                dest = args["dest"]
+                dest = args.get("dest", args.get("port"))
                 qid = args["qid"]
                 front_port = get_pnum_from_endpoints(self.manifest, dest)
                 dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
@@ -315,14 +259,16 @@ class MicroInstructionParser:
 
         # --- FWD ---
         if op == ISA.FWD.value:
-            front_port = get_pnum_from_endpoints(self.manifest, args["dest"])
+            dest = args.get("dest", args.get("port"))
+            front_port = get_pnum_from_endpoints(self.manifest, dest)
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
             instrs = [MicroInstruction(name="fwd_ni", kwargs={"port": dev_port})]
             effects = [MicroEffect()]  # no read/write impact
 
         # --- FWD_AND_ENQUEUE ---
         elif op == ISA.FWD_AND_ENQUEUE.value:
-            front_port = get_pnum_from_endpoints(self.manifest, args["dest"])
+            dest = args.get("dest", args.get("port"))
+            front_port = get_pnum_from_endpoints(self.manifest, dest)
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
             instrs = [MicroInstruction(name="fwd_ni", kwargs={"port": dev_port, "qid": args["qid"]})]
             effects = [MicroEffect()]
@@ -334,7 +280,7 @@ class MicroInstructionParser:
 
         # --- HINC ---
         elif op == ISA.HINC.value:
-            header = args['target']
+            header = args.get("target", args.get("header"))
             normal_header = self._hdr_fetch_micro(header, False)
             spec_header = self._hdr_fetch_micro(header, True)
 
@@ -346,7 +292,7 @@ class MicroInstructionParser:
 
         # --- HASSIGN ---
         elif op == ISA.HASSIGN.value:
-            header = args['target']
+            header = args.get("target", args.get("header"))
             instrs = [
                 MicroInstruction(name="sum_ni", kwargs={"header_update": 1, "header_id": tofino_headers[header], "const_val": args["value"]}),
             ]
@@ -354,7 +300,7 @@ class MicroInstructionParser:
 
         # --- HTOVAR ---
         elif op == ISA.HTOVAR.value:
-            header = args['target']
+            header = args.get("target", args.get("header"))
             var_name = args.get("var_name", "")
             normal_header = self._hdr_fetch_micro(header, False)
             spec_header = self._hdr_fetch_micro(header, True)
@@ -386,61 +332,6 @@ class MicroInstructionParser:
             dev_port = sm.engine_controller.port_mechanism.port_hdl.get_dev_port(front_port, 0)
             instrs = [MicroInstruction(name="initialize_activate_ni", kwargs={})]
             effects = [MicroEffect()]
-
-        # --- IF ---
-        elif op == ISA.IF.value:
-            branches = args.get("branches", [])
-            cond_ir = {}
-            # cond_ir = self._cond_to_ir(branches)
-            # reads = self._cond_collect_reads_from_dnf([cl for br in cond_ir["branches"] for cl in br["dnf"]])
-            """
-            {
-                "condition": {
-                  "left": "size",
-                  "op": "EQ",
-                  "right": 1500
-                },
-                "body": [
-                  {
-                    "op": "FWD",
-                    "args": {
-                      "port": "PC2_OUT"
-                    }
-                  }
-                ]
-              },
-              {
-                "condition": {
-                  "left": "size",
-                  "op": "EQ",
-                  "right": 1600
-                },
-                "body": [
-                  {
-                    "op": "FWD",
-                    "args": {
-                      "port": "PC1_OUT"
-                    }
-                  }
-                ]
-              }
-            """
-            print(compiler_effects)
-            _reads = compiler_effects.get("reads", [])
-            _writes = compiler_effects.get("writes", [])
-
-            reads = [item.removeprefix("var.").removeprefix("hdr.") for item in _reads]
-            writes = [item.removeprefix("var.").removeprefix("hdr.") for item in _writes]
-
-            # for br in branches:
-            #     br["condition"] 
-                
-            #     for i in br["body"]:
-            #         lst_micros, lst_effects = self._translate_instr_to_micro(i["op"], i["args"])
-
-
-            instrs = [MicroInstruction(name="decide", kwargs={"cond_ir": cond_ir, "reads": reads})]
-            effects = [MicroEffect(reads=set(reads), writes=set(writes))]
 
         else:
             raise MicroInstructionError(f"Unknown instruction '{op}' cannot be translated.")
@@ -538,7 +429,6 @@ class MicroInstructionParser:
 
             out["branches"].append({"label": label, "dnf": dnf})
         return out
-
 
 
     def _hdr_extract_micro(self, hdr: str) -> str:
